@@ -44,6 +44,7 @@ export interface ICanvasFloatDom {
     /**
      * unitId of workbook, if not set, will use current workbook
      */
+    id?: string;
     unitId?: string;
     /**
      * subUnitId of worksheet, if not set, will use current worksheet

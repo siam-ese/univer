@@ -12,6 +12,8 @@
         "lint:types": "node ./scripts/generate-locales.mjs && tsc --noEmit"
     },
     "dependencies": {
+        "@univerjs/chart": "workspace:*",
+        "@univerjs/chart-ui": "workspace:*",
         "@univerjs/core": "workspace:*",
         "@univerjs/data-validation": "workspace:*",
         "@univerjs/debugger": "workspace:*",
