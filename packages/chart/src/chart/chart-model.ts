@@ -14,37 +14,47 @@
  * limitations under the License.
  */
 
-import { Disposable, toDisposable, Tools } from '@univerjs/core';
+import { Disposable, Tools } from '@univerjs/core';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, combineLatest, distinctUntilChanged, filter, Subject } from 'rxjs';
 import { chartDataPipeline } from './chart-data-pipeline';
 import type { ChartModelManager } from './chart-model-manager';
-import type { ChartDataSource, ChartStyle, ChartType, IChartConfig, IChartDataConfig } from './types';
-import { DataDirection } from './types';
+import type { ChartDataSource, IChartConfig, IChartDataContext } from './types';
+import type { ChartStyle } from './style.types';
+import { ChartType, DataDirection } from './constants';
 
 export interface IChartModelOption {
     id?: string;
     dataSource: Observable<ChartDataSource>;
-    dataConfig?: Partial<IChartDataConfig>;
+    dataConfig?: Partial<IChartDataContext>;
     style?: ChartStyle;
 }
 
 export class ChartModel extends Disposable {
+    private _disposeEffects = new Set<() => void>();
     private _dataSource$: Observable<ChartDataSource>;
     public readonly id: string;
-    private _chartTypeSubject = new BehaviorSubject<ChartType | null>(null);
-    private _chartType$ = this._chartTypeSubject.asObservable();
 
-    private _dataConfig$ = new BehaviorSubject<IChartDataConfig>({
+    /** chart type */
+    private _chartTypeSubject = new BehaviorSubject<ChartType>(ChartType.Line);
+    chartType$ = this._chartTypeSubject.asObservable();
+    get chartType() {
+        return this._chartTypeSubject.getValue();
+    }
+
+    /** chart data config */
+    private _dataConfig$ = new BehaviorSubject<IChartDataContext>({
         aggregate: false,
         direction: DataDirection.Row,
     });
 
     dataConfig$ = this._dataConfig$.asObservable();
 
-    private _config$ = new Subject<IChartConfig>();
+    /** chart  config */
+    private _config$ = new BehaviorSubject<IChartConfig | null>(null);
     config$ = this._config$.asObservable();
 
+    /** chart style config */
     private _style$ = new Subject<ChartStyle>();
     style$ = this._style$.asObservable();
     public style: ChartStyle = {};
@@ -68,21 +78,26 @@ export class ChartModel extends Disposable {
     private _init() {
         const { _manager } = this;
         this.disposeWithMe(
-            toDisposable(
-                combineLatest([
-                    this._chartType$.pipe(distinctUntilChanged()),
-                    this._dataSource$,
-                    this._dataConfig$,
-                ]).pipe(filter(([chartType]) => Boolean(chartType)))
-                    .subscribe(([chartType, dataSource, dataConfig]) => {
-                        const generator = _manager.generatorProvider.getGenerator(chartType!);
-                        if (generator) {
-                            const chartData = chartDataPipeline.getOutput(dataSource, dataConfig);
-                            const config = generator(chartType!, chartData);
-                            this._config$.next(config);
-                        }
-                    })
+            combineLatest([
+                this.chartType$.pipe(distinctUntilChanged()),
+                this._dataSource$,
+                this._dataConfig$,
+            ]).pipe(
+                filter(([chartType]) => Boolean(chartType))
             )
+                .subscribe(([_chartType, dataSource, dataConfig]) => {
+                    const chartType = _chartType!;
+                    // console.log(dataConfig, 'dataConfig');
+                    // console.log(dataSource, 'dataSource');
+                    const chartData = chartDataPipeline.getOutput(dataSource, dataConfig);
+                    const chartConfig = _manager.convertChartConfig(chartType, chartData);
+                    // console.log(chartConfig, 'chartConfig');
+                    if (!chartConfig) {
+                        return;
+                    }
+
+                    this._config$.next(chartConfig);
+                })
         );
     }
 
@@ -92,19 +107,25 @@ export class ChartModel extends Disposable {
         this._style$.next(this.style);
     }
 
-    setChartDataConfig(config: Partial<IChartDataConfig>) {
+    setChartDataConfig(config: Partial<IChartDataContext>) {
         const { _dataConfig$ } = this;
         const dataConfig = Object.assign({}, _dataConfig$.getValue(), config);
         _dataConfig$.next(dataConfig);
     }
 
-    setChart(chartItem: ChartType) {
-        this._chartTypeSubject.next(chartItem);
+    setChart(type: ChartType) {
+        this._chartTypeSubject.next(type);
+    }
+
+    onDispose(effect: () => void) {
+        this._disposeEffects.add(effect);
     }
 
     override dispose(): void {
         super.dispose();
 
+        this._disposeEffects.forEach((effect) => effect());
+        this._disposeEffects.clear();
         this._chartTypeSubject.complete();
         this._config$.complete();
     }

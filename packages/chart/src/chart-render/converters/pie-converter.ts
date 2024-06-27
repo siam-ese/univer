@@ -14,34 +14,33 @@
  * limitations under the License.
  */
 
-import type { ICartesianChartSpec } from '@visactor/vchart';
+import type { IPieChartSpec } from '@visactor/vchart';
 import type { IChartRenderSpecConverter } from '../types';
 import { ChartType } from '../../chart/constants';
-import { SpecField } from './constants';
+import { PieSpecField } from './constants';
 
-export const lineConverter: IChartRenderSpecConverter<ICartesianChartSpec & { seriesField: string }> = {
+export const pieConverter: IChartRenderSpecConverter<IPieChartSpec> = {
     canConvert(config) {
-        return config.type !== ChartType.Pie;
+        return config.type === ChartType.Pie;
     },
     convert(config) {
         const unit = Array.isArray(config.units) ? config.units[0] : config.units;
         const { category, series } = unit.data;
         const values = series.map((ser) => {
             return ser.items.map((item, valueIndex) => ({
-                [SpecField.yField]: item.value,
-                [SpecField.xField]: category?.getValueByIndex(valueIndex),
-                [SpecField.seriesField]: ser.name,
+                [PieSpecField.categoryField]: category?.getValueByIndex(valueIndex),
+                // [SpecFields.xField]: category?.getValueByIndex(valueIndex),
+                [PieSpecField.valueField]: item.value,
             }));
         }).flat();
 
         return {
-            type: config.type.toLowerCase(),
+            type: 'pie',
             data: {
                 values,
             },
-            xField: SpecField.xField,
-            yField: SpecField.yField,
-            seriesField: SpecField.seriesField,
+            valueField: PieSpecField.valueField,
+            categoryField: PieSpecField.categoryField,
         };
     },
 };

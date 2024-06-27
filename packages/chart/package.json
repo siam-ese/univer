@@ -68,7 +68,8 @@
         "rxjs": ">=7.0.0"
     },
     "dependencies": {
-        "@visactor/vchart": "^1.11.0"
+        "@visactor/vchart": "^1.11.0",
+        "chart.js": "^4.4.3"
     },
     "devDependencies": {
         "@univerjs/core": "workspace:*",

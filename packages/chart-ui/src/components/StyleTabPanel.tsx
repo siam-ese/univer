@@ -14,17 +14,8 @@
  * limitations under the License.
  */
 
-import type { IChartConfigGenerator } from '../types';
+import React from 'react';
 
-export const generalGenerator: IChartConfigGenerator = (chartType, chartData) => {
-    return {
-        type: chartType,
-        units: {
-            type: chartType,
-            data: {
-                xAxis: chartData.category,
-                yAxes: chartData.series,
-            },
-        },
-    };
+export const StyleTabPanel = () => {
+    return <div>StyleTabPanel</div>;
 };

@@ -25,6 +25,7 @@ export class VChartRenderEngine extends ChartRenderEngine<VChartSpec> {
     private _vchart: VChart | null;
 
     override setData(spec: VChartSpec): void {
+        // console.log(spec, 'chart spec');
         if (!this._vchart) {
             this._vchart = new VChart(spec, {
                 dom: this.container,

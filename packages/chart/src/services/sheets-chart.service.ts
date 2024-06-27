@@ -20,21 +20,19 @@ import { RefRangeService } from '@univerjs/sheets';
 import { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
 import { Inject } from '@wendellhu/redi';
 import { BehaviorSubject, Observable } from 'rxjs';
-import type { ChartRenderHelper } from '../chart-dom/chart-dom-container';
 import type { IChartInjector } from '../chart-injectors/line-chart-injector';
-import type { IChartRenderEngineConstructor } from '../chart-render/render-engine';
+import { ChartRenderAdapter } from '../chart-render/chart-render-adapter';
+import type { IChartRenderEngineConstructor } from '../chart-render/render-engine/render-engine';
 import type { ChartModel } from '../chart/chart-model';
 import { ChartModelManager } from '../chart/chart-model-manager';
-import { lineGenerator } from '../chart/converters/line-generator';
-import { type ChartDataSource, ChartType, DataDirection, type IChartSnapshot } from '../chart/types';
+import { ChartType, DataDirection } from '../chart/constants';
+import type { ChartDataSource, IChartSnapshot } from '../chart/types';
 
 export const SHEET_CHART_PLUGIN = 'SHEET_CHART_PLUGIN';
 
 export interface ISheetsChartResource {
     [key: string]: IChartSnapshot;
 }
-
-const ID_SEPARATOR = '&';
 
 function waitElement(id: string) {
     return new Promise<HTMLElement>((resolve) => {
@@ -50,7 +48,8 @@ function waitElement(id: string) {
 
 @OnLifecycle(LifecycleStages.Rendered, SheetsChartService)
 export class SheetsChartService extends Disposable {
-    private readonly _chartModelManager = new ChartModelManager();
+    private readonly _chartRenderAdapter = new ChartRenderAdapter();
+    private readonly _chartModelManager: ChartModelManager;
 
     private readonly _activeChartModel$ = new BehaviorSubject<Nullable<ChartModel>>(null);
     readonly activeChartModel$ = this._activeChartModel$.asObservable();
@@ -64,11 +63,21 @@ export class SheetsChartService extends Disposable {
         @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService
     ) {
         super();
+
+        this._chartModelManager = new ChartModelManager(this._chartRenderAdapter);
         // this._initSnapshot();
         this._initCharts();
 
         // Todo: type assertion
-        this.bindRenderHelper(async (id: string) => {
+        this._bindRenderHelper();
+    }
+
+    private _initCharts() {
+    }
+
+    private _bindRenderHelper() {
+        const { _chartModelManager, _sheetCanvasFloatDomManagerService } = this;
+        const renderHelper = async (id: string) => {
             const floatDom = _sheetCanvasFloatDomManagerService.addFloatDomToPosition({
                 id,
                 allowTransform: true,
@@ -83,35 +92,49 @@ export class SheetsChartService extends Disposable {
             if (!floatDom) {
                 throw new Error('Fail to mount float dom');
             }
-            const el = await waitElement(floatDom.id);
+
+            await waitElement(floatDom.id);
+
+            this.disposeWithMe(_sheetCanvasFloatDomManagerService.remove$.subscribe((params) => {
+                if (params.id === floatDom.id) {
+                    _chartModelManager.removeChartModel(floatDom.id);
+                }
+            }));
 
             return {
-                id: el,
+                id: floatDom.id,
                 dispose: floatDom.dispose,
             };
-        });
-    }
-
-    private _initCharts() {
-        this._chartModelManager.generatorProvider.addGenerator(ChartType.Line, lineGenerator);
-    }
-
-    bindRenderHelper(renderHelper: ChartRenderHelper) {
-        this._chartModelManager.renderAdapter.bindRenderHelper(renderHelper);
+        };
+        this._chartRenderAdapter.bindRenderHelper(renderHelper);
     }
 
     addInjector(injector: IChartInjector) {
-        injector.injectDataGenerator?.(this._chartModelManager.generatorProvider);
-        const renderModel = this._chartModelManager.renderAdapter.getRenderModel();
+        injector.injectDataGenerator?.(this._chartModelManager);
+        const renderModel = this._chartRenderAdapter.getRenderModel();
         renderModel && injector.injectRenderConverter?.(renderModel);
     }
 
     registerRenderEngine(name: string, renderEngineCtor: IChartRenderEngineConstructor) {
-        this._chartModelManager.renderAdapter.registerRenderEngine(name, renderEngineCtor);
+        this._chartRenderAdapter.registerRenderEngine(name, renderEngineCtor);
+    }
+
+    setActiveChartModel(chartModel: ChartModel) {
+        this._activeChartModel$.next(chartModel);
+    }
+
+    getChartSuggestion(range: IRange) {
+        const { startRow, endRow, startColumn, endColumn } = range;
+        const rowsGreaterThanColumns = endRow - startRow > endColumn - startColumn;
+
+        return {
+            direction: rowsGreaterThanColumns ? DataDirection.Column : DataDirection.Row,
+            chartType: rowsGreaterThanColumns ? ChartType.Line : ChartType.Bar,
+        };
     }
 
     createChartModel(unitId: string, subUnitId: string, range: IRange) {
-        const chartModelId = [unitId, subUnitId, Tools.generateRandomId()].join(ID_SEPARATOR);
+        const chartModelId = Tools.generateRandomId();
 
         const getCellValuesFromRange = (r: IRange) => {
             const workbook = this._univerInstanceService.getUniverSheetInstance(unitId);
@@ -131,24 +154,22 @@ export class SheetsChartService extends Disposable {
         });
 
         // Init suggest chart type and data direction to chart model
-        const { startRow, endRow, startColumn, endColumn } = range;
-        const rowsGreaterThanColumns = endRow - startRow > endColumn - startColumn;
+        const chartSuggestion = this.getChartSuggestion(range);
         const chartModel = this._chartModelManager.createChartModel({
             id: chartModelId,
             dataSource: dataSource$,
             dataConfig: {
-                direction: rowsGreaterThanColumns ? DataDirection.Column : DataDirection.Row,
+                direction: chartSuggestion.direction,
             },
         });
 
-        const chartType = rowsGreaterThanColumns ? ChartType.Line : ChartType.Bar;
-        chartModel.setChart(chartType);
+        chartModel.setChart(chartSuggestion.chartType);
 
         return chartModel;
     }
 
     getChartModel(id: string) {
-        this._chartModelManager.getChartModel(id);
+        return this._chartModelManager.getChartModel(id);
     }
 
     private _serializeAutoFiltersForUnit(unitId: string): string {

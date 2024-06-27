@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-export enum SpecFields {
+export enum SpecField {
     xField = '__xField__',
     yField = '__yField__',
     seriesField = '__seriesField__',
+}
+
+export enum PieSpecField {
+    categoryField = '__categoryField__',
+    valueField = '__valueField__',
 }

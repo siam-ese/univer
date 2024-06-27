@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
-export class ChartComponentViewModel {
+export enum ChartType {
+    Line = 'Line',
+    Bar = 'Bar',
+    Pie = 'Pie',
+    BarStacked = 'LineStacked',
+}
+export enum DataDirection {
+    Row = 'Row',
+    Column = 'Column',
+}
 
+export enum CategoryType {
+    Linear = 'Linear',
+    Text = 'Text',
 }

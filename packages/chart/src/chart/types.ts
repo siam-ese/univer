@@ -15,45 +15,17 @@
  */
 
 import type { CellValue, Nullable } from '@univerjs/core';
+import type { CategoryType, ChartType, DataDirection } from './constants';
 
-type DeepPartial<T, P extends keyof T = keyof T> = T extends object ? {
-    [key in P]+?: DeepPartial<T[key]>;
-} : T;
-
+/** Snapshot */
 export interface IChartSnapshot {
     id: string;
 }
 
-export enum ChartType {
-    Line = 'Line',
-    Bar = 'Bar',
-    Pie = 'Pie',
-    BarStacked = 'LineStacked',
-}
-// export enum ChartRenderType {
-//     Line,
-//     Bar,
-//     Pie,
-// }
-// export interface ChartType {
-//     type: ChartType;
-//     renderType: ChartRenderType;
-// }
-// export enum ChartTypeID {
-//     Line = 1,
-//     Bar,
-//     Pie,
-// }
-
 export type ChartDataSource = Array<Array<Nullable<CellValue>>>;
 export type ChartDataSourceValue = Nullable<CellValue>;
 
-export enum DataDirection {
-    Row = 'row',
-    Column = 'column',
-}
-
-export interface IChartDataConfig {
+export interface IChartDataContext {
     direction: DataDirection;
     // stack: boolean; // effect on both of data and render
     aggregate: boolean; // effect on both of data and render
@@ -63,83 +35,44 @@ export interface IChartDataConfig {
     seriesIndexes?: number[];
 }
 
-// export interface ChartDataSource {
-//     data: ChartDataSource;
-// }
-
-/* chart style */
-export interface ILabelStyle {
-    content: string;
-    fontSize: number;
-    color: string;
-    align: 'left' | 'right' | 'center';
-    strikethrough: boolean;
-    italic: boolean;
-    underline: boolean;
-}
-
-interface IChartStyle {
-    common: {
-        stack: boolean;
-        backgroundColor: string;
-        fontSize: number;
-        fontColor: string;
-        borderColor: string;
-        title: ILabelStyle;
-        subtitle: ILabelStyle;
-        xAxisTitle: ILabelStyle;
-        yAxisTitle: ILabelStyle;
-        dataPoints: {
-            [index: number]: {};
-        };
-    };
-    pie: {};
-}
-
-export type ChartStyle = DeepPartial<IChartStyle>;
-
-// IChartSpec
-export interface IChartConfig {
-    type: ChartType;
-    units: IChartUnit | IChartUnit[];
-}
-
-export interface IAxisData {
-    name?: Nullable<string>;
-    value: ChartDataSourceValue[];
-    labelValue: string[];
-}
-
-export enum CategoryType {
-    Linear = 'Linear',
-    Text = 'Text',
-}
-
 export interface IChartData {
     category?: {
         index: number;
         name: string;
         type: CategoryType;
-        values: ChartDataSourceValue[];
-        textValues: string[];
+        items: Array<{
+            value: ChartDataSourceValue;
+            label: string;
+        }>;
         getValueByIndex: (index: number) => string | undefined;
     };
     series: Array<{
         index: number;
         name: string;
-        values: ChartDataSourceValue[];
-        textValues: string[];
+        items: Array<{
+            value: ChartDataSourceValue;
+            label: string;
+        }>;
     }>;
 };
+
+export interface IChartConfig {
+    type: ChartType;
+    units: IChartUnit[];
+}
 
 export interface IChartUnit {
     type: ChartType;
     data: {
-        xAxis: IChartData['category'];
-        yAxes: IChartData['series'];
+        category: IChartData['category'];
+        series: IChartData['series'];
         formatCode?: string;
     }; // for dataSource to chartConfig
 }
 
-export type IChartConfigGenerator = (chartItem: ChartType, chartData: IChartData) => IChartConfig;
+export interface IChartConfigConverter {
+    canConvert(type: ChartType): boolean;
+    convert(type: ChartType, data: IChartData): IChartConfig;
+}
+// export type IChartConfigGenerator = (type: ChartType, chartData: IChartData) => IChartConfig;
 

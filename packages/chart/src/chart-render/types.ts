@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import type { ChartStyle, IChartConfig } from '../chart/types';
+import type { IChartConfig } from '../chart/types';
+import type { ChartStyle } from '../chart/style.types';
 
 export interface IChartRenderSpecConverter<ChartRenderSpec = unknown> {
     canConvert: (config: IChartConfig) => boolean;
     convert: (config: IChartConfig) => ChartRenderSpec;
 }
 export type BeforeConvertOperator = (config: IChartConfig) => IChartConfig;
-export type BeforeRenderOperator<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig) => void;
+export type AfterConvertOperator<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig) => void;
 

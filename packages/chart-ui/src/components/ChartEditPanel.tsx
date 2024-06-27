@@ -14,8 +14,22 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import { Button } from '@univerjs/design';
+import React, { useState } from 'react';
+import { DataTabPanel } from './DataTabPanel';
+import { StyleTabPanel } from './StyleTabPanel';
 
 export const ChartEditPanel = () => {
-    return <div>ChartEditPanel</div>;
+    const [tab, setTab] = useState(0);
+    return (
+        <div>
+            <div>
+                <Button onClick={() => setTab(0)}>Data Panel</Button>
+                <Button onClick={() => setTab(1)}>Style Panel</Button>
+            </div>
+            <div>
+                {tab === 0 ? <DataTabPanel /> : <StyleTabPanel />}
+            </div>
+        </div>
+    );
 };

@@ -14,6 +14,22 @@
  * limitations under the License.
  */
 
-import { generalGenerator } from './common';
+import type { IChartConfigConverter } from '../types';
 
-export const lineGenerator = generalGenerator;
+export const generalConverter: IChartConfigConverter = {
+    canConvert() {
+        return true;
+    },
+    convert: (chartType, chartData) => {
+        return {
+            type: chartType,
+            units: [{
+                type: chartType,
+                data: {
+                    category: chartData.category,
+                    series: chartData.series,
+                },
+            }],
+        };
+    },
+};

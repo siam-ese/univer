@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import type { ChartDataSource, ChartDataSourceValue, IChartData, IChartDataConfig } from './types';
-import { CategoryType, DataDirection } from './types';
+import type { ChartDataSource, ChartDataSourceValue, IChartData, IChartDataContext } from './types';
+import { CategoryType, DataDirection } from './constants';
 
 type NestedArray<T = any> = Array<Array<T>>;
 
@@ -108,7 +108,7 @@ function sumArray(ary: ChartDataSourceValue[]) {
 export type IChartDataPipelineOperator = (ctx: IChartDataPipelineContext) => void;
 export interface IChartDataPipelineContext {
     dataSource: ChartDataSource;
-    dataConfig: IChartDataConfig;
+    dataConfig: IChartDataContext;
     _headerData?: ChartDataSourceValue[];
 }
 
@@ -120,7 +120,7 @@ export class ChartDataPipeline {
         return this;
     }
 
-    getOutput(dataSource: ChartDataSource, dataConfig: IChartDataConfig) {
+    getOutput(dataSource: ChartDataSource, dataConfig: IChartDataContext) {
         const ctx = {
             dataSource,
             dataConfig,
@@ -141,8 +141,10 @@ export class ChartDataPipeline {
                 return {
                     index,
                     name: toString(headerData?.[index]),
-                    values,
-                    textValues: values.map(toString),
+                    items: values.map((value) => ({
+                        value,
+                        label: toString(value),
+                    })),
                 };
             }),
         };
@@ -154,10 +156,12 @@ export class ChartDataPipeline {
                 index: categoryIndex,
                 name: toString(headerData?.[categoryIndex]),
                 type: dataConfig.categoryType!,
-                values: categoryData,
-                textValues: categoryData.map(toString),
+                items: categoryData.map((value) => ({
+                    value,
+                    label: toString(value),
+                })),
                 getValueByIndex(index: number) {
-                    return this.type === CategoryType.Text ? this.textValues[index] : undefined;
+                    return this.type === CategoryType.Text ? this.items[index].label : undefined;
                 },
             };
         }

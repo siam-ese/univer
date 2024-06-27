@@ -17,7 +17,10 @@
 export { UniverSheetsChartPlugin, type IUniverSheetsChartPluginConfig } from './plugins/univer-sheets-chart-plugin';
 export { SheetsChartService } from './services/sheets-chart.service';
 export { SheetsChartController } from './controllers/sheets-chart.controller';
-export { VChartRenderEngine } from './chart-render/vchart-render-engine';
+export { VChartRenderEngine } from './chart-render/render-engine/vchart-render-engine';
 export { ChartRenderModel } from './chart-render/chart-render-model';
 export { ChartModel } from './chart/chart-model';
 export { lineChartInjector } from './chart-injectors/line-chart-injector';
+export { ChartType } from './chart/constants';
+export { useChartConfigStateProxy, useChartConfigState, ussChartConfigStateWithDefault } from './chart-view/hooks';
+export { useActiveChartModel } from './hooks';

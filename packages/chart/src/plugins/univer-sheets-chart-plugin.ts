@@ -20,7 +20,7 @@ import { Inject, Injector } from '@wendellhu/redi';
 import { SheetsChartService } from '../services/sheets-chart.service';
 import { SheetsChartController } from '../controllers/sheets-chart.controller';
 import type { IChartInjector } from '../chart-injectors/line-chart-injector';
-import type { IChartRenderEngineConstructor } from '../chart-render/render-engine';
+import type { IChartRenderEngineConstructor } from '../chart-render/render-engine/render-engine';
 
 const PLUGIN_NAME = 'UniverSheetsChartPlugin';
 

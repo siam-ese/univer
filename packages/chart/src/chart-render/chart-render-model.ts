@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-import type { ChartStyle, IChartConfig } from '../chart/types';
+import type { IChartConfig } from '../chart/types';
+import type { ChartStyle } from '../chart/style.types';
 import type {
+    AfterConvertOperator,
     BeforeConvertOperator,
-    BeforeRenderOperator,
     IChartRenderSpecConverter,
 } from './types';
 
 export class ChartRenderModel<Spec extends object = any> {
     private _renderSpecConverters = new Set<IChartRenderSpecConverter<Spec>>();
     private _beforeConvertOperators = new Set<BeforeConvertOperator>();
-    private _beforeRenderOperators = new Set<BeforeRenderOperator<Spec>>();
+    private _afterConvertOperators = new Set<AfterConvertOperator<Spec>>();
     private _config: IChartConfig;
 
     constructor() {
@@ -38,12 +39,12 @@ export class ChartRenderModel<Spec extends object = any> {
         this._renderSpecConverters.add(converter);
     }
 
-    onBeforeConvert(interceptor: BeforeConvertOperator) {
-        this._beforeConvertOperators.add(interceptor);
+    addBeforeConvertOperator(operator: BeforeConvertOperator) {
+        this._beforeConvertOperators.add(operator);
     }
 
-    onBeforeRender(interceptor: BeforeRenderOperator<Spec>) {
-        this._beforeRenderOperators.add(interceptor);
+    addAfterConvertOperator(operator: AfterConvertOperator<Spec>) {
+        this._afterConvertOperators.add(operator);
     }
 
     getChartConfig(config: IChartConfig) {
@@ -52,8 +53,8 @@ export class ChartRenderModel<Spec extends object = any> {
         } = this;
 
         // onBeforeConvert
-        _beforeConvertOperators.forEach((interceptor) => {
-            config = interceptor(config);
+        _beforeConvertOperators.forEach((operator) => {
+            config = operator(config);
         });
 
         this._config = config;
@@ -63,7 +64,7 @@ export class ChartRenderModel<Spec extends object = any> {
 
     getRenderSpec(config: IChartConfig, style: ChartStyle): Spec | undefined {
         const {
-            _beforeRenderOperators,
+            _afterConvertOperators,
             _renderSpecConverters,
         } = this;
 
@@ -74,7 +75,7 @@ export class ChartRenderModel<Spec extends object = any> {
         // Converting
         const spec = converter.convert(config);
         // onBeforeRender
-        _beforeRenderOperators.forEach((interceptor) => interceptor(spec, style, config));
+        _afterConvertOperators.forEach((operator) => operator(spec, style, config));
 
         return spec;
     }
@@ -82,6 +83,6 @@ export class ChartRenderModel<Spec extends object = any> {
     dispose() {
         this._renderSpecConverters.clear();
         this._beforeConvertOperators.clear();
-        this._beforeRenderOperators.clear();
+        this._afterConvertOperators.clear();
     }
 }

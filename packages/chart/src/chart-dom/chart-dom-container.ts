@@ -14,20 +14,6 @@
  * limitations under the License.
  */
 
-import type { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
-
-export function mountChartDom(floatDomService: SheetCanvasFloatDomManagerService) {
-    return floatDomService.addFloatDomToPosition({
-        allowTransform: true,
-        initPosition: {
-            startX: 200,
-            endX: 400,
-            startY: 200,
-            endY: 400,
-        },
-        componentKey: 'Chart',
-    });
-}
 export type ChartRenderHelper = (chartId: string) => Promise<{
     id: string | HTMLElement;
     dispose?: () => void;

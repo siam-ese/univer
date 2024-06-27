@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import type { ChartModel } from '@univerjs/chart';
 import { SheetsChartService } from '@univerjs/chart';
 import { Disposable, ICommandService, IUniverInstanceService, LifecycleStages, OnLifecycle, UniverInstanceType } from '@univerjs/core';
 import { ComponentManager, IMenuService, ISidebarService } from '@univerjs/ui';
@@ -52,7 +51,7 @@ export class SheetsChartUIController extends Disposable {
         );
     }
 
-    openPanel(chartModel: ChartModel) {
+    openPanel() {
         this._sidebarDisposable = this._sidebarService.open({
             children: {
                 label: CHART_EDIT_PANEL_KEY,
@@ -65,13 +64,18 @@ export class SheetsChartUIController extends Disposable {
         const { _sheetsChartService } = this;
         this._componentManager.register(CHART_EDIT_PANEL_KEY, ChartEditPanel);
         this.disposeWithMe(this._drawingManagerService.focus$.subscribe((params) => {
-            const chartModel = _sheetsChartService.activeChartModel;
             const drawing = params[0];
-            if (!drawing || !chartModel) {
+            if (!drawing) {
                 return;
             }
+            const chartModel = _sheetsChartService.getChartModel(drawing.drawingId);
+            if (!chartModel) {
+                return;
+            }
+
             if (drawing.drawingId === chartModel.id) {
-                this.openPanel(chartModel);
+                _sheetsChartService.setActiveChartModel(chartModel);
+                this.openPanel();
             }
         }));
     }

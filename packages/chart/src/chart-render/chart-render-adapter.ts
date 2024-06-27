@@ -15,9 +15,10 @@
  */
 
 import type { ChartRenderHelper } from '../chart-dom/chart-dom-container';
-import type { ChartStyle, IChartConfig } from '../chart/types';
+import type { IChartConfig } from '../chart/types';
+import type { ChartStyle } from '../chart/style.types';
 import { ChartRenderModel } from './chart-render-model';
-import type { ChartRenderEngine, IChartRenderEngineConstructor } from './render-engine';
+import type { ChartRenderEngine, IChartRenderEngineConstructor } from './render-engine/render-engine';
 
 export class ChartRenderAdapter {
     private _renderModelMap = new Map<string, ChartRenderModel>();
@@ -79,6 +80,10 @@ export class ChartRenderAdapter {
 
     dispose() {
         this._currentEngineName = '';
+
+        this._renderEngineMap.forEach((engine) => engine.dispose());
+        this._renderEngineMap.clear();
+
         this._renderModelMap.forEach((model) => model.dispose());
         this._renderModelMap.clear();
     }

@@ -14,22 +14,11 @@
  * limitations under the License.
  */
 
-import type { ChartType, IChartConfigGenerator } from './types';
+import { useDependency } from '@wendellhu/redi/react-bindings';
+import { SheetsChartService } from './services/sheets-chart.service';
 
-export class ChartGeneratorProvider {
-    private _generators = new Map<ChartType, IChartConfigGenerator>();
+export function useActiveChartModel() {
+    const chartService = useDependency(SheetsChartService);
 
-    addGenerator(name: ChartType, generator: IChartConfigGenerator) {
-        const { _generators } = this;
-        if (_generators.has(name)) {
-            console.warn(`The type of ${name} chart generator has been registered!`);
-            return;
-        }
-        _generators.set(name, generator);
-    }
-
-    getGenerator(type: ChartType) {
-        return this._generators.get(type);
-    }
+    return chartService.activeChartModel!;
 }
-

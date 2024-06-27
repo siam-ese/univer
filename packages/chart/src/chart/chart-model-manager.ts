@@ -15,21 +15,29 @@
  */
 
 import { Disposable } from '@univerjs/core';
-import { ChartRenderAdapter } from '../chart-render/chart-render-adapter';
-import { ChartGeneratorProvider } from './chart-generator-provider';
+// import { ChartRenderManager } from '../chart-render/chart-render-adapter';
+import type { ChartRenderAdapter } from '../chart-render/chart-render-adapter';
 import type { IChartModelOption } from './chart-model';
 import { ChartModel } from './chart-model';
-// import type { IChartConfigConverter } from './types';
+import type { IChartConfigConverter, IChartData } from './types';
+import type { ChartType } from './constants';
 
 export class ChartModelManager extends Disposable {
-    // private _generators = new Map<IChartConfigConverter['name'], IChartConfigConverter>();
     private _models = new Map<string, ChartModel>();
-    private _generatorProvider = new ChartGeneratorProvider();
-    readonly renderAdapter = new ChartRenderAdapter();
-    private _currentChartModel: string;
+    private _converters = new Set<IChartConfigConverter>();
 
-    get generatorProvider() {
-        return this._generatorProvider;
+    constructor(private _chartRenderAdapter: ChartRenderAdapter) {
+        super();
+    }
+
+    addConverter(handler: IChartConfigConverter) {
+        this._converters.add(handler);
+    }
+
+    convertChartConfig(chartType: ChartType, chartData: IChartData) {
+        const converter = Array.from(this._converters).find((converter) => converter.canConvert(chartType));
+
+        return converter ? converter.convert(chartType, chartData) : null;
     }
 
     getChartModel(id: string) {
@@ -41,12 +49,14 @@ export class ChartModelManager extends Disposable {
 
         this.disposeWithMe(
             chartModel.config$.subscribe((config) => {
-                this.renderAdapter.render(chartModel.id, config, chartModel.style);
+                if (config) {
+                    this._chartRenderAdapter.render(chartModel.id, config, chartModel.style);
+                }
             })
         );
         this.disposeWithMe(
             chartModel.style$.subscribe((style) => {
-                this.renderAdapter.renderStyle(chartModel.id, style);
+                this._chartRenderAdapter.renderStyle(chartModel.id, style);
             })
         );
 
@@ -55,9 +65,14 @@ export class ChartModelManager extends Disposable {
         return chartModel;
     }
 
-    // addChart(converter: IChartConfigConverter) {
-    //     this._generatorProvider.addConverter(converter);
-    // }
+    removeChartModel(id: string) {
+        const { _models } = this;
+        const chartModel = _models.get(id);
+        if (chartModel) {
+            chartModel.dispose();
+            _models.delete(id);
+        }
+    }
 
     override dispose() {
         super.dispose();

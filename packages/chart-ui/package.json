@@ -70,11 +70,11 @@
     "devDependencies": {
         "@univerjs/chart": "workspace:*",
         "@univerjs/core": "workspace:*",
+        "@univerjs/design": "workspace:*",
         "@univerjs/drawing": "workspace:*",
         "@univerjs/shared": "workspace:*",
         "@univerjs/sheets": "workspace:*",
         "@univerjs/sheets-drawing-ui": "workspace:*",
-        "@univerjs/sheets-ui": "workspace:*",
         "@univerjs/ui": "workspace:*",
         "@wendellhu/redi": "^0.15.1",
         "dayjs": "^1.11.11",
