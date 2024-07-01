@@ -72,5 +72,6 @@ export class SheetsChartUIService extends Disposable {
 
     override dispose() {
         super.dispose();
+        this._viewState.clear();
     }
 }

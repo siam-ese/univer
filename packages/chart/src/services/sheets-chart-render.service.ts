@@ -30,7 +30,7 @@ export class SheetsChartRenderService extends Disposable {
     private _renderEngineConstructors = new Map<string, IChartRenderEngineConstructor>();
     private _renderEngineMap = new Map<string, IChartRenderEngine>();
     private _currentEngineName: string = '';
-    private _chartMountHelper: ChartMountHelper;
+    private _chartMountHelper: ChartMountHelper | undefined;
 
     setChartMountHelper(renderHelper: ChartMountHelper) {
         this._chartMountHelper = renderHelper;
@@ -67,7 +67,10 @@ export class SheetsChartRenderService extends Disposable {
         if (renderEngine) {
             renderEngine.setData(spec);
         } else if (Ctor) {
-            const helper = this._chartMountHelper(id);
+            const helper = this._chartMountHelper?.(id);
+            if (!helper) {
+                return;
+            }
 
             renderEngine = new Ctor(helper.id);
 
@@ -93,6 +96,8 @@ export class SheetsChartRenderService extends Disposable {
     override dispose() {
         super.dispose();
         this._currentEngineName = '';
+
+        this._renderEngineConstructors.clear();
 
         this._renderEngineMap.forEach((engine) => engine.dispose());
         this._renderEngineMap.clear();

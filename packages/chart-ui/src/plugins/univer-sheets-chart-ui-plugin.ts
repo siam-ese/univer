@@ -35,18 +35,5 @@ export class UniverSheetsChartUIPlugin extends Plugin {
             [SheetsChartUIService],
             [SheetsChartUIController],
         ] as Dependency[]).forEach((d) => injector.add(d));
-
-        // const sheetsChartService = injector.get(SheetsChartService);
-
-        // const { renderEngines, injectors } = this._config;
-        // // Register render engine
-        // Object.keys(renderEngines).forEach((name) => {
-        //     sheetsChartService.registerRenderEngine(name, renderEngines[name]);
-        // });
-
-        // // Add injector after render engine initiated
-        // injectors.forEach((injector) => {
-        //     sheetsChartService.addInjector(injector);
-        // });
     }
 }

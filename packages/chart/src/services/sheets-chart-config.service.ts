@@ -96,5 +96,7 @@ export class SheetsChartConfigService extends Disposable {
     override dispose() {
         super.dispose();
         this._models.forEach((model) => model.dispose());
+        this._models.clear();
+        this._converters.clear();
     }
 }

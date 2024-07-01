@@ -27,7 +27,6 @@ export type ChartDataSourceValue = Nullable<CellValue>;
 
 export interface IChartDataContext {
     direction: DataDirection;
-    // stack: boolean; // effect on both of data and render
     aggregate: boolean; // effect on both of data and render
     categoryIndex?: number;
     categoryType?: CategoryType;

@@ -60,7 +60,7 @@ export class SheetsChartService extends Disposable {
         // this._initSnapshot();
         this._initCharts();
 
-        // Todo: type assertion
+        // Todo: remove code that related to dom from univerjs/chart
         this._setChartMountHelper();
     }
 
