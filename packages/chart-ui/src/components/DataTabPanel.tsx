@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import { ChartType, useActiveChartModel, useChartConfigState, useChartConfigStateProxy } from '@univerjs/chart';
+import { ChartType } from '@univerjs/chart';
 import type { ISelectProps } from '@univerjs/design';
 import { Select } from '@univerjs/design';
 import React from 'react';
+import { useChartConfigState, useSheetsChartUIService } from '../chart-view/hooks';
 
 export const DataTabPanel = () => {
-    const chartModel = useActiveChartModel();
+    const sheetsChartUIService = useSheetsChartUIService();
 
-    const stateProxy = useChartConfigStateProxy(chartModel);
-    const [chartType, setChartType] = useChartConfigState('chartType', stateProxy, ChartType.Line);
+    const [chartType, setChartType] = useChartConfigState('chartType', sheetsChartUIService, ChartType.Line);
     const chartTypeOptions: ISelectProps['options'] = [
         {
             label: 'Line',

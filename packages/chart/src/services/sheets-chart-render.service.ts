@@ -14,27 +14,35 @@
  * limitations under the License.
  */
 
-import type { ChartRenderHelper } from '../chart-dom/chart-dom-container';
-import type { IChartConfig } from '../chart/types';
+import { Disposable } from '@univerjs/core';
+import { ChartRenderModel } from '../chart-render/chart-render-model';
+import type { IChartRenderEngine, IChartRenderEngineConstructor } from '../chart-render/render-engine/render-engine';
 import type { ChartStyle } from '../chart/style.types';
-import { ChartRenderModel } from './chart-render-model';
-import type { ChartRenderEngine, IChartRenderEngineConstructor } from './render-engine/render-engine';
+import type { IChartConfig } from '../chart/types';
 
-export class ChartRenderAdapter {
+export type ChartMountHelper = (chartId: string) => {
+    id: string | HTMLElement;
+    dispose?: () => void;
+};
+
+export class SheetsChartRenderService extends Disposable {
     private _renderModelMap = new Map<string, ChartRenderModel>();
     private _renderEngineConstructors = new Map<string, IChartRenderEngineConstructor>();
-    private _renderEngineMap = new Map<string, ChartRenderEngine>();
+    private _renderEngineMap = new Map<string, IChartRenderEngine>();
     private _currentEngineName: string = '';
-    private _renderHelper: ChartRenderHelper;
+    private _chartMountHelper: ChartMountHelper;
 
-    bindRenderHelper(renderHelper: ChartRenderHelper) {
-        this._renderHelper = renderHelper;
+    setChartMountHelper(renderHelper: ChartMountHelper) {
+        this._chartMountHelper = renderHelper;
     }
 
     registerRenderEngine(name: string, ctor: IChartRenderEngineConstructor) {
         this._currentEngineName = name;
-        this._renderModelMap.set(name, new ChartRenderModel());
+        const renderModel = new ChartRenderModel();
+        this._renderModelMap.set(name, renderModel);
         this._renderEngineConstructors.set(name, ctor);
+
+        return renderModel;
     }
 
     getRenderModel(name: string = this._currentEngineName) {
@@ -59,10 +67,14 @@ export class ChartRenderAdapter {
         if (renderEngine) {
             renderEngine.setData(spec);
         } else if (Ctor) {
-            const helper = await this._renderHelper(id);
-            renderEngine = new Ctor(id);
-            renderEngine.setData(spec);
-            helper.dispose && renderEngine.onDispose(helper.dispose);
+            const helper = this._chartMountHelper(id);
+
+            renderEngine = new Ctor(helper.id);
+
+            helper.dispose && renderEngine.onDispose?.(helper.dispose);
+
+            renderEngine.renderWithData(spec);
+
             _renderEngineMap.set(id, renderEngine);
         }
     }
@@ -78,7 +90,8 @@ export class ChartRenderAdapter {
         }
     }
 
-    dispose() {
+    override dispose() {
+        super.dispose();
         this._currentEngineName = '';
 
         this._renderEngineMap.forEach((engine) => engine.dispose());

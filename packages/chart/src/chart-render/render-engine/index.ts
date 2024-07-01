@@ -14,8 +14,5 @@
  * limitations under the License.
  */
 
-export type ChartRenderHelper = (chartId: string) => Promise<{
-    id: string | HTMLElement;
-    dispose?: () => void;
-}>;
-
+export * from './render-engine';
+export * from './vchart-render-engine';

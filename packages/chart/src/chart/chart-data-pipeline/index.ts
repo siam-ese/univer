@@ -14,11 +14,4 @@
  * limitations under the License.
  */
 
-import { useDependency } from '@wendellhu/redi/react-bindings';
-import { SheetsChartService } from './services/sheets-chart.service';
-
-export function useActiveChartModel() {
-    const chartService = useDependency(SheetsChartService);
-
-    return chartService.activeChartModel!;
-}
+export { ChartDataPipeline, chartDataPipeline } from './chart-data-pipeline';

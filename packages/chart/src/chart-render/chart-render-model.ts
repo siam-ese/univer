@@ -28,9 +28,6 @@ export class ChartRenderModel<Spec extends object = any> {
     private _afterConvertOperators = new Set<AfterConvertOperator<Spec>>();
     private _config: IChartConfig;
 
-    constructor() {
-    }
-
     get config() {
         return this._config;
     }

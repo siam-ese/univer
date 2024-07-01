@@ -14,29 +14,25 @@
  * limitations under the License.
  */
 
-export abstract class ChartRenderEngine<T = unknown> {
-    private _disposeEffects: Array<() => void > = [];
-    constructor(public container: HTMLElement | string) {
-    };
+import type { Disposable } from '@univerjs/core';
 
-    public setData(spec: T): void {}
-    public setTheme(): void {}
-    public exportImg(): Promise<string> {
-        return Promise.resolve('');
-    }
+export interface IChartRenderEngine<Spec = unknown> extends Disposable {
+    container: HTMLElement | string;
 
-    onDispose(effect: () => void) {
-        this._disposeEffects.push(effect);
-    }
+    setData(spec: Spec): void;
 
-    dispose(): void {
-        this._disposeEffects.forEach((fn) => fn());
-        this._disposeEffects = [];
-    }
+    render(): void;
+
+    renderWithData(spec: Spec): void;
+
+    setTheme(): void;
+
+    exportImg(): Promise<string>;
+
+    onDispose?(dispose: () => void): void;
 }
 
 export interface IChartRenderEngineConstructor<T = unknown> {
-    // name: string;
-    new (container: HTMLElement | string): ChartRenderEngine<T>;
+    new (container: HTMLElement | string): IChartRenderEngine<T>;
 }
 

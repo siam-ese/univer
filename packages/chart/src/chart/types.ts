@@ -74,5 +74,4 @@ export interface IChartConfigConverter {
     canConvert(type: ChartType): boolean;
     convert(type: ChartType, data: IChartData): IChartConfig;
 }
-// export type IChartConfigGenerator = (type: ChartType, chartData: IChartData) => IChartConfig;
 

@@ -16,23 +16,53 @@
 
 import VChart from '@visactor/vchart';
 import type { ISpec } from '@visactor/vchart';
-import { ChartRenderEngine } from './render-engine';
+import { Disposable } from '@univerjs/core';
+import type { IChartRenderEngine } from './render-engine';
 
 export type VChartSpec = ISpec;
 export const VChartRenderEngineName = 'VChart';
-export class VChartRenderEngine extends ChartRenderEngine<VChartSpec> {
+export class VChartRenderEngine extends Disposable implements IChartRenderEngine<VChartSpec> {
     static override name = VChartRenderEngineName;
     private _vchart: VChart | null;
 
-    override setData(spec: VChartSpec): void {
-        // console.log(spec, 'chart spec');
+    constructor(public container: HTMLElement | string) {
+        super();
+    }
+
+    private _ensureChartInstance() {
         if (!this._vchart) {
-            this._vchart = new VChart(spec, {
+            this._vchart = new VChart({
+                type: '',
+            }, {
                 dom: this.container,
             });
-        } else {
-            this._vchart.updateSpec(spec, false);
         }
-        this._vchart.renderSync();
+        return this._vchart!;
+    }
+
+    render(): void {
+        const instance = this._ensureChartInstance();
+        instance.renderSync();
+    }
+
+    renderWithData(spec: VChartSpec): void {
+        this.setData(spec);
+        this.render();
+    }
+
+    setData(spec: VChartSpec): void {
+        const instance = this._ensureChartInstance();
+        instance.updateSpec(spec, false);
+    }
+
+    setTheme(): void {
+    }
+
+    exportImg() {
+        return Promise.resolve('');
+    }
+
+    onDispose(dispose: () => void): void {
+        this.disposeWithMe(dispose);
     }
 }

@@ -15,23 +15,25 @@
  */
 
 import type { ChartRenderModel } from '../chart-render/chart-render-model';
-import type { ChartModelManager } from '../chart/chart-model-manager';
 import { lineConverter } from '../chart-render/converters/line-converter';
 import { generalConverter } from '../chart/converters/generalConverter';
 import { pieConverter } from '../chart-render/converters/pie-converter';
+import type { IChartConfigConverter } from '../chart/types';
 
 export interface IChartInjector {
-    injectDataGenerator?(provider: any): void;
-    injectRenderConverter?(renderModel: ChartRenderModel): void;
+    injectChartConfig?(injector: {
+        addConverter: (converter: IChartConfigConverter) => void;
+    }): void;
+    injectChartRender?(injector: Pick<ChartRenderModel, 'addAfterConvertOperator' | 'addBeforeConvertOperator' | 'addRenderSpecConverter'>): void;
 }
 
 export const lineChartInjector: IChartInjector = {
-    injectDataGenerator(manager: ChartModelManager) {
-        manager.addConverter(generalConverter);
+    injectChartConfig(injector) {
+        injector.addConverter(generalConverter);
     },
-    injectRenderConverter(renderModel) {
-        renderModel.addRenderSpecConverter(lineConverter);
-        renderModel.addRenderSpecConverter(pieConverter);
+    injectChartRender(injector) {
+        injector.addRenderSpecConverter(lineConverter);
+        injector.addRenderSpecConverter(pieConverter);
     },
 };
 

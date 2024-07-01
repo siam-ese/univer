@@ -14,22 +14,60 @@
  * limitations under the License.
  */
 
-import { Disposable, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle } from '@univerjs/core';
-import { RefRangeService } from '@univerjs/sheets';
-import { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
+import { Disposable, LifecycleStages, OnLifecycle } from '@univerjs/core';
 import { Inject } from '@wendellhu/redi';
+import type { ChartModel, ChartType } from '@univerjs/chart';
+import { SheetsChartConfigService } from '@univerjs/chart';
+import type { Observable } from 'rxjs';
+import { registryChartConfigState } from '../chart-view/registry';
 
-export const SHEET_CHART_PLUGIN = 'SHEET_CHART_PLUGIN';
+export interface IChartConfigStateMap {
+    stack: IChartConfigState<boolean>;
+    chartType: IChartConfigState<ChartType>;
+}
+
+export type ChartConfigStateKey = keyof IChartConfigStateMap;
+export type ChartConfigStateValue = InferChartConfigStateValue<ChartConfigStateKey>;
+
+export type InferChartConfigStateValue<T extends ChartConfigStateKey, M = IChartConfigStateMap[T]> = M extends IChartConfigState<infer V> ? V : never;
+
+export interface IChartConfigState<IChartConfigStateValue> {
+    set(value: IChartConfigStateValue): void;
+    get(): Observable<IChartConfigStateValue>;
+};
 
 @OnLifecycle(LifecycleStages.Rendered, SheetsChartUIService)
 export class SheetsChartUIService extends Disposable {
+    private _viewState = new Map<ChartConfigStateKey, (chartModel: ChartModel) => IChartConfigStateMap[ChartConfigStateKey]>();
+
     constructor(
-        @Inject(SheetCanvasFloatDomManagerService) private readonly _sheetCanvasFloatDomManagerService: SheetCanvasFloatDomManagerService,
-        @IResourceManagerService private readonly _resourcesManagerService: IResourceManagerService,
-        @Inject(RefRangeService) private readonly _refRangeService: RefRangeService,
-        @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService
+        @Inject(SheetsChartConfigService) private readonly _sheetsChartConfigService: SheetsChartConfigService
+
     ) {
         super();
+        registryChartConfigState(this);
+    }
+
+    registerViewState<T extends ChartConfigStateKey = ChartConfigStateKey>(id: T, state: (chartModel: ChartModel) => IChartConfigStateMap[T]) {
+        this._viewState.set(id, state);
+    }
+
+    getViewState<V extends ChartConfigStateValue = ChartConfigStateValue>(id: ChartConfigStateKey): IChartConfigState<V> | undefined {
+        const { activeChartModel } = this._sheetsChartConfigService;
+        if (!activeChartModel) {
+            return;
+        }
+        const viewState = this._viewState.get(id) as ((chartModel: ChartModel) => IChartConfigState<V>) | undefined;
+        if (viewState) {
+            return viewState(activeChartModel);
+        }
+    }
+
+    removeViewState(id: ChartConfigStateKey) {
+        const { _viewState } = this;
+        if (_viewState.has(id)) {
+            _viewState.delete(id);
+        }
     }
 
     override dispose() {

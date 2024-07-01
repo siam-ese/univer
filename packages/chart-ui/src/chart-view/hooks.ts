@@ -14,42 +14,42 @@
  * limitations under the License.
  */
 
-import { useCallback, useMemo } from 'react';
 import { useObservable } from '@univerjs/ui';
-import type { ChartModel } from '../chart/chart-model';
-import { chartConfigProxyManager } from './chart-config-proxy-manager';
-import type { ChartConfigStateKey, ChartConfigStateValue, InferChartConfigStateValue } from './chart-config-state-accessor';
-import type { ChartConfigStateProxy } from './chart-config-state-proxy';
+import { useCallback, useMemo } from 'react';
+import { useDependency } from '@wendellhu/redi/react-bindings';
+import { SheetsChartConfigService } from '@univerjs/chart';
+import { SheetsChartUIService } from '../services/sheets-chart-ui.service';
+import type { ChartConfigStateKey, InferChartConfigStateValue } from './chart-config-state-accessor';
 
-export const useChartConfigStateProxy = (chartModel: ChartModel) => {
-    const stateProxy = useMemo(() => {
-        const proxy = chartConfigProxyManager.getConfigProxy(chartModel.id);
-        return proxy || chartConfigProxyManager.createConfigProxy(chartModel);
-    }, [chartModel]);
+export function useSheetsChartUIService() {
+    const sheetsChartUIService = useDependency(SheetsChartUIService);
+    const sheetsChartConfigService = useDependency(SheetsChartConfigService);
+    useObservable(sheetsChartConfigService.activeChartModel$);
 
-    return stateProxy;
-};
+    return sheetsChartUIService;
+}
 
 export function useChartConfigState<V, T extends ChartConfigStateKey = ChartConfigStateKey>(
     key: T,
-    stateProxy: ChartConfigStateProxy,
+    service: SheetsChartUIService,
     defaultValue: V
 ): [V, (value: V) => void];
 export function useChartConfigState<T extends ChartConfigStateKey = ChartConfigStateKey, V extends InferChartConfigStateValue<T> = InferChartConfigStateValue<T>>(
     key: T,
-    stateProxy: ChartConfigStateProxy,
+    service: SheetsChartUIService,
 ): [V | undefined, (value: V) => void];
 export function useChartConfigState<T extends ChartConfigStateKey = ChartConfigStateKey, V extends InferChartConfigStateValue<T> = InferChartConfigStateValue<T>>(
     key: T,
-    stateProxy: ChartConfigStateProxy,
+    service: SheetsChartUIService,
     defaultValue?: undefined
 ): [V | undefined, (value: V) => void] {
-    const observable = useMemo(() => stateProxy.get<V>(key), [stateProxy, key]);
+    const viewState = useMemo(() => service.getViewState<V>(key), [service, key]);
+    const observable = useMemo(() => viewState?.get(), [viewState]);
     const state = useObservable<V>(observable, defaultValue);
 
     const setState = useCallback((value: V) => {
-        stateProxy.set(key, value as ChartConfigStateValue);
-    }, [stateProxy, key]);
+        viewState?.set(value);
+    }, [viewState]);
 
     return [state, setState] as const;
 }

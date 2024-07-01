@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
+import type { Nullable } from '@univerjs/core';
 import { Disposable, Tools } from '@univerjs/core';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, combineLatest, distinctUntilChanged, filter, Subject } from 'rxjs';
-import { chartDataPipeline } from './chart-data-pipeline';
-import type { ChartModelManager } from './chart-model-manager';
-import type { ChartDataSource, IChartConfig, IChartDataContext } from './types';
+import { chartDataPipeline } from './chart-data-pipeline/chart-data-pipeline';
+import type { ChartDataSource, IChartConfig, IChartData, IChartDataContext } from './types';
 import type { ChartStyle } from './style.types';
 import { ChartType, DataDirection } from './constants';
 
@@ -28,6 +28,7 @@ export interface IChartModelOption {
     dataSource: Observable<ChartDataSource>;
     dataConfig?: Partial<IChartDataContext>;
     style?: ChartStyle;
+    convertConfig: (chartType: ChartType, chartData: IChartData) => Nullable<IChartConfig>;
 }
 
 export class ChartModel extends Disposable {
@@ -59,10 +60,10 @@ export class ChartModel extends Disposable {
     style$ = this._style$.asObservable();
     public style: ChartStyle = {};
 
-    constructor(option: IChartModelOption, private _manager: ChartModelManager) {
+    constructor(private _option: IChartModelOption) {
         super();
 
-        const { id, dataSource, dataConfig, style } = option;
+        const { id, dataSource, dataConfig, style } = _option;
         this.id = id || Tools.generateRandomId();
 
         this._dataSource$ = dataSource;
@@ -76,7 +77,7 @@ export class ChartModel extends Disposable {
     }
 
     private _init() {
-        const { _manager } = this;
+        const { convertConfig } = this._option;
         this.disposeWithMe(
             combineLatest([
                 this.chartType$.pipe(distinctUntilChanged()),
@@ -90,7 +91,7 @@ export class ChartModel extends Disposable {
                     // console.log(dataConfig, 'dataConfig');
                     // console.log(dataSource, 'dataSource');
                     const chartData = chartDataPipeline.getOutput(dataSource, dataConfig);
-                    const chartConfig = _manager.convertChartConfig(chartType, chartData);
+                    const chartConfig = convertConfig(chartType, chartData);
                     // console.log(chartConfig, 'chartConfig');
                     if (!chartConfig) {
                         return;

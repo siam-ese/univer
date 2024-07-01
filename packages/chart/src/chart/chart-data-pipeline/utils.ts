@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-import type { ChartDataSource, ChartDataSourceValue, IChartData, IChartDataContext } from './types';
-import { CategoryType, DataDirection } from './constants';
+import { CategoryType, DataDirection } from '../constants';
+import type { ChartDataSourceValue } from '../types';
+import type { IChartDataPipelineOperator } from './chart-data-pipeline';
 
 type NestedArray<T = any> = Array<Array<T>>;
 
 type Nil = null | undefined;
 
-function isNil(value: any): value is Nil {
+export function isNil(value: any): value is Nil {
     return value === null || value === undefined;
 }
 
-function countTypesFromArray(ary: ChartDataSourceValue[]) {
+export function countTypesFromArray(ary: ChartDataSourceValue[]) {
     let numbers = 0;
     let strings = 0;
 
@@ -47,16 +48,16 @@ function countTypesFromArray(ary: ChartDataSourceValue[]) {
     };
 }
 
-function toString(value: ChartDataSourceValue) {
+export function toString(value: ChartDataSourceValue) {
     return isNil(value)
         ? ''
         : String(value);
 }
-function toNumber(value: ChartDataSourceValue) {
+export function toNumber(value: ChartDataSourceValue) {
     return Number(value) || 0;
 }
 
-function dataDirectionToColumn<T = any>(dataSource: NestedArray<T>): NestedArray<T> {
+export function dataDirectionToColumn<T = any>(dataSource: NestedArray<T>): NestedArray<T> {
     const table: Array<Array<T>> = [];
 
     for (let c = 0; c < dataSource[0].length; c++) {
@@ -70,7 +71,7 @@ function dataDirectionToColumn<T = any>(dataSource: NestedArray<T>): NestedArray
     return table;
 }
 
-function findCategoryIndex(dataSource: NestedArray<ChartDataSourceValue>) {
+export function findCategoryIndex(dataSource: NestedArray<ChartDataSourceValue>) {
     let categoryIndex = -1;
     let maxCount = 0;
 
@@ -85,7 +86,7 @@ function findCategoryIndex(dataSource: NestedArray<ChartDataSourceValue>) {
     return categoryIndex;
 }
 
-function groupBy<T = any>(ary: T[], selector: (item: T, index: number) => string) {
+export function groupBy<T = any>(ary: T[], selector: (item: T, index: number) => string) {
     const groups = new Map<string, T[] >();
     ary.forEach((item, index) => {
         const group = selector(item, index);
@@ -101,82 +102,17 @@ function groupBy<T = any>(ary: T[], selector: (item: T, index: number) => string
     }));
 }
 
-function sumArray(ary: ChartDataSourceValue[]) {
+export function sumArray(ary: ChartDataSourceValue[]) {
     return ary.reduce((acc: number, item) => acc + toNumber(item), 0);
 }
 
-export type IChartDataPipelineOperator = (ctx: IChartDataPipelineContext) => void;
-export interface IChartDataPipelineContext {
-    dataSource: ChartDataSource;
-    dataConfig: IChartDataContext;
-    _headerData?: ChartDataSourceValue[];
-}
-
-export class ChartDataPipeline {
-    private _operators: IChartDataPipelineOperator[] = [];
-
-    pipe(...operators: IChartDataPipelineOperator[]) {
-        this._operators = this._operators.concat(operators);
-        return this;
-    }
-
-    getOutput(dataSource: ChartDataSource, dataConfig: IChartDataContext) {
-        const ctx = {
-            dataSource,
-            dataConfig,
-        };
-        this._operators.forEach((operator) => operator(ctx));
-
-        return this._generateOutput(ctx);
-    }
-
-    _generateOutput(ctx: IChartDataPipelineContext): IChartData {
-        const { dataSource, dataConfig, _headerData: headerData } = ctx;
-
-        const seriesIndexes = dataConfig.seriesIndexes || dataSource.map((_, i) => i).filter((i) => i !== dataConfig.categoryIndex);
-
-        const result: IChartData = {
-            series: seriesIndexes.map((index) => {
-                const values = dataSource[index];
-                return {
-                    index,
-                    name: toString(headerData?.[index]),
-                    items: values.map((value) => ({
-                        value,
-                        label: toString(value),
-                    })),
-                };
-            }),
-        };
-
-        const categoryIndex = dataConfig.categoryIndex;
-        if (categoryIndex !== undefined) {
-            const categoryData = dataSource[categoryIndex];
-            result.category = {
-                index: categoryIndex,
-                name: toString(headerData?.[categoryIndex]),
-                type: dataConfig.categoryType!,
-                items: categoryData.map((value) => ({
-                    value,
-                    label: toString(value),
-                })),
-                getValueByIndex(index: number) {
-                    return this.type === CategoryType.Text ? this.items[index].label : undefined;
-                },
-            };
-        }
-
-        return result;
-    }
-}
-
-const dataDirectionOperator: IChartDataPipelineOperator = (ctx) => {
+export const dataDirectionOperator: IChartDataPipelineOperator = (ctx) => {
     if (ctx.dataConfig.direction === DataDirection.Column) {
         ctx.dataSource = dataDirectionToColumn(ctx.dataSource);
     }
 };
 
-const findHeaderOperator: IChartDataPipelineOperator = (ctx) => {
+export const findHeaderOperator: IChartDataPipelineOperator = (ctx) => {
     const header: ChartDataSourceValue[] = [];
     ctx.dataSource.forEach((line) => header.push(line[ctx.dataConfig.headerIndex ?? 0]));
     const counts = countTypesFromArray(header);
@@ -186,7 +122,7 @@ const findHeaderOperator: IChartDataPipelineOperator = (ctx) => {
     }
 };
 
-const findCategoryOperator: IChartDataPipelineOperator = (ctx) => {
+export const findCategoryOperator: IChartDataPipelineOperator = (ctx) => {
     if (ctx.dataConfig.categoryIndex === undefined) {
         const categoryIndex = findCategoryIndex(ctx.dataSource);
         if (categoryIndex >= 0) {
@@ -199,7 +135,7 @@ const findCategoryOperator: IChartDataPipelineOperator = (ctx) => {
     }
 };
 
-const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
+export const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
     const { dataSource, dataConfig } = ctx;
 
     const categoryData = dataConfig.categoryIndex !== undefined ? dataSource[dataConfig.categoryIndex] : undefined;
@@ -215,11 +151,3 @@ const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
         });
     }
 };
-
-export const chartDataPipeline = new ChartDataPipeline()
-    .pipe(
-        dataDirectionOperator,
-        findHeaderOperator,
-        findCategoryOperator,
-        aggregateOperator
-    );

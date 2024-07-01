@@ -14,20 +14,36 @@
  * limitations under the License.
  */
 
-import { Disposable } from '@univerjs/core';
-// import { ChartRenderManager } from '../chart-render/chart-render-adapter';
-import type { ChartRenderAdapter } from '../chart-render/chart-render-adapter';
-import type { IChartModelOption } from './chart-model';
-import { ChartModel } from './chart-model';
-import type { IChartConfigConverter, IChartData } from './types';
-import type { ChartType } from './constants';
+import type { Nullable } from '@univerjs/core';
+import { Disposable, LifecycleStages, OnLifecycle } from '@univerjs/core';
+import { Inject } from '@wendellhu/redi';
+import { BehaviorSubject } from 'rxjs';
+import type { IChartModelOption } from '../chart/chart-model';
+import { ChartModel } from '../chart/chart-model';
+import type { ChartType } from '../chart/constants';
+import type { IChartConfigConverter, IChartData } from '../chart/types';
+import { SheetsChartRenderService } from './sheets-chart-render.service';
 
-export class ChartModelManager extends Disposable {
+export const SHEET_CHART_PLUGIN = 'SHEET_CHART_PLUGIN';
+
+@OnLifecycle(LifecycleStages.Rendered, SheetsChartConfigService)
+export class SheetsChartConfigService extends Disposable {
+    private readonly _activeChartModel$ = new BehaviorSubject<Nullable<ChartModel>>(null);
+    readonly activeChartModel$ = this._activeChartModel$.asObservable();
+
+    get activeChartModel(): Nullable<ChartModel> { return this._activeChartModel$.getValue(); }
+
     private _models = new Map<string, ChartModel>();
     private _converters = new Set<IChartConfigConverter>();
 
-    constructor(private _chartRenderAdapter: ChartRenderAdapter) {
+    constructor(
+        @Inject(SheetsChartRenderService) private _chartRenderAdapter: SheetsChartRenderService
+    ) {
         super();
+    }
+
+    setActiveChartModel(chartModel: ChartModel) {
+        this._activeChartModel$.next(chartModel);
     }
 
     addConverter(handler: IChartConfigConverter) {
@@ -44,8 +60,11 @@ export class ChartModelManager extends Disposable {
         return this._models.get(id);
     }
 
-    createChartModel(option: IChartModelOption) {
-        const chartModel = new ChartModel(option, this);
+    createChartModel(option: Omit<IChartModelOption, 'convertConfig'>) {
+        const chartModel = new ChartModel({
+            ...option,
+            convertConfig: this.convertChartConfig.bind(this),
+        });
 
         this.disposeWithMe(
             chartModel.config$.subscribe((config) => {

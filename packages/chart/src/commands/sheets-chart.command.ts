@@ -38,10 +38,6 @@ export const InsertSheetsChartMutation: IMutation<IInsertChartCommandParams> = {
 };
 
 /**
- * It is used to set the bold style of selections or one cell, need to distinguish between
- *  **selection state** and **edit state**. If you are in the selective state,
- *  you need to set the style on the cell and the style on the rich text(p textRuns) at the same time,
- *  and if it is only in edit state, then you only need to set the style of the rich text(p textRuns)
  */
 export const InsertChartCommand: ICommand = {
     type: CommandType.COMMAND,
@@ -49,9 +45,7 @@ export const InsertChartCommand: ICommand = {
     handler: async (accessor) => {
         const commandService = accessor.get(ICommandService);
         const selectionManagerService = accessor.get(SelectionManagerService);
-        // const univerInstanceService = accessor.get(IUniverInstanceService);
-        // const workbook = univerInstanceService.getCurrentUnitForType<Workbook>(UniverInstanceType.UNIVER_SHEET)!;
-        // const worksheet = workbook.getActiveSheet();
+
         const currentSelection = selectionManagerService.getCurrent();
         const range = selectionManagerService.getSelectionRanges()?.[0];
         if (!range) {

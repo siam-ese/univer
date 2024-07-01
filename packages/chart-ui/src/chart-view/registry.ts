@@ -16,10 +16,10 @@
 
 import { Tools } from '@univerjs/core';
 import { map } from 'rxjs';
-import type { ChartConfigStateAccessor } from './chart-config-state-accessor';
+import type { SheetsChartUIService } from '../services/sheets-chart-ui.service';
 
-export function registryChartConfigState(accessor: ChartConfigStateAccessor) {
-    accessor.registerConfigState('stack', (chartModel) => ({
+export function registryChartConfigState(service: SheetsChartUIService) {
+    service.registerViewState('stack', (chartModel) => ({
         set(v) {
             Tools.set(chartModel, 'style.common.stack', v);
             chartModel.setStyle(chartModel.style);
@@ -28,11 +28,10 @@ export function registryChartConfigState(accessor: ChartConfigStateAccessor) {
             return chartModel.style$.pipe(map((style) => Boolean(style.common?.stack)));
         },
     }));
-    accessor.registerConfigState('chartType', (chartModel) => ({
+    service.registerViewState('chartType', (chartModel) => ({
         set(v) {
             Tools.set(chartModel, 'style.common.stack', v);
             chartModel.setChart(v);
-            // chartModel.setStyle(chartModel.style);
         },
         get() {
             return chartModel.chartType$;

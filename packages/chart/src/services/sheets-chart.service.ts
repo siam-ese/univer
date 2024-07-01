@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-import type { IRange, Nullable } from '@univerjs/core';
+import type { IRange } from '@univerjs/core';
 import { Disposable, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
 import { RefRangeService } from '@univerjs/sheets';
 import { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
 import { Inject } from '@wendellhu/redi';
-import { BehaviorSubject, Observable } from 'rxjs';
-import type { IChartInjector } from '../chart-injectors/line-chart-injector';
-import { ChartRenderAdapter } from '../chart-render/chart-render-adapter';
-import type { IChartRenderEngineConstructor } from '../chart-render/render-engine/render-engine';
-import type { ChartModel } from '../chart/chart-model';
-import { ChartModelManager } from '../chart/chart-model-manager';
+import { Observable } from 'rxjs';
 import { ChartType, DataDirection } from '../chart/constants';
 import type { ChartDataSource, IChartSnapshot } from '../chart/types';
+import type { IChartInjector } from '../chart-injectors/line-chart-injector';
+import { SheetsChartConfigService } from './sheets-chart-config.service';
+import { SheetsChartRenderService } from './sheets-chart-render.service';
 
 export const SHEET_CHART_PLUGIN = 'SHEET_CHART_PLUGIN';
 
@@ -46,38 +44,32 @@ function waitElement(id: string) {
     });
 }
 
+// TODO: Maybe refactor to controller
 @OnLifecycle(LifecycleStages.Rendered, SheetsChartService)
 export class SheetsChartService extends Disposable {
-    private readonly _chartRenderAdapter = new ChartRenderAdapter();
-    private readonly _chartModelManager: ChartModelManager;
-
-    private readonly _activeChartModel$ = new BehaviorSubject<Nullable<ChartModel>>(null);
-    readonly activeChartModel$ = this._activeChartModel$.asObservable();
-
-    get activeChartModel(): Nullable<ChartModel> { return this._activeChartModel$.getValue(); }
-
     constructor(
         @Inject(SheetCanvasFloatDomManagerService) private readonly _sheetCanvasFloatDomManagerService: SheetCanvasFloatDomManagerService,
         @IResourceManagerService private readonly _resourcesManagerService: IResourceManagerService,
         @Inject(RefRangeService) private readonly _refRangeService: RefRangeService,
-        @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService
+        @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService,
+        @Inject(SheetsChartConfigService) private readonly _sheetsChartConfigService: SheetsChartConfigService,
+        @Inject(SheetsChartRenderService) private readonly _sheetsChartRenderService: SheetsChartRenderService
     ) {
         super();
 
-        this._chartModelManager = new ChartModelManager(this._chartRenderAdapter);
         // this._initSnapshot();
         this._initCharts();
 
         // Todo: type assertion
-        this._bindRenderHelper();
+        this._setChartMountHelper();
     }
 
     private _initCharts() {
     }
 
-    private _bindRenderHelper() {
-        const { _chartModelManager, _sheetCanvasFloatDomManagerService } = this;
-        const renderHelper = async (id: string) => {
+    private _setChartMountHelper() {
+        const { _sheetsChartConfigService, _sheetCanvasFloatDomManagerService } = this;
+        const mountHelper = (id: string) => {
             const floatDom = _sheetCanvasFloatDomManagerService.addFloatDomToPosition({
                 id,
                 allowTransform: true,
@@ -90,37 +82,37 @@ export class SheetsChartService extends Disposable {
                 componentKey: 'Chart',
             });
             if (!floatDom) {
-                throw new Error('Fail to mount float dom');
+                throw new Error('Fail to create float dom');
             }
 
-            await waitElement(floatDom.id);
+            const mountNode = document.createElement('div');
+            mountNode.style.width = '100%';
+            mountNode.style.height = '100%';
+
+            waitElement(floatDom.id).then((el) => {
+                el.appendChild(mountNode);
+            });
 
             this.disposeWithMe(_sheetCanvasFloatDomManagerService.remove$.subscribe((params) => {
                 if (params.id === floatDom.id) {
-                    _chartModelManager.removeChartModel(floatDom.id);
+                    _sheetsChartConfigService.removeChartModel(floatDom.id);
                 }
             }));
 
             return {
-                id: floatDom.id,
+                id: mountNode,
                 dispose: floatDom.dispose,
             };
         };
-        this._chartRenderAdapter.bindRenderHelper(renderHelper);
+        this._sheetsChartRenderService.setChartMountHelper(mountHelper);
     }
 
     addInjector(injector: IChartInjector) {
-        injector.injectDataGenerator?.(this._chartModelManager);
-        const renderModel = this._chartRenderAdapter.getRenderModel();
-        renderModel && injector.injectRenderConverter?.(renderModel);
-    }
-
-    registerRenderEngine(name: string, renderEngineCtor: IChartRenderEngineConstructor) {
-        this._chartRenderAdapter.registerRenderEngine(name, renderEngineCtor);
-    }
-
-    setActiveChartModel(chartModel: ChartModel) {
-        this._activeChartModel$.next(chartModel);
+        injector.injectChartConfig?.(this._sheetsChartConfigService);
+        const renderModel = this._sheetsChartRenderService.getRenderModel();
+        if (renderModel) {
+            injector.injectChartRender?.(renderModel);
+        }
     }
 
     getChartSuggestion(range: IRange) {
@@ -155,7 +147,7 @@ export class SheetsChartService extends Disposable {
 
         // Init suggest chart type and data direction to chart model
         const chartSuggestion = this.getChartSuggestion(range);
-        const chartModel = this._chartModelManager.createChartModel({
+        const chartModel = this._sheetsChartConfigService.createChartModel({
             id: chartModelId,
             dataSource: dataSource$,
             dataConfig: {
@@ -169,7 +161,7 @@ export class SheetsChartService extends Disposable {
     }
 
     getChartModel(id: string) {
-        return this._chartModelManager.getChartModel(id);
+        return this._sheetsChartConfigService.getChartModel(id);
     }
 
     private _serializeAutoFiltersForUnit(unitId: string): string {
@@ -218,6 +210,6 @@ export class SheetsChartService extends Disposable {
 
     override dispose() {
         super.dispose();
-        this._chartModelManager.dispose();
+        this._sheetsChartConfigService.dispose();
     }
 }
