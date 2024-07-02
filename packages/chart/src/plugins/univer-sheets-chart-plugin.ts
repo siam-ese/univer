@@ -24,7 +24,7 @@ import type { IChartRenderEngineConstructor } from '../chart-render/render-engin
 import { SheetsChartRenderService } from '../services/sheets-chart-render.service';
 import { SheetsChartConfigService } from '../services/sheets-chart-config.service';
 
-const PLUGIN_NAME = 'UniverSheetsChartPlugin';
+export const SHEETS_CHART_PLUGIN_NAME = 'SHEET_CHART_PLUGIN';
 
 export interface IUniverSheetsChartPluginConfig {
     renderEngines: Record<string, IChartRenderEngineConstructor>;
@@ -33,7 +33,7 @@ export interface IUniverSheetsChartPluginConfig {
 
 export class UniverSheetsChartPlugin extends Plugin {
     static override type = UniverInstanceType.UNIVER_SHEET;
-    static override pluginName = PLUGIN_NAME;
+    static override pluginName = SHEETS_CHART_PLUGIN_NAME;
 
     constructor(private readonly _config: IUniverSheetsChartPluginConfig, @Inject(Injector) protected readonly _injector: Injector) {
         super();

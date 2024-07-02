@@ -17,15 +17,20 @@
 import type { IChartConfig } from '../chart/types';
 import type { ChartStyle } from '../chart/style.types';
 import type {
-    AfterConvertOperator,
-    BeforeConvertOperator,
+    ChartConfigInterceptor,
     IChartRenderSpecConverter,
+    RenderSpecInterceptor,
 } from './types';
+import { stackInterceptor } from './render-spec-interceptors/stack-interceptor';
+
+export function addInterceptors(renderModel: ChartRenderModel) {
+    renderModel.addRenderSpecInterceptor(stackInterceptor);
+}
 
 export class ChartRenderModel<Spec extends object = any> {
     private _renderSpecConverters = new Set<IChartRenderSpecConverter<Spec>>();
-    private _beforeConvertOperators = new Set<BeforeConvertOperator>();
-    private _afterConvertOperators = new Set<AfterConvertOperator<Spec>>();
+    private _chartConfigInterceptors = new Set<ChartConfigInterceptor>();
+    private _renderSpecInterceptors = new Set<RenderSpecInterceptor<Spec>>();
     private _config: IChartConfig;
 
     get config() {
@@ -36,22 +41,22 @@ export class ChartRenderModel<Spec extends object = any> {
         this._renderSpecConverters.add(converter);
     }
 
-    addBeforeConvertOperator(operator: BeforeConvertOperator) {
-        this._beforeConvertOperators.add(operator);
+    addChartConfigInterceptor(operator: ChartConfigInterceptor) {
+        this._chartConfigInterceptors.add(operator);
     }
 
-    addAfterConvertOperator(operator: AfterConvertOperator<Spec>) {
-        this._afterConvertOperators.add(operator);
+    addRenderSpecInterceptor(operator: RenderSpecInterceptor<Spec>) {
+        this._renderSpecInterceptors.add(operator);
     }
 
     getChartConfig(config: IChartConfig) {
         const {
-            _beforeConvertOperators,
+            _chartConfigInterceptors,
         } = this;
 
         // onBeforeConvert
-        _beforeConvertOperators.forEach((operator) => {
-            config = operator(config);
+        _chartConfigInterceptors.forEach((interceptor) => {
+            config = interceptor(config);
         });
 
         this._config = config;
@@ -61,7 +66,7 @@ export class ChartRenderModel<Spec extends object = any> {
 
     getRenderSpec(config: IChartConfig, style: ChartStyle): Spec | undefined {
         const {
-            _afterConvertOperators,
+            _renderSpecInterceptors,
             _renderSpecConverters,
         } = this;
 
@@ -72,14 +77,14 @@ export class ChartRenderModel<Spec extends object = any> {
         // Converting
         const spec = converter.convert(config);
         // onBeforeRender
-        _afterConvertOperators.forEach((operator) => operator(spec, style, config));
+        _renderSpecInterceptors.forEach((interceptor) => interceptor(spec, style, config));
 
         return spec;
     }
 
     dispose() {
         this._renderSpecConverters.clear();
-        this._beforeConvertOperators.clear();
-        this._afterConvertOperators.clear();
+        this._chartConfigInterceptors.clear();
+        this._renderSpecInterceptors.clear();
     }
 }

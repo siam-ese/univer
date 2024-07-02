@@ -31,9 +31,15 @@ export interface ILabelStyle {
     underline: boolean;
 }
 
+export enum StackType {
+    // None,
+    Normal = '0',
+    Percent = '1',
+}
+
 interface IChartStyle {
     common: {
-        stack: boolean;
+        stackType: StackType;
         backgroundColor: string;
         fontSize: number;
         fontColor: string;

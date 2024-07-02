@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
+import type { IRange, Nullable } from '@univerjs/core';
 import { Disposable, LifecycleStages, OnLifecycle } from '@univerjs/core';
 import { Inject } from '@wendellhu/redi';
-import type { ChartModel, ChartType } from '@univerjs/chart';
-import { SheetsChartConfigService } from '@univerjs/chart';
+import type { ChartModel, ChartType, StackType } from '@univerjs/chart';
+import { SheetsChartConfigService, SheetsChartService } from '@univerjs/chart';
 import type { Observable } from 'rxjs';
 import { registryChartConfigState } from '../chart-view/registry';
 
 export interface IChartConfigStateMap {
-    stack: IChartConfigState<boolean>;
+    stackType: IChartConfigState<Nullable<StackType>>;
     chartType: IChartConfigState<ChartType>;
+    dataRange: IChartConfigState<Nullable<IRange>>;
 }
 
 export type ChartConfigStateKey = keyof IChartConfigStateMap;
@@ -33,7 +35,7 @@ export type InferChartConfigStateValue<T extends ChartConfigStateKey, M = IChart
 
 export interface IChartConfigState<IChartConfigStateValue> {
     set(value: IChartConfigStateValue): void;
-    get(): Observable<IChartConfigStateValue>;
+    get(): Observable<IChartConfigStateValue> | undefined;
 };
 
 @OnLifecycle(LifecycleStages.Rendered, SheetsChartUIService)
@@ -41,11 +43,20 @@ export class SheetsChartUIService extends Disposable {
     private _viewState = new Map<ChartConfigStateKey, (chartModel: ChartModel) => IChartConfigStateMap[ChartConfigStateKey]>();
 
     constructor(
-        @Inject(SheetsChartConfigService) private readonly _sheetsChartConfigService: SheetsChartConfigService
+        @Inject(SheetsChartConfigService) private readonly _sheetsChartConfigService: SheetsChartConfigService,
+        @Inject(SheetsChartService) private readonly _sheetsChartService: SheetsChartService
 
     ) {
         super();
         registryChartConfigState(this);
+    }
+
+    getRange(id: string) {
+        return this._sheetsChartService.getChartDataSource(id)?.range$;
+    }
+
+    setRange(id: string, range: IRange) {
+        return this._sheetsChartService.getChartDataSource(id)?.setRange(range);
     }
 
     registerViewState<T extends ChartConfigStateKey = ChartConfigStateKey>(id: T, state: (chartModel: ChartModel) => IChartConfigStateMap[T]) {

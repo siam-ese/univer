@@ -19,13 +19,13 @@ import { map } from 'rxjs';
 import type { SheetsChartUIService } from '../services/sheets-chart-ui.service';
 
 export function registryChartConfigState(service: SheetsChartUIService) {
-    service.registerViewState('stack', (chartModel) => ({
+    service.registerViewState('stackType', (chartModel) => ({
         set(v) {
-            Tools.set(chartModel, 'style.common.stack', v);
+            Tools.set(chartModel, 'style.common.stackType', v);
             chartModel.setStyle(chartModel.style);
         },
         get() {
-            return chartModel.style$.pipe(map((style) => Boolean(style.common?.stack)));
+            return chartModel.style$.pipe(map((style) => style.common?.stackType));
         },
     }));
     service.registerViewState('chartType', (chartModel) => ({
@@ -35,6 +35,15 @@ export function registryChartConfigState(service: SheetsChartUIService) {
         },
         get() {
             return chartModel.chartType$;
+        },
+    }));
+
+    service.registerViewState('dataRange', (chartModel) => ({
+        set(v) {
+            v && service.setRange(chartModel.id, v);
+        },
+        get() {
+            return service.getRange(chartModel.id);
         },
     }));
 }

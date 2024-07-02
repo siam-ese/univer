@@ -788,6 +788,9 @@ importers:
       '@univerjs/drawing':
         specifier: workspace:*
         version: link:../drawing
+      '@univerjs/engine-formula':
+        specifier: workspace:*
+        version: link:../engine-formula
       '@univerjs/shared':
         specifier: workspace:*
         version: link:../../common/shared

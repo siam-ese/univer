@@ -24,7 +24,7 @@ export interface IChartInjector {
     injectChartConfig?(injector: {
         addConverter: (converter: IChartConfigConverter) => void;
     }): void;
-    injectChartRender?(injector: Pick<ChartRenderModel, 'addAfterConvertOperator' | 'addBeforeConvertOperator' | 'addRenderSpecConverter'>): void;
+    injectChartRender?(injector: Pick<ChartRenderModel, 'addRenderSpecInterceptor' | 'addChartConfigInterceptor' | 'addRenderSpecConverter'>): void;
 }
 
 export const lineChartInjector: IChartInjector = {

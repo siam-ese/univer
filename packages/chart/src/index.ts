@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-export { UniverSheetsChartPlugin, type IUniverSheetsChartPluginConfig } from './plugins/univer-sheets-chart-plugin';
-export { SheetsChartService } from './services/sheets-chart.service';
+export { lineChartInjector } from './chart-injectors/line-chart-injector';
+export { ChartRenderModel } from './chart-render/chart-render-model';
+export { VChartRenderEngine } from './chart-render/render-engine/vchart-render-engine';
+export { ChartModel } from './chart/chart-model';
+export { ChartType } from './chart/constants';
+export { type ChartStyle, StackType } from './chart/style.types';
+export { SheetsChartController } from './controllers/sheets-chart.controller';
+export { UniverSheetsChartPlugin, SHEETS_CHART_PLUGIN_NAME, type IUniverSheetsChartPluginConfig } from './plugins/univer-sheets-chart-plugin';
 export { SheetsChartConfigService } from './services/sheets-chart-config.service';
 export { SheetsChartRenderService } from './services/sheets-chart-render.service';
-export { SheetsChartController } from './controllers/sheets-chart.controller';
-export { VChartRenderEngine } from './chart-render/render-engine/vchart-render-engine';
-export { ChartRenderModel } from './chart-render/chart-render-model';
-export { ChartModel } from './chart/chart-model';
-export { lineChartInjector } from './chart-injectors/line-chart-injector';
-export { ChartType } from './chart/constants';
+export { SheetsChartService } from './services/sheets-chart.service';
+

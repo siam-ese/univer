@@ -25,14 +25,14 @@ import { ChartType, DataDirection } from './constants';
 
 export interface IChartModelOption {
     id?: string;
-    dataSource: Observable<ChartDataSource>;
+    chartType?: ChartType;
+    dataSource$: Observable<ChartDataSource>;
     dataConfig?: Partial<IChartDataContext>;
     style?: ChartStyle;
     convertConfig: (chartType: ChartType, chartData: IChartData) => Nullable<IChartConfig>;
 }
 
 export class ChartModel extends Disposable {
-    private _disposeEffects = new Set<() => void>();
     private _dataSource$: Observable<ChartDataSource>;
     public readonly id: string;
 
@@ -63,20 +63,26 @@ export class ChartModel extends Disposable {
     constructor(private _option: IChartModelOption) {
         super();
 
-        const { id, dataSource, dataConfig, style } = _option;
+        const { id, chartType, dataSource$, dataConfig, style } = _option;
         this.id = id || Tools.generateRandomId();
 
-        this._dataSource$ = dataSource;
+        this._dataSource$ = dataSource$;
+
+        if (chartType) {
+            this.setChart(chartType);
+        }
         if (dataConfig) {
             this.setChartDataConfig(dataConfig);
         }
         if (style) {
             this.setStyle(style);
         }
+
         this._init();
     }
 
     private _init() {
+        // console.log('chart model _init');
         const { convertConfig } = this._option;
         this.disposeWithMe(
             combineLatest([
@@ -119,14 +125,12 @@ export class ChartModel extends Disposable {
     }
 
     onDispose(effect: () => void) {
-        this._disposeEffects.add(effect);
+        this.disposeWithMe(effect);
     }
 
     override dispose(): void {
         super.dispose();
 
-        this._disposeEffects.forEach((effect) => effect());
-        this._disposeEffects.clear();
         this._chartTypeSubject.complete();
         this._config$.complete();
     }

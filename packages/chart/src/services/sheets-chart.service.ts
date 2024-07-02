@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-import type { IRange } from '@univerjs/core';
-import { Disposable, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
+import type { IRange, Nullable } from '@univerjs/core';
+import { Disposable, ICommandService, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
 import { RefRangeService } from '@univerjs/sheets';
 import { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
 import { Inject } from '@wendellhu/redi';
-import { Observable } from 'rxjs';
-import { ChartType, DataDirection } from '../chart/constants';
-import type { ChartDataSource, IChartSnapshot } from '../chart/types';
+import { BehaviorSubject } from 'rxjs';
 import type { IChartInjector } from '../chart-injectors/line-chart-injector';
+import type { ChartModel } from '../chart/chart-model';
+import { ChartType, DataDirection } from '../chart/constants';
+import { SheetChartDataSource } from '../chart/sheet-chart-data-source';
+import type { IChartSnapshot } from '../chart/types';
 import { SheetsChartConfigService } from './sheets-chart-config.service';
 import { SheetsChartRenderService } from './sheets-chart-render.service';
 
@@ -44,16 +46,24 @@ function waitElement(id: string) {
     });
 }
 
-// TODO: Maybe refactor to controller
 @OnLifecycle(LifecycleStages.Rendered, SheetsChartService)
 export class SheetsChartService extends Disposable {
+    private _chartModelIdMap = new Map<string, Map<string, Set<string>>>();
+    private readonly _activeChartModel$ = new BehaviorSubject<Nullable<ChartModel>>(null);
+    readonly activeChartModel$ = this._activeChartModel$.asObservable();
+
+    get activeChartModel(): Nullable<ChartModel> { return this._activeChartModel$.getValue(); }
+
+    private _dataSourceMap = new Map<string, SheetChartDataSource>();
+
     constructor(
         @Inject(SheetCanvasFloatDomManagerService) private readonly _sheetCanvasFloatDomManagerService: SheetCanvasFloatDomManagerService,
         @IResourceManagerService private readonly _resourcesManagerService: IResourceManagerService,
         @Inject(RefRangeService) private readonly _refRangeService: RefRangeService,
         @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService,
         @Inject(SheetsChartConfigService) private readonly _sheetsChartConfigService: SheetsChartConfigService,
-        @Inject(SheetsChartRenderService) private readonly _sheetsChartRenderService: SheetsChartRenderService
+        @Inject(SheetsChartRenderService) private readonly _sheetsChartRenderService: SheetsChartRenderService,
+        @Inject(ICommandService) private readonly _commandService: ICommandService
     ) {
         super();
 
@@ -65,6 +75,24 @@ export class SheetsChartService extends Disposable {
     }
 
     private _initCharts() {
+    }
+
+    setActiveChartModel(chartModel: ChartModel) {
+        this._activeChartModel$.next(chartModel);
+    }
+
+    getChartModels(unitId: string, subUnitId: string) {
+        const unitMap = this._chartModelIdMap.get(unitId);
+        if (!unitMap) {
+            return [];
+        }
+        const subUnitMap = unitMap.get(subUnitId);
+        if (!subUnitMap) {
+            return [];
+        }
+
+        const { _sheetsChartConfigService } = this;
+        return Array.from(subUnitMap).map((id) => _sheetsChartConfigService.getChartModel(id));
     }
 
     private _setChartMountHelper() {
@@ -125,37 +153,55 @@ export class SheetsChartService extends Disposable {
         };
     }
 
+    ensureChartModelCollection(unitId: string, subUnitId: string) {
+        let unitMap = this._chartModelIdMap.get(unitId);
+        if (!unitMap) {
+            unitMap = new Map();
+            this._chartModelIdMap.set(unitId, unitMap);
+        }
+
+        let subUnitMap = unitMap.get(subUnitId);
+        if (!subUnitMap) {
+            subUnitMap = new Set<string>();
+            unitMap.set(subUnitId, subUnitMap);
+        }
+
+        return subUnitMap;
+    }
+
+    getChartDataSource(id: string) {
+        return this._dataSourceMap.get(id);
+    }
+
     createChartModel(unitId: string, subUnitId: string, range: IRange) {
+        const dataSource = new SheetChartDataSource({
+            unitId,
+            subUnitId,
+            range,
+        }, this._univerInstanceService, this._commandService);
+
         const chartModelId = Tools.generateRandomId();
-
-        const getCellValuesFromRange = (r: IRange) => {
-            const workbook = this._univerInstanceService.getUniverSheetInstance(unitId);
-            if (!workbook) return;
-
-            const workSheet = workbook?.getSheetBySheetId(subUnitId);
-            if (!workSheet) return;
-
-            return workSheet.getRange(r).getValues().map((cells) => cells.map((cell) => cell?.v));
-        };
-        // style
-        const dataSource$ = new Observable<ChartDataSource>((subscriber) => {
-            const cellValues = getCellValuesFromRange(range);
-            if (cellValues) {
-                subscriber.next(cellValues);
-            }
-        });
-
         // Init suggest chart type and data direction to chart model
         const chartSuggestion = this.getChartSuggestion(range);
         const chartModel = this._sheetsChartConfigService.createChartModel({
             id: chartModelId,
-            dataSource: dataSource$,
+            dataSource$: dataSource.dataSource$,
+            chartType: chartSuggestion.chartType,
             dataConfig: {
                 direction: chartSuggestion.direction,
             },
         });
 
-        chartModel.setChart(chartSuggestion.chartType);
+        const collection = this.ensureChartModelCollection(unitId, subUnitId);
+        collection.add(chartModel.id);
+
+        this._dataSourceMap.set(chartModel.id, dataSource);
+
+        chartModel.onDispose(() => {
+            collection.delete(chartModel.id);
+            dataSource.dispose();
+            this._dataSourceMap.delete(chartModel.id);
+        });
 
         return chartModel;
     }

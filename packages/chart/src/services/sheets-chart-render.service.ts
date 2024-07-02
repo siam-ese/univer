@@ -15,7 +15,7 @@
  */
 
 import { Disposable } from '@univerjs/core';
-import { ChartRenderModel } from '../chart-render/chart-render-model';
+import { addInterceptors, ChartRenderModel } from '../chart-render/chart-render-model';
 import type { IChartRenderEngine, IChartRenderEngineConstructor } from '../chart-render/render-engine/render-engine';
 import type { ChartStyle } from '../chart/style.types';
 import type { IChartConfig } from '../chart/types';
@@ -39,6 +39,7 @@ export class SheetsChartRenderService extends Disposable {
     registerRenderEngine(name: string, ctor: IChartRenderEngineConstructor) {
         this._currentEngineName = name;
         const renderModel = new ChartRenderModel();
+        addInterceptors(renderModel);
         this._renderModelMap.set(name, renderModel);
         this._renderEngineConstructors.set(name, ctor);
 

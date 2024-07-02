@@ -17,10 +17,13 @@
 import VChart from '@visactor/vchart';
 import type { ISpec } from '@visactor/vchart';
 import { Disposable } from '@univerjs/core';
+import type { RenderSpecInterceptor } from '../types';
 import type { IChartRenderEngine } from './render-engine';
 
 export type VChartSpec = ISpec;
 export const VChartRenderEngineName = 'VChart';
+
+export type VChartRenderSpecInterceptor = RenderSpecInterceptor<VChartSpec>;
 export class VChartRenderEngine extends Disposable implements IChartRenderEngine<VChartSpec> {
     static override name = VChartRenderEngineName;
     private _vchart: VChart | null;

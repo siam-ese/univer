@@ -30,7 +30,6 @@ export const SHEET_CHART_PLUGIN = 'SHEET_CHART_PLUGIN';
 export class SheetsChartConfigService extends Disposable {
     private readonly _activeChartModel$ = new BehaviorSubject<Nullable<ChartModel>>(null);
     readonly activeChartModel$ = this._activeChartModel$.asObservable();
-
     get activeChartModel(): Nullable<ChartModel> { return this._activeChartModel$.getValue(); }
 
     private _models = new Map<string, ChartModel>();

@@ -18,12 +18,13 @@ import { useObservable } from '@univerjs/ui';
 import { useCallback, useMemo } from 'react';
 import { useDependency } from '@wendellhu/redi/react-bindings';
 import { SheetsChartConfigService } from '@univerjs/chart';
+import type { ChartConfigStateKey, InferChartConfigStateValue } from '../services/sheets-chart-ui.service';
 import { SheetsChartUIService } from '../services/sheets-chart-ui.service';
-import type { ChartConfigStateKey, InferChartConfigStateValue } from './chart-config-state-accessor';
 
 export function useSheetsChartUIService() {
     const sheetsChartUIService = useDependency(SheetsChartUIService);
     const sheetsChartConfigService = useDependency(SheetsChartConfigService);
+    // chart ui service should update with activeChartModel change
     useObservable(sheetsChartConfigService.activeChartModel$);
 
     return sheetsChartUIService;

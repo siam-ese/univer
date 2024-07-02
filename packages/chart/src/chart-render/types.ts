@@ -21,6 +21,6 @@ export interface IChartRenderSpecConverter<ChartRenderSpec = unknown> {
     canConvert: (config: IChartConfig) => boolean;
     convert: (config: IChartConfig) => ChartRenderSpec;
 }
-export type BeforeConvertOperator = (config: IChartConfig) => IChartConfig;
-export type AfterConvertOperator<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig) => void;
+export type ChartConfigInterceptor = (config: IChartConfig) => IChartConfig;
+export type RenderSpecInterceptor<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig) => void;
 
