@@ -55,6 +55,7 @@ export class VChartRenderEngine extends Disposable implements IChartRenderEngine
 
     setData(spec: VChartSpec): void {
         const instance = this._ensureChartInstance();
+        // console.log(spec, 'vchart spec');
         instance.updateSpec(spec, false);
     }
 

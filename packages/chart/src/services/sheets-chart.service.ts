@@ -188,6 +188,7 @@ export class SheetsChartService extends Disposable {
             dataSource$: dataSource.dataSource$,
             chartType: chartSuggestion.chartType,
             dataConfig: {
+                defaultDirection: chartSuggestion.direction,
                 direction: chartSuggestion.direction,
             },
         });

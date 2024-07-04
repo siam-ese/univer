@@ -25,13 +25,17 @@ export interface IChartSnapshot {
 export type ChartDataSource = Array<Array<Nullable<CellValue>>>;
 export type ChartDataSourceValue = Nullable<CellValue>;
 
-export interface IChartDataContext {
-    direction: DataDirection;
-    aggregate: boolean; // effect on both of data and render
+export interface IChartDataConfig {
+    defaultDirection?: DataDirection;
+    direction?: DataDirection;
+    aggregate?: boolean; // effect on both of data and render
     categoryIndex?: number;
     categoryType?: CategoryType;
-    headerIndex?: number;
+    categoryResourceIndexes?: number[];
+    headers?: string[];
+    firstRowAsHeader?: boolean;
     seriesIndexes?: number[];
+    seriesResourceIndexes?: number[];
 }
 
 export interface IChartData {
@@ -43,7 +47,9 @@ export interface IChartData {
             value: ChartDataSourceValue;
             label: string;
         }>;
-        getValueByIndex: (index: number) => string | undefined;
+        keys: string[];
+        // labels: string[];
+        // getValueByIndex: (index: number) => string | undefined;
     };
     series: Array<{
         index: number;

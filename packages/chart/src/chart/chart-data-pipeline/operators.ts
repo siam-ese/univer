@@ -18,8 +18,6 @@ import { CategoryType, DataDirection } from '../constants';
 import type { ChartDataSourceValue } from '../types';
 import type { IChartDataPipelineOperator } from './chart-data-pipeline';
 
-type NestedArray<T = any> = Array<Array<T>>;
-
 type Nil = null | undefined;
 
 export function isNil(value: any): value is Nil {
@@ -57,7 +55,7 @@ export function toNumber(value: ChartDataSourceValue) {
     return Number(value) || 0;
 }
 
-export function dataDirectionToColumn<T = any>(dataSource: NestedArray<T>): NestedArray<T> {
+export function dataDirectionToColumn<T = any>(dataSource: T[][]): T[][] {
     const table: Array<Array<T>> = [];
 
     for (let c = 0; c < dataSource[0].length; c++) {
@@ -71,19 +69,28 @@ export function dataDirectionToColumn<T = any>(dataSource: NestedArray<T>): Nest
     return table;
 }
 
-export function findCategoryIndex(dataSource: NestedArray<ChartDataSourceValue>) {
+export function findCategoryIndexes(dataSource: ChartDataSourceValue[][]) {
+    const categoryIndexes: number[] = [];
+
     let categoryIndex = -1;
     let maxCount = 0;
 
     dataSource.forEach((items, index) => {
         const counts = countTypesFromArray(items);
+        if (counts.strings === items.length) {
+            categoryIndexes.push(index);
+        }
         if (counts.strings > maxCount) {
             maxCount = counts.strings;
             categoryIndex = index;
         }
     });
 
-    return categoryIndex;
+    if (categoryIndexes.length <= 0 && categoryIndex >= 0) {
+        categoryIndexes.push(categoryIndex);
+    }
+
+    return categoryIndexes;
 }
 
 export function groupBy<T = any>(ary: T[], selector: (item: T, index: number) => string) {
@@ -107,47 +114,70 @@ export function sumArray(ary: ChartDataSourceValue[]) {
 }
 
 export const dataDirectionOperator: IChartDataPipelineOperator = (ctx) => {
-    if (ctx.dataConfig.direction === DataDirection.Column) {
+    const { dataConfig } = ctx;
+    const direction = dataConfig.direction || dataConfig.defaultDirection;
+    if (direction === DataDirection.Column) {
         ctx.dataSource = dataDirectionToColumn(ctx.dataSource);
     }
 };
 
-export const findHeaderOperator: IChartDataPipelineOperator = (ctx) => {
-    const header: ChartDataSourceValue[] = [];
-    ctx.dataSource.forEach((line) => header.push(line[ctx.dataConfig.headerIndex ?? 0]));
+export const findHeaderOperator: IChartDataPipelineOperator = ({ dataConfig, dataSource }) => {
+    const header: ChartDataSourceValue[] = dataSource.map((line) => line[0]);
+
     const counts = countTypesFromArray(header);
     if (counts.strings >= counts.numbers) {
-        ctx._headerData = header;
-        ctx.dataSource.forEach((items) => items.shift());
+        dataConfig.headers = header.map(toString);
+        dataSource.forEach((items) => items.shift());
+    } else {
+        dataConfig.headers = undefined;
     }
 };
 
-export const findCategoryOperator: IChartDataPipelineOperator = (ctx) => {
-    if (ctx.dataConfig.categoryIndex === undefined) {
-        const categoryIndex = findCategoryIndex(ctx.dataSource);
-        if (categoryIndex >= 0) {
-            ctx.dataConfig.categoryIndex = categoryIndex;
+export const findCategoryOperator: IChartDataPipelineOperator = ({ dataConfig, dataSource }) => {
+    const categoryIndexes = findCategoryIndexes(dataSource);
+
+    dataConfig.categoryResourceIndexes = categoryIndexes;
+
+    if (isNil(dataConfig.categoryIndex)) {
+        dataConfig.categoryIndex = categoryIndexes[0];
+    }
+
+    dataConfig.categoryType = isNil(dataConfig.categoryIndex)
+        ? undefined
+        : countTypesFromArray(dataSource[dataConfig.categoryIndex]).strings > 0 ? CategoryType.Text : CategoryType.Linear;
+};
+
+export const findSeriesOperator: IChartDataPipelineOperator = ({ dataConfig, dataSource }) => {
+    const seriesResourceIndexesSet = new Set<number>();
+    dataSource.forEach((_, i) => {
+        if (!dataConfig.categoryResourceIndexes?.includes(i)) {
+            seriesResourceIndexesSet.add(i);
         }
-    }
-    const { dataConfig, dataSource } = ctx;
-    if (dataConfig.categoryIndex !== undefined && !dataConfig.categoryType) {
-        dataConfig.categoryType = countTypesFromArray(dataSource[dataConfig.categoryIndex]).strings > 0 ? CategoryType.Text : CategoryType.Linear;
-    }
+    });
+    dataConfig.seriesIndexes = dataConfig.seriesIndexes
+        ? dataConfig.seriesIndexes.filter((i) => seriesResourceIndexesSet.has(i))
+        : Array.from(seriesResourceIndexesSet);
+    dataConfig.seriesResourceIndexes = Array.from(seriesResourceIndexesSet);
 };
 
 export const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
     const { dataSource, dataConfig } = ctx;
-
-    const categoryData = dataConfig.categoryIndex !== undefined ? dataSource[dataConfig.categoryIndex] : undefined;
-    if (categoryData && dataConfig.categoryType === CategoryType.Text) {
-        const getCategoryTextByIndex = (idx: number) => toString(categoryData[idx]);
-        ctx.dataSource = ctx.dataSource.map((items, itemsIndex) => {
-            const groups = groupBy(items, (_, i) => getCategoryTextByIndex(i));
-            if (itemsIndex === dataConfig.categoryIndex) {
-                return groups.map((group) => group.name);
-            } else {
-                return groups.map((group) => sumArray(group.values));
-            }
-        });
+    if (!dataConfig.aggregate) {
+        return;
     }
+
+    const categoryData = !isNil(dataConfig.categoryIndex) ? dataSource[dataConfig.categoryIndex] : undefined;
+    if (!categoryData) {
+        return;
+    }
+
+    const getCategoryTextByIndex = (idx: number) => toString(categoryData[idx]);
+    ctx.dataSource = ctx.dataSource.map((items, itemsIndex) => {
+        const groups = groupBy(items, (_, i) => getCategoryTextByIndex(i));
+        if (itemsIndex === dataConfig.categoryIndex) {
+            return groups.map((group) => group.name);
+        } else {
+            return groups.map((group) => sumArray(group.values));
+        }
+    });
 };

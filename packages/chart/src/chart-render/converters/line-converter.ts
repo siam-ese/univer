@@ -26,13 +26,27 @@ export const lineConverter: IChartRenderSpecConverter<ICartesianChartSpec & { se
     convert(config) {
         const unit = Array.isArray(config.units) ? config.units[0] : config.units;
         const { category, series } = unit.data;
-        const values = series.map((ser) => {
-            return ser.items.map((item, valueIndex) => ({
-                [SpecField.yField]: item.value,
-                [SpecField.xField]: category?.getValueByIndex(valueIndex),
-                [SpecField.seriesField]: ser.name,
-            }));
+        // const hasXField = Boolean(category);
+        // console.log(category, 'category');
+        const hasCategory = Boolean(category);
+
+        const xFieldLabelMap: Record<string, string> = {};
+        const values = series.map((ser, seriesIndex) => {
+            return ser.items.map((item, valueIndex) => {
+                const xField = category?.keys[valueIndex] || seriesIndex;
+                const xFieldLabel = category?.items[valueIndex].label || '';
+                xFieldLabelMap[xField] = xFieldLabel;
+                return ({
+                    [SpecField.seriesIndex]: seriesIndex,
+                    [SpecField.yField]: item.value,
+                    // [SpecField.xFieldId]: xFieldId,
+                    [SpecField.xField]: xField,
+                    [SpecField.seriesField]: ser.name,
+                });
+            });
         }).flat();
+
+        // console.log(Boolean(category), 'Boolean(category)');
 
         return {
             type: config.type.toLowerCase(),
@@ -42,6 +56,30 @@ export const lineConverter: IChartRenderSpecConverter<ICartesianChartSpec & { se
             xField: SpecField.xField,
             yField: SpecField.yField,
             seriesField: SpecField.seriesField,
+            tooltip: {
+                dimension: {
+                    title: {
+                        visible: hasCategory,
+                    },
+                },
+                mark: {
+                    title: {
+                        visible: hasCategory,
+                    },
+                },
+            },
+            axes: [
+                {
+                    type: 'band',
+                    orient: 'bottom',
+                    visible: hasCategory,
+                    label: {
+                        formatMethod: (text, datum) => {
+                            return xFieldLabelMap[datum?.id];
+                        },
+                    },
+                },
+            ],
         };
     },
 };

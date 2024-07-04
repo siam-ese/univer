@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-import type { ChartDataSource, ChartDataSourceValue, IChartData, IChartDataContext } from '../types';
-import { CategoryType } from '../constants';
+import type { ChartDataSource, IChartData, IChartDataConfig } from '../types';
 import {
     aggregateOperator,
     dataDirectionOperator,
     findCategoryOperator,
     findHeaderOperator,
-    toString } from './utils';
+    findSeriesOperator,
+    toString } from './operators';
 
 export type IChartDataPipelineOperator = (ctx: IChartDataPipelineContext) => void;
 export interface IChartDataPipelineContext {
     dataSource: ChartDataSource;
-    dataConfig: IChartDataContext;
-    _headerData?: ChartDataSourceValue[];
+    dataConfig: IChartDataConfig;
 }
 
 export class ChartDataPipeline {
@@ -38,27 +37,35 @@ export class ChartDataPipeline {
         return this;
     }
 
-    getOutput(dataSource: ChartDataSource, dataConfig: IChartDataContext) {
+    unpipe(operator: IChartDataPipelineOperator) {
+        this._operators = this._operators.filter((op) => op !== operator);
+        return this;
+    }
+
+    // When chart data source change, as range changed we should rebuild data context
+    buildContext(dataSource: ChartDataSource, dataConfig: IChartDataConfig) {
         const ctx = {
             dataSource,
             dataConfig,
         };
+
         this._operators.forEach((operator) => operator(ctx));
 
-        return this._generateOutput(ctx);
+        return ctx;
     }
 
-    _generateOutput(ctx: IChartDataPipelineContext): IChartData {
-        const { dataSource, dataConfig, _headerData: headerData } = ctx;
+    static getOutput(ctx: IChartDataPipelineContext): IChartData {
+        const { dataSource, dataConfig } = ctx;
+        const { headers } = dataConfig;
 
-        const seriesIndexes = dataConfig.seriesIndexes || dataSource.map((_, i) => i).filter((i) => i !== dataConfig.categoryIndex);
+        const seriesIndexes = dataConfig.seriesIndexes || [];
 
         const result: IChartData = {
             series: seriesIndexes.map((index) => {
                 const values = dataSource[index];
                 return {
                     index,
-                    name: toString(headerData?.[index]),
+                    name: toString(headers?.[index]) || `Series ${index}`,
                     items: values.map((value) => ({
                         value,
                         label: toString(value),
@@ -70,17 +77,16 @@ export class ChartDataPipeline {
         const categoryIndex = dataConfig.categoryIndex;
         if (categoryIndex !== undefined) {
             const categoryData = dataSource[categoryIndex];
+
             result.category = {
                 index: categoryIndex,
-                name: toString(headerData?.[categoryIndex]),
+                name: toString(headers?.[categoryIndex]),
                 type: dataConfig.categoryType!,
                 items: categoryData.map((value) => ({
                     value,
                     label: toString(value),
                 })),
-                getValueByIndex(index: number) {
-                    return this.type === CategoryType.Text ? this.items[index].label : undefined;
-                },
+                keys: categoryData.map((value, index) => `${index}_${value}`),
             };
         }
 
@@ -88,10 +94,12 @@ export class ChartDataPipeline {
     }
 }
 
-export const chartDataPipeline = new ChartDataPipeline()
+export const dataSourcePipeline = new ChartDataPipeline()
     .pipe(
         dataDirectionOperator,
         findHeaderOperator,
         findCategoryOperator,
-        aggregateOperator
+        findSeriesOperator
     );
+
+export const outputPipeline = new ChartDataPipeline().pipe(aggregateOperator);

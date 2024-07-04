@@ -18,8 +18,8 @@ import { useObservable } from '@univerjs/ui';
 import { useCallback, useMemo } from 'react';
 import { useDependency } from '@wendellhu/redi/react-bindings';
 import { SheetsChartConfigService } from '@univerjs/chart';
-import type { ChartConfigStateKey, InferChartConfigStateValue } from '../services/sheets-chart-ui.service';
-import { SheetsChartUIService } from '../services/sheets-chart-ui.service';
+import type { ChartConfigStateKey, InferChartConfigStateValue } from './services/sheets-chart-ui.service';
+import { SheetsChartUIService } from './services/sheets-chart-ui.service';
 
 export function useSheetsChartUIService() {
     const sheetsChartUIService = useDependency(SheetsChartUIService);
@@ -49,7 +49,7 @@ export function useChartConfigState<T extends ChartConfigStateKey = ChartConfigS
     const state = useObservable<V>(observable, defaultValue);
 
     const setState = useCallback((value: V) => {
-        viewState?.set(value);
+        viewState?.set?.(value);
     }, [viewState]);
 
     return [state, setState] as const;

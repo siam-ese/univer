@@ -15,9 +15,11 @@
  */
 
 export enum SpecField {
+    // xFieldId = '__xFieldId__',
     xField = '__xField__',
     yField = '__yField__',
     seriesField = '__seriesField__',
+    seriesIndex = '__seriesIndex__',
 }
 
 export enum PieSpecField {

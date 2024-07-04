@@ -28,7 +28,7 @@ export const pieConverter: IChartRenderSpecConverter<IPieChartSpec> = {
         const { category, series } = unit.data;
         const values = series.map((ser) => {
             return ser.items.map((item, valueIndex) => ({
-                [PieSpecField.categoryField]: category?.getValueByIndex(valueIndex),
+                [PieSpecField.categoryField]: category?.keys[valueIndex],
                 // [SpecFields.xField]: category?.getValueByIndex(valueIndex),
                 [PieSpecField.valueField]: item.value,
             }));

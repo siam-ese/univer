@@ -15,3 +15,4 @@
  */
 
 export { ChartDataPipeline, chartDataPipeline } from './chart-data-pipeline';
+export { isNil } from './operators';

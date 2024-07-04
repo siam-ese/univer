@@ -18,11 +18,13 @@ export { lineChartInjector } from './chart-injectors/line-chart-injector';
 export { ChartRenderModel } from './chart-render/chart-render-model';
 export { VChartRenderEngine } from './chart-render/render-engine/vchart-render-engine';
 export { ChartModel } from './chart/chart-model';
-export { ChartType } from './chart/constants';
+export { ChartType, DataDirection, CategoryType } from './chart/constants';
+export type { IChartDataConfig } from './chart/types';
 export { type ChartStyle, StackType } from './chart/style.types';
 export { SheetsChartController } from './controllers/sheets-chart.controller';
 export { UniverSheetsChartPlugin, SHEETS_CHART_PLUGIN_NAME, type IUniverSheetsChartPluginConfig } from './plugins/univer-sheets-chart-plugin';
 export { SheetsChartConfigService } from './services/sheets-chart-config.service';
 export { SheetsChartRenderService } from './services/sheets-chart-render.service';
 export { SheetsChartService } from './services/sheets-chart.service';
+export { isNil } from './chart/chart-data-pipeline';
 
