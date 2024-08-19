@@ -15,12 +15,11 @@
  */
 
 import { SheetsChartConfigService } from '@univerjs/chart';
-import { Disposable, ICommandService, IUniverInstanceService, LifecycleStages, OnLifecycle, UniverInstanceType } from '@univerjs/core';
+import { Disposable, ICommandService, Inject, Injector, IUniverInstanceService, LifecycleStages, OnLifecycle, UniverInstanceType } from '@univerjs/core';
 import { ComponentManager, IMenuService, ISidebarService } from '@univerjs/ui';
 import { IDrawingManagerService } from '@univerjs/drawing';
 
-import type { IDisposable } from '@wendellhu/redi';
-import { Inject, Injector } from '@wendellhu/redi';
+import type { IDisposable } from '@univerjs/core';
 import { ChartEditPanel } from '../components/ChartEditPanel';
 
 const CHART_EDIT_PANEL_KEY = 'sheet.chart.edit.panel';

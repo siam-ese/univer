@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import { Plugin, UniverInstanceType } from '@univerjs/core';
-import type { Dependency } from '@wendellhu/redi';
-import { Inject, Injector } from '@wendellhu/redi';
+import { Inject, Injector, Plugin, UniverInstanceType } from '@univerjs/core';
+import type { Dependency } from '@univerjs/core';
 import { SheetsChartUIController } from '../controllers/sheets-chart-ui.controller';
 import { SheetsChartUIService } from '../services/sheets-chart-ui.service';
 

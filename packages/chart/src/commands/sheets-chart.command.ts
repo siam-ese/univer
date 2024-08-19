@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import type { ICommand, IMutation, IRange } from '@univerjs/core';
-import { CommandType, ICommandService } from '@univerjs/core';
-import { type ISheetCommandSharedParams, SelectionManagerService } from '@univerjs/sheets';
+import type { ICommand, IMutation, IRange, Workbook } from '@univerjs/core';
+import { CommandType, ICommandService, IUniverInstanceService, UniverInstanceType } from '@univerjs/core';
+import { type ISheetCommandSharedParams, SheetsSelectionsService } from '@univerjs/sheets';
 
 import { SheetsChartService } from '../services/sheets-chart.service';
 
@@ -28,8 +28,16 @@ export const InsertSheetsChartMutation: IMutation<IInsertChartCommandParams> = {
     id: 'sheet.mutation.insert-chart',
     type: CommandType.MUTATION,
     handler: (accessor, params) => {
-        const { subUnitId, unitId, range } = params;
+        const { range } = params;
+        const univerInstanceService = accessor.get(IUniverInstanceService);
         const sheetChartService = accessor.get(SheetsChartService);
+        const workbook = univerInstanceService.getCurrentUnitForType<Workbook>(UniverInstanceType.UNIVER_SHEET);
+        const unitId = workbook?.getUnitId();
+        const subUnitId = workbook?.getActiveSheet().getSheetId();
+
+        if (!unitId || !subUnitId) {
+            return true;
+        }
 
         sheetChartService.createChartModel(unitId, subUnitId, range);
 
@@ -44,17 +52,18 @@ export const InsertChartCommand: ICommand = {
     id: 'sheet.command.insert-chart',
     handler: async (accessor) => {
         const commandService = accessor.get(ICommandService);
-        const selectionManagerService = accessor.get(SelectionManagerService);
+        const selectionManagerService = accessor.get(SheetsSelectionsService);
 
-        const currentSelection = selectionManagerService.getCurrent();
-        const range = selectionManagerService.getSelectionRanges()?.[0];
+        const [currentSelection] = selectionManagerService.getCurrentSelections();
+
+        const range = currentSelection.range;
         if (!range) {
             return false;
         }
 
         const params = {
-            unitId: currentSelection?.unitId,
-            subUnitId: currentSelection?.sheetId,
+            unitId: currentSelection.primary?.unitId,
+            subUnitId: currentSelection.primary?.sheetId,
             range,
         };
         return commandService.executeCommand(InsertSheetsChartMutation.id, params);

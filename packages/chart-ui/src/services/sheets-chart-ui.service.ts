@@ -15,8 +15,7 @@
  */
 
 import type { IRange, Nullable } from '@univerjs/core';
-import { Disposable, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
-import { Inject } from '@wendellhu/redi';
+import { Disposable, Inject, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
 import type { ChartModel, ChartType, DataDirection, IChartDataConfig, StackType } from '@univerjs/chart';
 import { CategoryType, SheetsChartConfigService, SheetsChartService } from '@univerjs/chart';
 import { map, type Observable } from 'rxjs';

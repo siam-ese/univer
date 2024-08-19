@@ -19,9 +19,8 @@ import type { ISelectProps } from '@univerjs/design';
 import { Button, Checkbox, Select } from '@univerjs/design';
 import React from 'react';
 import { RangeSelector } from '@univerjs/ui';
-import { useDependency } from '@wendellhu/redi/react-bindings';
+import { createInternalEditorID, IUniverInstanceService, UniverInstanceType, useDependency } from '@univerjs/core';
 import type { IUnitRange, Workbook } from '@univerjs/core';
-import { createInternalEditorID, IUniverInstanceService, UniverInstanceType } from '@univerjs/core';
 import { serializeRange } from '@univerjs/engine-formula';
 import { useChartConfigState, useSheetsChartUIService } from '../hooks';
 

@@ -16,7 +16,7 @@
 
 import { Disposable, ICommandService, IUniverInstanceService, LifecycleStages, OnLifecycle, UniverInstanceType } from '@univerjs/core';
 import { getMenuHiddenObservable, type IMenuButtonItem, IMenuService, MenuGroup, MenuItemType, MenuPosition } from '@univerjs/ui';
-import { type IAccessor, Inject, Injector } from '@wendellhu/redi';
+import { type IAccessor, Inject, Injector } from '@univerjs/core';
 import { deriveStateFromActiveSheet$ } from '@univerjs/sheets-ui';
 import { Observable } from 'rxjs';
 import { InsertChartCommand, InsertSheetsChartMutation } from '../commands/sheets-chart.command';

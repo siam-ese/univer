@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import { Plugin, UniverInstanceType } from '@univerjs/core';
-import type { Dependency } from '@wendellhu/redi';
-import { Inject, Injector } from '@wendellhu/redi';
+import type { Dependency } from '@univerjs/core';
+import { Inject, Injector, Plugin, UniverInstanceType } from '@univerjs/core';
 import { SheetsChartService } from '../services/sheets-chart.service';
 import { SheetsChartController } from '../controllers/sheets-chart.controller';
 import type { IChartInjector } from '../chart-injectors/line-chart-injector';
@@ -39,16 +38,17 @@ export class UniverSheetsChartPlugin extends Plugin {
         super();
     }
 
-    override onStarting(injector: Injector): void {
+    override onStarting(): void {
+        const { _injector } = this;
         ([
             [SheetsChartConfigService],
             [SheetsChartRenderService],
             [SheetsChartService],
             [SheetsChartController],
-        ] as Dependency[]).forEach((d) => injector.add(d));
+        ] as Dependency[]).forEach((d) => _injector.add(d));
 
-        const sheetsChartService = injector.get(SheetsChartService);
-        const sheetsRenderService = injector.get(SheetsChartRenderService);
+        const sheetsChartService = _injector.get(SheetsChartService);
+        const sheetsRenderService = _injector.get(SheetsChartRenderService);
 
         const { renderEngines, injectors } = this._config;
         // Register render engine

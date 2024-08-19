@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-import type { ICommandService, IRange, IUniverInstanceService } from '@univerjs/core';
+import type { ICommandService, IDisposable, IRange, IUniverInstanceService } from '@univerjs/core';
 import { Disposable, Rectangle } from '@univerjs/core';
 import type { ISetRangeValuesCommandParams } from '@univerjs/sheets';
 import { SetRangeValuesCommand } from '@univerjs/sheets';
-import type { IDisposable } from '@wendellhu/redi';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, Subject } from 'rxjs';
 import type { ChartDataSource } from './types';

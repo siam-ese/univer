@@ -755,9 +755,6 @@ importers:
       '@univerjs/ui':
         specifier: workspace:*
         version: link:../ui
-      '@wendellhu/redi':
-        specifier: ^0.15.1
-        version: 0.15.6
       dayjs:
         specifier: ^1.11.11
         version: 1.11.13
@@ -803,9 +800,6 @@ importers:
       '@univerjs/ui':
         specifier: workspace:*
         version: link:../ui
-      '@wendellhu/redi':
-        specifier: ^0.15.1
-        version: 0.15.6
       dayjs:
         specifier: ^1.11.11
         version: 1.11.13
@@ -5933,9 +5927,6 @@ packages:
 
   '@webassemblyjs/wast-printer@1.12.1':
     resolution: {integrity: sha512-+X4WAlOisVWQMikjbcvY2e0rwPsKQ9F688lksZhBcPycBBuii3O7m8FACbDMWDojpAqvjIncrG8J0XHKyQfVeA==}
-
-  '@wendellhu/redi@0.15.6':
-    resolution: {integrity: sha512-SaAdfa+mZ5V8ZSr+ZEufNRM+1asmAZKg7Pb/T+ILBPXFMkT1hrssjpBYfCw/AHhl36J1NAIO1YpmlTCqBEQrLQ==}
 
   '@wendellhu/redi@0.16.1':
     resolution: {integrity: sha512-nwyKHCIbAgA7ZjhH6a49lVhe8oPFHjg4AtUHUSqdQgYNvHIFTbIWEbieS1pU0TMMHrff+mxGCGp3BZW14AvNsw==}
@@ -14828,8 +14819,6 @@ snapshots:
     dependencies:
       '@webassemblyjs/ast': 1.12.1
       '@xtuc/long': 4.2.2
-
-  '@wendellhu/redi@0.15.6': {}
 
   '@wendellhu/redi@0.16.1': {}
 

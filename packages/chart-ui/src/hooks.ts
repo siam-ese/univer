@@ -16,7 +16,7 @@
 
 import { useObservable } from '@univerjs/ui';
 import { useCallback, useMemo } from 'react';
-import { useDependency } from '@wendellhu/redi/react-bindings';
+import { useDependency } from '@univerjs/core';
 import { SheetsChartConfigService } from '@univerjs/chart';
 import type { ChartConfigStateKey, InferChartConfigStateValue } from './services/sheets-chart-ui.service';
 import { SheetsChartUIService } from './services/sheets-chart-ui.service';

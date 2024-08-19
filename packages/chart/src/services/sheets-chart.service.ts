@@ -15,10 +15,9 @@
  */
 
 import type { IRange, Nullable } from '@univerjs/core';
-import { Disposable, ICommandService, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
+import { Disposable, ICommandService, Inject, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
 import { RefRangeService } from '@univerjs/sheets';
 import { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
-import { Inject } from '@wendellhu/redi';
 import { BehaviorSubject } from 'rxjs';
 import type { IChartInjector } from '../chart-injectors/line-chart-injector';
 import type { ChartModel } from '../chart/chart-model';
@@ -63,7 +62,7 @@ export class SheetsChartService extends Disposable {
         @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService,
         @Inject(SheetsChartConfigService) private readonly _sheetsChartConfigService: SheetsChartConfigService,
         @Inject(SheetsChartRenderService) private readonly _sheetsChartRenderService: SheetsChartRenderService,
-        @Inject(ICommandService) private readonly _commandService: ICommandService
+        @ICommandService private readonly _commandService: ICommandService
     ) {
         super();
 

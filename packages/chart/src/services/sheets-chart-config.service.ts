@@ -15,8 +15,7 @@
  */
 
 import type { Nullable } from '@univerjs/core';
-import { Disposable, LifecycleStages, OnLifecycle } from '@univerjs/core';
-import { Inject } from '@wendellhu/redi';
+import { Disposable, Inject, LifecycleStages, OnLifecycle } from '@univerjs/core';
 import { BehaviorSubject } from 'rxjs';
 import type { IChartModelOption } from '../chart/chart-model';
 import { ChartModel } from '../chart/chart-model';
