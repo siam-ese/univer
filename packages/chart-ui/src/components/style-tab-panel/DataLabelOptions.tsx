@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-import type { IChartConfig } from '../chart/types';
-import type { ChartStyle } from '../chart/style.types';
-import type { IChartRenderEngine } from './render-engine';
+import { Select } from '@univerjs/design';
+import React from 'react';
+import { dataLabelPositionOptions } from '../options';
 
-export interface IChartRenderSpecConverter<ChartRenderSpec = unknown> {
-    canConvert: (config: IChartConfig) => boolean;
-    convert: (config: IChartConfig) => ChartRenderSpec;
-}
-export type ChartConfigInterceptor = (config: IChartConfig) => IChartConfig;
-export type RenderSpecInterceptor<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig, instance: IChartRenderEngine) => void;
-
+export const DataLabelOptions = () => {
+    return (
+        <div>
+            <div>
+                <h4>Label Position</h4>
+                <Select value="" onChange={() => {}} options={dataLabelPositionOptions}></Select>
+            </div>
+            <div>
+                <h4>Title Format</h4>
+                {/* <FontFormatBar /> */}
+            </div>
+        </div>
+    );
+};

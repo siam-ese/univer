@@ -68,5 +68,7 @@ export class SheetsChartController extends Disposable {
             // ReCalcSheetsFilterMutation,
             // RemoveSheetsFilterMutation,
         ].forEach((command) => this.disposeWithMe(this._commandService.registerCommand(command)));
+
+        this._commandService.executeCommand(InsertChartCommand.id);
     }
 }

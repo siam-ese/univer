@@ -16,6 +16,7 @@
 
 import VChart from '@visactor/vchart';
 import type { ISpec } from '@visactor/vchart';
+import type { Nullable } from '@univerjs/core';
 import { Disposable } from '@univerjs/core';
 import type { RenderSpecInterceptor } from '../types';
 import type { IChartRenderEngine } from './render-engine';
@@ -43,20 +44,24 @@ export class VChartRenderEngine extends Disposable implements IChartRenderEngine
         return this._vchart!;
     }
 
-    render(): void {
-        const instance = this._ensureChartInstance();
-        instance.renderSync();
+    get containerElement() {
+        const { container } = this;
+        return container instanceof HTMLElement ? container : document.getElementById(container);
     }
 
-    renderWithData(spec: VChartSpec): void {
-        this.setData(spec);
-        this.render();
+    render(spec: VChartSpec): void {
+        const instance = this._ensureChartInstance();
+        instance.updateSpec(spec, false, {
+            reuse: false,
+        });
+        // instance.renderSync();
     }
 
-    setData(spec: VChartSpec): void {
-        const instance = this._ensureChartInstance();
-        // console.log(spec, 'vchart spec');
-        instance.updateSpec(spec, false);
+    setBorderColor(color: Nullable<string>): void {
+        const { containerElement } = this;
+        if (containerElement) {
+            containerElement.style.border = `3px solid ${color || 'transparent'}`;
+        }
     }
 
     setTheme(): void {

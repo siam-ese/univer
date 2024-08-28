@@ -1,0 +1,137 @@
+/**
+ * Copyright 2023-present DreamNum Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import React, { useState } from 'react';
+import { ColorPicker, Dropdown, Menu, MenuItem } from '@univerjs/design';
+import { useDependency } from '@univerjs/core';
+import { ComponentManager } from '@univerjs/ui';
+import { MoreDownSingle } from '@univerjs/icons';
+import clsx from 'clsx';
+import { fontSizeOptions } from '../options';
+import styles from './index.module.less';
+
+export interface IFontFormatStyle {
+    fontSize: number;
+    color: string;
+    bold: boolean;
+    italic: boolean;
+    underline: boolean;
+    strikethrough: boolean;
+}
+
+export interface IFontFormatBarProps extends Partial<IFontFormatStyle> {
+    onChange?: <K extends keyof IFontFormatStyle = keyof IFontFormatStyle>(name: K, value: IFontFormatStyle[K]) => void;
+}
+
+export const FontFormatBar = (props: IFontFormatBarProps) => {
+    const { fontSize,
+            color,
+            bold,
+            italic,
+            underline,
+            strikethrough, onChange } = props;
+    const componentManager = useDependency(ComponentManager);
+    const BoldSingleIcon = componentManager.get('BoldSingle');
+    const ItalicSingleIcon = componentManager.get('ItalicSingle');
+    const UnderlineSingleIcon = componentManager.get('UnderlineSingle');
+    const StrikethroughSingle = componentManager.get('StrikethroughSingle');
+    const FontIcon = componentManager.get('FontColor');
+
+    const [fontSizeDropdownVisible, setFontSizeDropdownVisible] = useState(false);
+    const [colorDropdownVisible, setColorDropdownVisible] = useState(false);
+
+    return (
+        <div className={styles.fontFormatBar}>
+            <Dropdown
+                visible={fontSizeDropdownVisible}
+                onVisibleChange={setFontSizeDropdownVisible}
+                overlay={(
+                    <Menu>
+                        {fontSizeOptions.map((item) => {
+                            return (
+                                <MenuItem
+                                    key={item.value}
+                                    onClick={() => {
+                                        onChange?.('fontSize', Number(item.value));
+                                        setFontSizeDropdownVisible(false);
+                                    }}
+                                >
+                                    {item.label}
+                                </MenuItem>
+                            );
+                        })}
+                    </Menu>
+                )}
+            >
+                <div className={clsx(styles.fontFormatBarItem, styles.fontFormatBarMenuItem)}>
+                    <span>{fontSize}</span>
+                    <MoreDownSingle className={clsx(styles.fontFormatBarMenuIcon, { [styles.fontFormatBarRotateIcon]: fontSizeDropdownVisible })} />
+                </div>
+            </Dropdown>
+            {/* <Select value="" onChange={() => {}} /> */}
+            <Dropdown
+                visible={colorDropdownVisible}
+                onVisibleChange={setColorDropdownVisible}
+                overlay={(
+                    <div className={styles.fontFormatBarColorPickerOverlay}>
+                        {' '}
+                        <ColorPicker color={color} onChange={(c) => onChange?.('color', c)} />
+                    </div>
+                )}
+            >
+                <div className={clsx(styles.fontFormatBarItem, styles.fontFormatBarMenuItem)}>
+                    <div>
+                        {FontIcon && <FontIcon />}
+                        <div className={styles.fontFormatBarColorBar} style={{ backgroundColor: color }}></div>
+                    </div>
+                    <MoreDownSingle className={clsx(styles.fontFormatBarMenuIcon, { [styles.fontFormatBarRotateIcon]: colorDropdownVisible })} />
+                </div>
+            </Dropdown>
+            <div
+                onClick={() => onChange?.('bold', !bold)}
+                className={clsx(styles.fontFormatBarItem, {
+                    [styles.fontFormatBarItemActive]: bold,
+                })}
+            >
+                {BoldSingleIcon && <BoldSingleIcon />}
+            </div>
+            <div
+                onClick={() => onChange?.('italic', !italic)}
+                className={clsx(styles.fontFormatBarItem, {
+                    [styles.fontFormatBarItemActive]: italic,
+                })}
+            >
+                {ItalicSingleIcon && <ItalicSingleIcon />}
+            </div>
+            <div
+                onClick={() => onChange?.('underline', !underline)}
+                className={clsx(styles.fontFormatBarItem, {
+                    [styles.fontFormatBarItemActive]: underline,
+                })}
+            >
+                {UnderlineSingleIcon && <UnderlineSingleIcon />}
+            </div>
+            <div
+                onClick={() => onChange?.('strikethrough', !strikethrough)}
+                className={clsx(styles.fontFormatBarItem, {
+                    [styles.fontFormatBarItemActive]: strikethrough,
+                })}
+            >
+                {StrikethroughSingle && <StrikethroughSingle />}
+            </div>
+        </div>
+    );
+};

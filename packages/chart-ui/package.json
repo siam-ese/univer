@@ -66,12 +66,17 @@
         "@univerjs/core": "workspace:*",
         "rxjs": ">=7.0.0"
     },
+    "dependencies": {
+        "@univerjs/icons": "^0.1.74",
+        "clsx": "^2.1.1"
+    },
     "devDependencies": {
         "@univerjs/chart": "workspace:*",
         "@univerjs/core": "workspace:*",
         "@univerjs/design": "workspace:*",
         "@univerjs/drawing": "workspace:*",
         "@univerjs/engine-formula": "workspace:*",
+        "@univerjs/icons": "workspace:*",
         "@univerjs/shared": "workspace:*",
         "@univerjs/sheets": "workspace:*",
         "@univerjs/sheets-drawing-ui": "workspace:*",

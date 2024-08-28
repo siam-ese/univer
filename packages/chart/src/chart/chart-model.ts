@@ -17,8 +17,8 @@
 import type { Nullable } from '@univerjs/core';
 import { Disposable, Tools } from '@univerjs/core';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, filter, map, Subject } from 'rxjs';
-import type { IChartDataPipelineOperator } from './chart-data-pipeline/chart-data-pipeline';
+import { BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, filter, map, tap } from 'rxjs';
+import type { IChartDataPipelineContext, IChartDataPipelineOperator } from './chart-data-pipeline/chart-data-pipeline';
 import { ChartDataPipeline, dataSourcePipeline, outputPipeline } from './chart-data-pipeline/chart-data-pipeline';
 import type { ChartDataSource, IChartConfig, IChartData, IChartDataConfig } from './types';
 import type { ChartStyle } from './style.types';
@@ -57,7 +57,7 @@ export class ChartModel extends Disposable {
     config$ = this._config$.asObservable();
 
     /** chart style config */
-    private _style$ = new Subject<ChartStyle>();
+    private _style$ = new BehaviorSubject<ChartStyle>({});
     style$ = this._style$.asObservable();
     public style: ChartStyle = {};
 
@@ -75,6 +75,7 @@ export class ChartModel extends Disposable {
         if (dataConfig) {
             this.applyDataConfig(dataConfig);
         }
+
         if (style) {
             this.applyStyle(style);
         }
@@ -108,7 +109,12 @@ export class ChartModel extends Disposable {
         this.disposeWithMe(
             combineLatest([
                 this.chartType$.pipe(distinctUntilChanged()),
-                this._dataSource$.pipe(map((dataSource) => dataSourcePipeline.buildContext(dataSource, this.dataConfig).dataSource)),
+                this._dataSource$
+                    .pipe(
+                        map((dataSource) => dataSourcePipeline.buildContext(dataSource, this.dataConfig)),
+                        tap((ctx) => this._initStyleByContext(ctx)),
+                        map((ctx) => ctx.dataSource)
+                    ),
                 this._dataConfig$,
             ]).pipe(
                 debounceTime(0),
@@ -129,20 +135,34 @@ export class ChartModel extends Disposable {
         );
     }
 
+    private _initStyleByContext(ctx: IChartDataPipelineContext) {
+        const { style } = this;
+        const { dataConfig, dataSource } = ctx;
+            // Init style by data config
+        if (style.common?.title?.content === undefined) {
+            const headers = dataConfig.headers;
+            const category = dataConfig.categoryIndex !== undefined ? dataSource[dataConfig.categoryIndex] : [];
+
+            this.applyStyle({
+                common: {
+                    title: {
+                        content: headers?.join(',') ?? category.join(','),
+                    },
+                },
+            });
+        }
+    }
+
     getDataByIndex(index: number) {
         return this._dataSource[index];
     }
 
     applyStyle(newStyle: ChartStyle) {
-        this.style = Object.assign({}, this.style, newStyle);
-
-        this._style$.next(this.style);
+        this._style$.next(Tools.deepMerge(this.style, newStyle));
     }
 
     applyDataConfig(config: Partial<IChartDataConfig>) {
-        const { _dataConfig$ } = this;
-        const dataConfig = Object.assign({}, _dataConfig$.getValue(), config);
-        _dataConfig$.next(dataConfig);
+        this._dataConfig$.next(Tools.deepMerge(this._dataConfig$.getValue(), config));
     }
 
     setChart(type: ChartType) {

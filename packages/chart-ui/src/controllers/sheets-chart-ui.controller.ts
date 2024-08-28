@@ -59,12 +59,17 @@ export class SheetsChartUIController extends Disposable {
         });
     }
 
+    hidePanel() {
+        this._sidebarDisposable?.dispose();
+    }
+
     private _initPanel() {
         const { _sheetsChartConfigService } = this;
         this._componentManager.register(CHART_EDIT_PANEL_KEY, ChartEditPanel);
         this.disposeWithMe(this._drawingManagerService.focus$.subscribe((params) => {
             const drawing = params[0];
             if (!drawing) {
+                this.hidePanel();
                 return;
             }
             const chartModel = _sheetsChartConfigService.getChartModel(drawing.drawingId);

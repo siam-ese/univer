@@ -1,0 +1,45 @@
+.font-format-bar {
+    display: flex;
+    padding: 2px 3px;
+    border: 1px solid rgb(208, 211, 214);
+    border-radius: 6px;
+    align-items: center;
+    gap: 6px;
+    &-item {
+        line-height: 1;
+        cursor: pointer;
+        border-radius: 4px;
+        padding: 4px 6px;
+    }
+    &-item-active {
+        background-color: rgb(224, 233, 255);
+        color: rgb(20, 86, 240);
+    }
+    &-menu-item {
+        display: flex;
+        align-items: center;
+    }
+    &-item:hover {
+        background-color: #eff0f1;
+    }
+    &-color-bar {
+        border-radius: 6px;
+        height: 4px;
+        width: 1em;
+    }
+    &-color-picker-overlay {
+        padding: var(--padding-base);
+        font-size: var(--font-size-xs);
+        background-color: rgb(var(--bg-color-secondary));
+        border: 1px solid rgb(var(--border-color));
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--box-shadow-base);
+    }
+    &-menu-icon {
+        margin-left: 4px;
+        transition: transform 0.3s;
+    }
+    &-rotate-icon {
+        transform: rotate(180deg);
+    }
+}

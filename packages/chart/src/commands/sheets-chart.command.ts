@@ -15,7 +15,7 @@
  */
 
 import type { ICommand, IMutation, IRange, Workbook } from '@univerjs/core';
-import { CommandType, ICommandService, IUniverInstanceService, UniverInstanceType } from '@univerjs/core';
+import { CommandType, ICommandService, IUniverInstanceService, RANGE_TYPE, UniverInstanceType } from '@univerjs/core';
 import { type ISheetCommandSharedParams, SheetsSelectionsService } from '@univerjs/sheets';
 
 import { SheetsChartService } from '../services/sheets-chart.service';
@@ -28,16 +28,9 @@ export const InsertSheetsChartMutation: IMutation<IInsertChartCommandParams> = {
     id: 'sheet.mutation.insert-chart',
     type: CommandType.MUTATION,
     handler: (accessor, params) => {
-        const { range } = params;
-        const univerInstanceService = accessor.get(IUniverInstanceService);
-        const sheetChartService = accessor.get(SheetsChartService);
-        const workbook = univerInstanceService.getCurrentUnitForType<Workbook>(UniverInstanceType.UNIVER_SHEET);
-        const unitId = workbook?.getUnitId();
-        const subUnitId = workbook?.getActiveSheet().getSheetId();
+        const { unitId, subUnitId, range } = params;
 
-        if (!unitId || !subUnitId) {
-            return true;
-        }
+        const sheetChartService = accessor.get(SheetsChartService);
 
         sheetChartService.createChartModel(unitId, subUnitId, range);
 
@@ -53,7 +46,24 @@ export const InsertChartCommand: ICommand = {
     handler: async (accessor) => {
         const commandService = accessor.get(ICommandService);
         const selectionManagerService = accessor.get(SheetsSelectionsService);
+        const univerInstanceService = accessor.get(IUniverInstanceService);
+        const workbook = univerInstanceService.getCurrentUnitForType<Workbook>(UniverInstanceType.UNIVER_SHEET);
+        const unitId = workbook?.getUnitId();
+        const subUnitId = workbook?.getActiveSheet().getSheetId();
 
+        selectionManagerService.setSelections([
+            {
+                range: {
+                    startRow: 13,
+                    startColumn: 0,
+                    endRow: 22,
+                    endColumn: 4,
+                    rangeType: RANGE_TYPE.NORMAL,
+                },
+                style: null,
+                primary: null,
+            },
+        ]);
         const [currentSelection] = selectionManagerService.getCurrentSelections();
 
         const range = currentSelection.range;
@@ -62,8 +72,8 @@ export const InsertChartCommand: ICommand = {
         }
 
         const params = {
-            unitId: currentSelection.primary?.unitId,
-            subUnitId: currentSelection.primary?.sheetId,
+            unitId,
+            subUnitId,
             range,
         };
         return commandService.executeCommand(InsertSheetsChartMutation.id, params);

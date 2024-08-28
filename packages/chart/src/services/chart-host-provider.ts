@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-import type { IChartConfig } from '../chart/types';
-import type { ChartStyle } from '../chart/style.types';
-import type { IChartRenderEngine } from './render-engine';
+import type { Nullable } from '@univerjs/core';
+import { createIdentifier } from '@univerjs/core';
+import type { Observable } from 'rxjs';
 
-export interface IChartRenderSpecConverter<ChartRenderSpec = unknown> {
-    canConvert: (config: IChartConfig) => boolean;
-    convert: (config: IChartConfig) => ChartRenderSpec;
+export interface IChartHostProvider {
+    getHostElement: (chartId: string) => Nullable<HTMLElement>;
+    createHost: (chartId: string) => {
+        id: string | HTMLElement;
+        dispose?: () => void;
+    };
+    removeHost$: Observable<string>;
 }
-export type ChartConfigInterceptor = (config: IChartConfig) => IChartConfig;
-export type RenderSpecInterceptor<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig, instance: IChartRenderEngine) => void;
 
+export const IChartHostProvider = createIdentifier<IChartHostProvider>('chart.host.provider');

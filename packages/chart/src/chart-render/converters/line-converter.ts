@@ -53,7 +53,7 @@ export const lineConverter: IChartRenderSpecConverter<ICartesianChartSpec & { se
             data: {
                 values,
             },
-            xField: SpecField.xField,
+            xField: [SpecField.xField, SpecField.seriesIndex],
             yField: SpecField.yField,
             seriesField: SpecField.seriesField,
             tooltip: {
@@ -78,6 +78,10 @@ export const lineConverter: IChartRenderSpecConverter<ICartesianChartSpec & { se
                             return xFieldLabelMap[datum?.id];
                         },
                     },
+                },
+                {
+                    type: 'linear',
+                    orient: 'left',
                 },
             ],
         };

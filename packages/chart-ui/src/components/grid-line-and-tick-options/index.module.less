@@ -1,0 +1,29 @@
+.grid-line-and-tick-options {
+    &-color-picker {
+        cursor: pointer;
+        padding: var(--padding-base);
+        font-size: var(--font-size-xs);
+        background-color: rgb(var(--bg-color-secondary));
+        border: 1px solid rgb(var(--border-color));
+        border-radius: var(--border-radius-lg);
+        // box-shadow: var(--box-shadow-base);
+        display: inline-flex;
+        align-items: center;
+        &-view {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+    }
+    &-color-picker-overlay {
+        padding: var(--padding-base);
+        font-size: var(--font-size-xs);
+        background-color: rgb(var(--bg-color-secondary));
+        border: 1px solid rgb(var(--border-color));
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--box-shadow-base);
+    }
+    &-rotate-icon {
+        transform: rotate(180deg);
+    }
+}

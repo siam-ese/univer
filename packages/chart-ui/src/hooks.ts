@@ -18,6 +18,7 @@ import { useObservable } from '@univerjs/ui';
 import { useCallback, useMemo } from 'react';
 import { useDependency } from '@univerjs/core';
 import { SheetsChartConfigService } from '@univerjs/chart';
+import { Observable } from 'rxjs';
 import type { ChartConfigStateKey, InferChartConfigStateValue } from './services/sheets-chart-ui.service';
 import { SheetsChartUIService } from './services/sheets-chart-ui.service';
 
@@ -45,11 +46,15 @@ export function useChartConfigState<T extends ChartConfigStateKey = ChartConfigS
     defaultValue?: undefined
 ): [V | undefined, (value: V) => void] {
     const viewState = useMemo(() => service.getViewState<V>(key), [service, key]);
-    const observable = useMemo(() => viewState?.get(), [viewState]);
+
+    const observable = useMemo(() => viewState instanceof Observable ? viewState : viewState?.get(), [viewState]);
+
     const state = useObservable<V>(observable, defaultValue);
 
     const setState = useCallback((value: V) => {
-        viewState?.set?.(value);
+        if (!(viewState instanceof Observable)) {
+            viewState?.set?.(value);
+        }
     }, [viewState]);
 
     return [state, setState] as const;

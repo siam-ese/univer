@@ -22,6 +22,7 @@ import { ChartModel } from '../chart/chart-model';
 import type { ChartType } from '../chart/constants';
 import type { IChartConfigConverter, IChartData } from '../chart/types';
 import { SheetsChartRenderService } from './sheets-chart-render.service';
+import { IChartHostProvider } from './chart-host-provider';
 
 export const SHEET_CHART_PLUGIN = 'SHEET_CHART_PLUGIN';
 
@@ -35,9 +36,16 @@ export class SheetsChartConfigService extends Disposable {
     private _converters = new Set<IChartConfigConverter>();
 
     constructor(
-        @Inject(SheetsChartRenderService) private _chartRenderAdapter: SheetsChartRenderService
+        @Inject(SheetsChartRenderService) private _chartRenderAdapter: SheetsChartRenderService,
+        @IChartHostProvider private _chartHostProvider: IChartHostProvider
     ) {
         super();
+
+        this.disposeWithMe(
+            this._chartHostProvider.removeHost$.subscribe((id) => {
+                this.removeChartModel(id);
+            })
+        );
     }
 
     setActiveChartModel(chartModel: ChartModel) {

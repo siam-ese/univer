@@ -65,7 +65,7 @@ export class ChartDataPipeline {
                 const values = dataSource[index];
                 return {
                     index,
-                    name: toString(headers?.[index]) || `Series ${index}`,
+                    name: toString(headers?.[index]) || `系列 ${index}`,
                     items: values.map((value) => ({
                         value,
                         label: toString(value),

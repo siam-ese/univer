@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import type { VChartRenderSpecInterceptor } from '../render-engine';
 
-export const StyleTabPanel = () => {
-    return <div>StyleTabPanel</div>;
+export const chartBoxStyleInterceptor: VChartRenderSpecInterceptor = (spec, style) => {
+    const commonStyle = style.common;
+
+    spec.background = commonStyle?.backgroundColor;
+
+    return spec;
 };

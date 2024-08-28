@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-import type { Disposable } from '@univerjs/core';
+import type { Disposable, Nullable } from '@univerjs/core';
 
 export interface IChartRenderEngine<Spec = unknown> extends Disposable {
     container: HTMLElement | string;
 
-    setData(spec: Spec): void;
-
-    render(): void;
-
-    renderWithData(spec: Spec): void;
+    render(spec: Spec): void;
 
     setTheme(): void;
 
     exportImg(): Promise<string>;
+
+    setBorderColor(color: Nullable<string>): void;
 
     onDispose?(dispose: () => void): void;
 }

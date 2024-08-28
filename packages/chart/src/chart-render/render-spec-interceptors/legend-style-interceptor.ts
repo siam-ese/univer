@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-import type { IChartConfig } from '../chart/types';
-import type { ChartStyle } from '../chart/style.types';
-import type { IChartRenderEngine } from './render-engine';
+import type { ILegendSpec } from '@visactor/vchart/esm/component/legend';
+import type { VChartRenderSpecInterceptor } from '../render-engine';
+import { LegendPosition } from '../../chart/style.types';
 
-export interface IChartRenderSpecConverter<ChartRenderSpec = unknown> {
-    canConvert: (config: IChartConfig) => boolean;
-    convert: (config: IChartConfig) => ChartRenderSpec;
-}
-export type ChartConfigInterceptor = (config: IChartConfig) => IChartConfig;
-export type RenderSpecInterceptor<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig, instance: IChartRenderEngine) => void;
+export const legendStyleInterceptor: VChartRenderSpecInterceptor = (spec, style, config, instance) => {
+    const legendStyle = style.common?.legend;
+    const legend: ILegendSpec = {
+        type: 'discrete',
+        visible: legendStyle?.position !== LegendPosition.Hide,
+        orient: legendStyle?.position as any,
+    };
+    spec.legends = [legend];
 
+    return spec;
+};

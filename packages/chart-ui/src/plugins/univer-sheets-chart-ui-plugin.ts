@@ -29,10 +29,11 @@ export class UniverSheetsChartUIPlugin extends Plugin {
         super();
     }
 
-    override onStarting(injector: Injector): void {
+    override onStarting(): void {
+        const { _injector } = this;
         ([
             [SheetsChartUIService],
             [SheetsChartUIController],
-        ] as Dependency[]).forEach((d) => injector.add(d));
+        ] as Dependency[]).forEach((d) => _injector.add(d));
     }
 }

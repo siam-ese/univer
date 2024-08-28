@@ -22,6 +22,8 @@ import type { IChartInjector } from '../chart-injectors/line-chart-injector';
 import type { IChartRenderEngineConstructor } from '../chart-render/render-engine/render-engine';
 import { SheetsChartRenderService } from '../services/sheets-chart-render.service';
 import { SheetsChartConfigService } from '../services/sheets-chart-config.service';
+import { IChartHostProvider } from '../services/chart-host-provider';
+import { SheetsChartHostProvider } from '../services/sheets-chart-host-provider';
 
 export const SHEETS_CHART_PLUGIN_NAME = 'SHEET_CHART_PLUGIN';
 
@@ -45,6 +47,7 @@ export class UniverSheetsChartPlugin extends Plugin {
             [SheetsChartRenderService],
             [SheetsChartService],
             [SheetsChartController],
+            [IChartHostProvider, { useClass: SheetsChartHostProvider }],
         ] as Dependency[]).forEach((d) => _injector.add(d));
 
         const sheetsChartService = _injector.get(SheetsChartService);

@@ -17,10 +17,10 @@
 import { Button } from '@univerjs/design';
 import React, { useState } from 'react';
 import { DataTabPanel } from './DataTabPanel';
-import { StyleTabPanel } from './StyleTabPanel';
+import { StyleTabPanel } from './style-tab-panel';
 
 export const ChartEditPanel = () => {
-    const [tab, setTab] = useState(0);
+    const [tab, setTab] = useState(1);
     return (
         <div>
             <div>

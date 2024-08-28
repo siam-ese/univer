@@ -16,7 +16,7 @@
 
 import type { IRange, Nullable } from '@univerjs/core';
 import { Disposable, Inject, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
-import type { ChartModel, ChartType, DataDirection, IChartDataConfig, StackType } from '@univerjs/chart';
+import type { ChartModel, ChartType, DataDirection, DeepPartial, IAllSeriesStyle, IChartDataConfig, ILabelStyle, ILegendStyle, ISeriesStyle, IXAxisOptions, IYAxisOptions, StackType } from '@univerjs/chart';
 import { CategoryType, SheetsChartConfigService, SheetsChartService } from '@univerjs/chart';
 import { map, type Observable } from 'rxjs';
 import type { ISelectProps } from '@univerjs/design';
@@ -130,19 +130,19 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             return chartModel.dataConfig$.pipe(map((dataConfig) => {
                 const { seriesResourceIndexes = [], headers } = dataConfig;
 
-                const options = seriesResourceIndexes.map((idx) => {
+                const options = seriesResourceIndexes.map((col, index) => {
                     let label: string;
                     if (headers) {
-                        label = headers[idx]?.toString() || '';
+                        label = headers[col]?.toString() || '';
                     } else {
-                        const values = chartModel.getDataByIndex(idx);
-                        const firstValue = values.find((v) => v !== null && v !== undefined);
-                        label = firstValue?.toString() || '';
+                        // const values = chartModel.getDataByIndex(col);
+                        // const firstValue = values.find((v) => v !== null && v !== undefined);
+                        label = `系列 ${index + 1}`;
                     }
 
                     return {
                         label,
-                        value: String(idx),
+                        value: String(col),
                     };
                 });
 
@@ -182,11 +182,9 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             return chartModel.dataConfig$.pipe(map((dataConfig) => dataConfig.direction));
         },
     }));
-    service.registerViewState('defaultDirection', (chartModel) => ({
-        get() {
-            return chartModel.dataConfig$.pipe(map((dataConfig) => dataConfig.defaultDirection));
-        },
-    }));
+    service.registerViewState('defaultDirection', (chartModel) => {
+        return chartModel.dataConfig$.pipe(map((dataConfig) => dataConfig.defaultDirection));
+    });
     service.registerViewState('asCategory', (chartModel) => ({
         set(option) {
             const { dataConfig } = chartModel;
@@ -233,6 +231,177 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             }));
         },
     }));
+
+    service.registerViewState('backgroundColor', (chartModel) => ({
+        set(color) {
+            chartModel.applyStyle({
+                common: {
+                    backgroundColor: color ?? undefined,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.backgroundColor));
+        },
+    }));
+    service.registerViewState('borderColor', (chartModel) => ({
+        set(color) {
+            chartModel.applyStyle({
+                common: {
+                    borderColor: color ?? undefined,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.borderColor));
+        },
+    }));
+    service.registerViewState('fontSize', (chartModel) => ({
+        set(fontSize) {
+            chartModel.applyStyle({
+                common: {
+                    fontSize,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.fontSize));
+        },
+    }));
+    service.registerViewState('titleStyle', (chartModel) => ({
+        set(style) {
+            chartModel.applyStyle({
+                common: {
+                    title: style,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.title));
+        },
+    }));
+    service.registerViewState('subtitleStyle', (chartModel) => ({
+        set(style) {
+            chartModel.applyStyle({
+                common: {
+                    subtitle: style,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.subtitle));
+        },
+    }));
+    service.registerViewState('xAxisTitleStyle', (chartModel) => ({
+        set(style) {
+            chartModel.applyStyle({
+                common: {
+                    xAxisTitle: style,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.xAxisTitle));
+        },
+    }));
+    service.registerViewState('yAxisTitleStyle', (chartModel) => ({
+        set(style) {
+            chartModel.applyStyle({
+                common: {
+                    yAxisTitle: style,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.yAxisTitle));
+        },
+    }));
+
+    service.registerViewState('yAxisTitleStyle', (chartModel) => ({
+        set(style) {
+            chartModel.applyStyle({
+                common: {
+                    yAxisTitle: style,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.yAxisTitle));
+        },
+    }));
+
+    service.registerViewState('allSeriesStyle', (chartModel) => ({
+        set(style) {
+            // const seriesStyleMap: { [id: string]: DeepPartial<ISeriesStyle> } = {};
+            // chartModel.dataConfig.seriesIndexes?.forEach((index) => {
+            //     const key = String(index);
+            //     seriesStyleMap[key] = style;
+            // });
+            chartModel.applyStyle({
+                common: {
+                    allSeriesStyle: style,
+                    // seriesStyleMap,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.allSeriesStyle));
+        },
+    }));
+    service.registerViewState('seriesStyleMap', (chartModel) => {
+        return chartModel.style$.pipe(map((style) => {
+            const seriesStyleMap = style.common?.seriesStyleMap || {};
+            return {
+                get(id) {
+                    return seriesStyleMap[id];
+                },
+                set(id, style) {
+                    seriesStyleMap[id] = style;
+                    chartModel.applyStyle({
+                        common: {
+                            seriesStyleMap,
+                        },
+                    });
+                },
+            };
+        }));
+    });
+    service.registerViewState('legendStyle', (chartModel) => ({
+        set(legend) {
+            chartModel.applyStyle({
+                common: {
+                    legend,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.legend));
+        },
+    }));
+    service.registerViewState('xAxisOptions', (chartModel) => ({
+        set(options) {
+            chartModel.applyStyle({
+                common: {
+                    xAxis: options,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.xAxis));
+        },
+    }));
+    service.registerViewState('yAxisOptions', (chartModel) => ({
+        set(options) {
+            chartModel.applyStyle({
+                common: {
+                    yAxis: options,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.yAxis));
+        },
+    }));
 };
 
 type ExtractValuable<T> = T extends null | undefined ? never : T;
@@ -250,6 +419,18 @@ export interface IChartConfigStateMap {
     seriesValues: IChartConfigState<number[]>;
     seriesList: IChartConfigState<SelectOption>;
     asCategory: IChartConfigState<Nullable<SelectOption[number]>>;
+    backgroundColor: IChartConfigState<Nullable<string>>;
+    borderColor: IChartConfigState<Nullable<string>>;
+    fontSize: IChartConfigState<number | undefined, number>;
+    titleStyle: IChartConfigState<Nullable<DeepPartial<ILabelStyle>>, Partial<ILabelStyle>>;
+    subtitleStyle: IChartConfigState<Nullable<DeepPartial<ILabelStyle>>, Partial<ILabelStyle>>;
+    xAxisTitleStyle: IChartConfigState<Nullable<DeepPartial<ILabelStyle>>, Partial<ILabelStyle>>;
+    yAxisTitleStyle: IChartConfigState< Nullable<DeepPartial<ILabelStyle>>, Partial<ILabelStyle>>;
+    allSeriesStyle: IChartConfigState< Nullable<DeepPartial<IAllSeriesStyle>>, IAllSeriesStyle>;
+    seriesStyleMap: IChartConfigState<{ get(id: string): DeepPartial<ISeriesStyle> | undefined; set(id: string, style: DeepPartial<ISeriesStyle>): void }>;
+    legendStyle: IChartConfigState<Nullable<DeepPartial<ILegendStyle>>, Partial<ILegendStyle>>;
+    xAxisOptions: IChartConfigState<Nullable<DeepPartial<IXAxisOptions>>, Partial<IXAxisOptions>>;
+    yAxisOptions: IChartConfigState<Nullable<DeepPartial<IYAxisOptions>>, Partial<IYAxisOptions>>;
 }
 
 export type ChartConfigStateKey = keyof IChartConfigStateMap;
@@ -257,10 +438,10 @@ export type ChartConfigStateValue = InferChartConfigStateValue<ChartConfigStateK
 
 export type InferChartConfigStateValue<T extends ChartConfigStateKey, M = IChartConfigStateMap[T]> = M extends IChartConfigState<infer V> ? V : never;
 
-export interface IChartConfigState<GetValue, SetValue = GetValue> {
+export type IChartConfigState<GetValue, SetValue = GetValue> = {
     set?(value: SetValue): void;
     get(): Observable<GetValue> | undefined;
-};
+} | Observable<GetValue>;
 
 @OnLifecycle(LifecycleStages.Rendered, SheetsChartUIService)
 export class SheetsChartUIService extends Disposable {

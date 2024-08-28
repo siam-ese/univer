@@ -14,14 +14,28 @@
  * limitations under the License.
  */
 
-import type { IChartConfig } from '../chart/types';
-import type { ChartStyle } from '../chart/style.types';
-import type { IChartRenderEngine } from './render-engine';
+import { generateRandomId } from '@univerjs/core';
+import { ChartBorderDashType, LegendPosition } from '../style.types';
 
-export interface IChartRenderSpecConverter<ChartRenderSpec = unknown> {
-    canConvert: (config: IChartConfig) => boolean;
-    convert: (config: IChartConfig) => ChartRenderSpec;
-}
-export type ChartConfigInterceptor = (config: IChartConfig) => IChartConfig;
-export type RenderSpecInterceptor<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig, instance: IChartRenderEngine) => void;
-
+export const defaultChartStyle = {
+    allSeriesId: generateRandomId(10),
+    axis: {
+        lineVisible: true,
+        labelVisible: true,
+        reverse: false,
+        gridLineVisible: true,
+    },
+    legend: {
+        position: LegendPosition.Bottom,
+    },
+    borderStyle: {
+        opacity: 1,
+        width: 0,
+        dashType: ChartBorderDashType.Solid,
+    },
+    textStyle: {
+        fontSize: 14,
+        color: '#1f2329',
+        align: 'left',
+    },
+};

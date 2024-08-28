@@ -22,9 +22,26 @@ import type {
     RenderSpecInterceptor,
 } from './types';
 import { stackInterceptor } from './render-spec-interceptors/stack-interceptor';
+import { chartBoxStyleInterceptor } from './render-spec-interceptors/chart-box-style-interceptor';
+import { fontSizeInterceptor } from './render-spec-interceptors/font-size-interceptor';
+import { chartBorderInterceptor } from './render-spec-interceptors/chart-border-interceptor';
+import type { IChartRenderEngine } from './render-engine';
+import { titleStyleInterceptor } from './render-spec-interceptors/title-style-interceptor';
+import { seriesStyleInterceptor } from './render-spec-interceptors/series-style-interceptor';
+import { dataLabelInterceptor } from './render-spec-interceptors/data-label-interceptor';
+import { legendStyleInterceptor } from './render-spec-interceptors/legend-style-interceptor';
+import { chartAxesInterceptor } from './render-spec-interceptors/chart-axes-interceptor';
 
 export function addInterceptors(renderModel: ChartRenderModel) {
     renderModel.addRenderSpecInterceptor(stackInterceptor);
+    renderModel.addRenderSpecInterceptor(chartBoxStyleInterceptor);
+    renderModel.addRenderSpecInterceptor(fontSizeInterceptor);
+    renderModel.addRenderSpecInterceptor(chartBorderInterceptor);
+    renderModel.addRenderSpecInterceptor(titleStyleInterceptor);
+    renderModel.addRenderSpecInterceptor(seriesStyleInterceptor);
+    renderModel.addRenderSpecInterceptor(dataLabelInterceptor);
+    renderModel.addRenderSpecInterceptor(legendStyleInterceptor);
+    renderModel.addRenderSpecInterceptor(chartAxesInterceptor);
 }
 
 export class ChartRenderModel<Spec extends object = any> {
@@ -64,7 +81,7 @@ export class ChartRenderModel<Spec extends object = any> {
         return config;
     }
 
-    getRenderSpec(config: IChartConfig, style: ChartStyle): Spec | undefined {
+    getRenderSpec(config: IChartConfig, style: ChartStyle, renderEngine: IChartRenderEngine): Spec | undefined {
         const {
             _renderSpecInterceptors,
             _renderSpecConverters,
@@ -77,8 +94,8 @@ export class ChartRenderModel<Spec extends object = any> {
         // Converting
         const spec = converter.convert(config);
         // onBeforeRender
-        _renderSpecInterceptors.forEach((interceptor) => interceptor(spec, style, config));
-
+        _renderSpecInterceptors.forEach((interceptor) => interceptor(spec, style, config, renderEngine));
+        // console.log('Final spec', spec);
         return spec;
     }
 

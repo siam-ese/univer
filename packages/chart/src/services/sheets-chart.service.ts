@@ -33,18 +33,6 @@ export interface ISheetsChartResource {
     [key: string]: IChartSnapshot;
 }
 
-function waitElement(id: string) {
-    return new Promise<HTMLElement>((resolve) => {
-        const timer = setInterval(() => {
-            const el = document.getElementById(id);
-            if (el) {
-                clearInterval(timer);
-                resolve(el);
-            }
-        }, 50);
-    });
-}
-
 @OnLifecycle(LifecycleStages.Rendered, SheetsChartService)
 export class SheetsChartService extends Disposable {
     private _chartModelIdMap = new Map<string, Map<string, Set<string>>>();
@@ -66,11 +54,7 @@ export class SheetsChartService extends Disposable {
     ) {
         super();
 
-        // this._initSnapshot();
         this._initCharts();
-
-        // Todo: remove code that related to dom from univerjs/chart
-        this._setChartMountHelper();
     }
 
     private _initCharts() {
@@ -94,46 +78,6 @@ export class SheetsChartService extends Disposable {
         return Array.from(subUnitMap).map((id) => _sheetsChartConfigService.getChartModel(id));
     }
 
-    private _setChartMountHelper() {
-        const { _sheetsChartConfigService, _sheetCanvasFloatDomManagerService } = this;
-        const mountHelper = (id: string) => {
-            const floatDom = _sheetCanvasFloatDomManagerService.addFloatDomToPosition({
-                id,
-                allowTransform: true,
-                initPosition: {
-                    startX: 200,
-                    endX: 200 + 468,
-                    startY: 200,
-                    endY: 200 + 369,
-                },
-                componentKey: 'Chart',
-            });
-            if (!floatDom) {
-                throw new Error('Fail to create float dom');
-            }
-
-            const mountNode = document.createElement('div');
-            mountNode.style.width = '100%';
-            mountNode.style.height = '100%';
-
-            waitElement(floatDom.id).then((el) => {
-                el.appendChild(mountNode);
-            });
-
-            this.disposeWithMe(_sheetCanvasFloatDomManagerService.remove$.subscribe((params) => {
-                if (params.id === floatDom.id) {
-                    _sheetsChartConfigService.removeChartModel(floatDom.id);
-                }
-            }));
-
-            return {
-                id: mountNode,
-                dispose: floatDom.dispose,
-            };
-        };
-        this._sheetsChartRenderService.setChartMountHelper(mountHelper);
-    }
-
     addInjector(injector: IChartInjector) {
         injector.injectChartConfig?.(this._sheetsChartConfigService);
         const renderModel = this._sheetsChartRenderService.getRenderModel();
@@ -148,7 +92,8 @@ export class SheetsChartService extends Disposable {
 
         return {
             direction: rowsGreaterThanColumns ? DataDirection.Column : DataDirection.Row,
-            chartType: rowsGreaterThanColumns ? ChartType.Line : ChartType.Bar,
+            // chartType: rowsGreaterThanColumns ? ChartType.Line : ChartType.Bar,
+            chartType: ChartType.Bar,
         };
     }
 

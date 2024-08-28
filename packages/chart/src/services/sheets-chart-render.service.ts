@@ -19,21 +19,18 @@ import { addInterceptors, ChartRenderModel } from '../chart-render/chart-render-
 import type { IChartRenderEngine, IChartRenderEngineConstructor } from '../chart-render/render-engine/render-engine';
 import type { ChartStyle } from '../chart/style.types';
 import type { IChartConfig } from '../chart/types';
-
-export type ChartMountHelper = (chartId: string) => {
-    id: string | HTMLElement;
-    dispose?: () => void;
-};
+import { IChartHostProvider } from './chart-host-provider';
 
 export class SheetsChartRenderService extends Disposable {
     private _renderModelMap = new Map<string, ChartRenderModel>();
     private _renderEngineConstructors = new Map<string, IChartRenderEngineConstructor>();
     private _renderEngineMap = new Map<string, IChartRenderEngine>();
     private _currentEngineName: string = '';
-    private _chartMountHelper: ChartMountHelper | undefined;
 
-    setChartMountHelper(renderHelper: ChartMountHelper) {
-        this._chartMountHelper = renderHelper;
+    constructor(
+        @IChartHostProvider private _chartHostProvider: IChartHostProvider
+    ) {
+        super();
     }
 
     registerRenderEngine(name: string, ctor: IChartRenderEngineConstructor) {
@@ -58,28 +55,24 @@ export class SheetsChartRenderService extends Disposable {
         const { _currentEngineName, _renderModelMap, _renderEngineConstructors, _renderEngineMap } = this;
         const renderModel = _renderModelMap.get(_currentEngineName);
         const Ctor = _renderEngineConstructors.get(_currentEngineName);
-        let renderEngine = _renderEngineMap.get(id);
 
         if (!renderModel) {
             return;
         }
 
-        const spec = renderModel.getRenderSpec(renderModel.getChartConfig(config), style);
-        if (renderEngine) {
-            renderEngine.setData(spec);
-        } else if (Ctor) {
-            const helper = this._chartMountHelper?.(id);
-            if (!helper) {
-                return;
-            }
+        let renderEngine = _renderEngineMap.get(id);
 
-            renderEngine = new Ctor(helper.id);
+        if (!renderEngine && Ctor) {
+            const host = this._chartHostProvider.createHost(id);
 
-            helper.dispose && renderEngine.onDispose?.(helper.dispose);
-
-            renderEngine.renderWithData(spec);
-
+            renderEngine = new Ctor(host.id);
+            host.dispose && renderEngine.onDispose?.(host.dispose);
             _renderEngineMap.set(id, renderEngine);
+        }
+
+        if (renderEngine) {
+            const spec = renderModel.getRenderSpec(renderModel.getChartConfig(config), style, renderEngine);
+            renderEngine.render(spec);
         }
     }
 
@@ -87,11 +80,13 @@ export class SheetsChartRenderService extends Disposable {
         const { _currentEngineName, _renderModelMap, _renderEngineMap } = this;
         const renderModel = _renderModelMap.get(_currentEngineName);
         const renderEngine = _renderEngineMap.get(id);
-        if (renderModel && renderEngine) {
-            const spec = renderModel.getRenderSpec(renderModel.config, style);
-
-            renderEngine.setData(spec);
+        if (!renderEngine || !renderModel) {
+            return;
         }
+
+        const spec = renderModel.getRenderSpec(renderModel.config, style, renderEngine);
+
+        renderEngine.render(spec);
     }
 
     override dispose() {
