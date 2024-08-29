@@ -14,23 +14,10 @@
  * limitations under the License.
  */
 
-import type { Disposable, Nullable } from '@univerjs/core';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 
-export interface IChartRenderEngine<Spec = unknown> extends Disposable {
-    container: HTMLElement | string;
+export const dataLabelOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
+    // instance.setBorderColor(style.common?.borderColor);
 
-    render(spec: Spec): void;
-
-    setTheme(): void;
-
-    exportImg(): Promise<string>;
-
-    setBorderColor(color: Nullable<string>): void;
-
-    onDispose?(dispose: () => void): void;
-}
-
-export interface IChartRenderEngineConstructor<T = unknown> {
-    new (container: HTMLElement | string): IChartRenderEngine<T>;
-}
-
+    return spec;
+};

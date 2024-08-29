@@ -14,5 +14,12 @@
  * limitations under the License.
  */
 
-export * from './render-engine';
-export * from './vchart-render-engine';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+
+export const chartBoxStyleOperator: VChartRenderSpecOperator = (spec, style) => {
+    const commonStyle = style.common;
+
+    spec.background = commonStyle?.backgroundColor;
+
+    return spec;
+};

@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-import type { VChartRenderSpecInterceptor } from '../render-engine';
+import type { ILegendSpec } from '@visactor/vchart/esm/component/legend';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+import { LegendPosition } from '../../../chart/style.types';
 
-export const chartBoxStyleInterceptor: VChartRenderSpecInterceptor = (spec, style) => {
-    const commonStyle = style.common;
-
-    spec.background = commonStyle?.backgroundColor;
+export const legendStyleOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
+    const legendStyle = style.common?.legend;
+    const legend: ILegendSpec = {
+        type: 'discrete',
+        visible: legendStyle?.position !== LegendPosition.Hide,
+        orient: legendStyle?.position as any,
+    };
+    spec.legends = [legend];
 
     return spec;
 };

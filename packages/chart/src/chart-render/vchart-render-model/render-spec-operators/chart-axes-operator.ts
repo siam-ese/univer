@@ -16,13 +16,13 @@
 
 import type { ICartesianAxisSpec } from '@visactor/vchart';
 import { Tools } from '@univerjs/core';
-import type { VChartRenderSpecInterceptor } from '../render-engine';
-import { defaultChartStyle } from '../../chart/constants/default-chart-style';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
 
 const { axis: defaultAxis } = defaultChartStyle;
 
 // eslint-disable-next-line complexity
-export const chartAxesInterceptor: VChartRenderSpecInterceptor = (spec, style, config, instance) => {
+export const chartAxesOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
     const { xAxis, yAxis } = style.common || {};
     const specXAxisIndex = spec.axes?.findIndex((axis) => (axis as ICartesianAxisSpec).orient === 'bottom');
     const specYAxisIndex = spec.axes?.findIndex((axis) => (axis as ICartesianAxisSpec).orient === 'left');

@@ -14,23 +14,10 @@
  * limitations under the License.
  */
 
-import type { IBarChartSpec } from '@visactor/vchart';
-import { ChartType } from '../../chart/constants';
-import type { VChartRenderSpecInterceptor } from '../render-engine';
-import { StackType } from '../../chart/style.types';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 
-export const stackInterceptor: VChartRenderSpecInterceptor = (spec, style, config) => {
-    const stackType = style.common?.stackType;
-    if (!stackType) {
-        return spec;
-    }
-
-    if (config.type === ChartType.Bar) {
-        if (stackType === StackType.Percent) {
-            (spec as IBarChartSpec).percent = true;
-        }
-        (spec as IBarChartSpec).stack = true;
-    }
+export const chartBorderOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
+    instance.setBorderColor(style.common?.borderColor);
 
     return spec;
 };

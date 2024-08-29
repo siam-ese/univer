@@ -15,11 +15,11 @@
  */
 
 import { Tools } from '@univerjs/core';
-import type { VChartRenderSpecInterceptor } from '../render-engine';
-import { defaultChartStyle } from '../../chart/constants/default-chart-style';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
 
 const { textStyle } = defaultChartStyle;
-export const titleStyleInterceptor: VChartRenderSpecInterceptor = (spec, style) => {
+export const titleStyleOperator: VChartRenderSpecOperator = (spec, style) => {
     const commonStyle = style.common;
     const titleStyle = commonStyle?.title;
 

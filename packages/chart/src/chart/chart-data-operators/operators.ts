@@ -16,7 +16,7 @@
 
 import { CategoryType, DataDirection } from '../constants';
 import type { ChartDataSourceValue } from '../types';
-import type { IChartDataPipelineOperator } from './chart-data-pipeline';
+import type { IChartDataPipelineOperator } from './build-chart-data';
 
 type Nil = null | undefined;
 

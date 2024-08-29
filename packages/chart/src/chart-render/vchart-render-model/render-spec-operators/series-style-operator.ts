@@ -15,9 +15,9 @@
  */
 
 import { Tools } from '@univerjs/core';
-import type { VChartRenderSpecInterceptor } from '../render-engine';
-import type { ISeriesStyle } from '../../chart/style.types';
-import { ChartBorderDashType } from '../../chart/style.types';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+import type { ISeriesStyle } from '../../../chart/style.types';
+import { ChartBorderDashType } from '../../../chart/style.types';
 
 const dashValues = {
     [ChartBorderDashType.Solid]: [0],
@@ -26,7 +26,7 @@ const dashValues = {
 };
 
 const supportedChartUnit = ['bar', 'line'];
-export const seriesStyleInterceptor: VChartRenderSpecInterceptor = (spec, style, config) => {
+export const seriesStyleOperator: VChartRenderSpecOperator = (spec, style, config) => {
     const specSeriesStyle = config.units.map((unit) => {
         return unit.data.series.map((series) => {
             return {

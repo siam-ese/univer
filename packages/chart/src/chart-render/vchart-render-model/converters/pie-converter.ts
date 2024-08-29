@@ -15,8 +15,8 @@
  */
 
 import type { IPieChartSpec } from '@visactor/vchart';
-import type { IChartRenderSpecConverter } from '../types';
-import { ChartType } from '../../chart/constants';
+import type { IChartRenderSpecConverter } from '../../types';
+import { ChartType } from '../../../chart/constants';
 import { PieSpecField } from './constants';
 
 export const pieConverter: IChartRenderSpecConverter<IPieChartSpec> = {

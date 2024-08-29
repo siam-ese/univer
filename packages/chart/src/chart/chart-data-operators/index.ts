@@ -14,10 +14,5 @@
  * limitations under the License.
  */
 
-import type { VChartRenderSpecInterceptor } from '../render-engine';
-
-export const dataLabelInterceptor: VChartRenderSpecInterceptor = (spec, style, config, instance) => {
-    // instance.setBorderColor(style.common?.borderColor);
-
-    return spec;
-};
+export * from './build-chart-data';
+export * from './operators';

@@ -16,12 +16,12 @@
 
 import type { IChartConfig } from '../chart/types';
 import type { ChartStyle } from '../chart/style.types';
-import type { IChartRenderEngine } from './render-engine';
+import type { IChartInstance } from './chart-instance';
 
 export interface IChartRenderSpecConverter<ChartRenderSpec = unknown> {
     canConvert: (config: IChartConfig) => boolean;
     convert: (config: IChartConfig) => ChartRenderSpec;
 }
 export type ChartConfigInterceptor = (config: IChartConfig) => IChartConfig;
-export type RenderSpecInterceptor<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig, instance: IChartRenderEngine) => void;
+export type RenderSpecOperator<ChartRenderSpec = unknown> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig, instance: IChartInstance) => void;
 

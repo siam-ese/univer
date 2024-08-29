@@ -15,11 +15,10 @@
  */
 
 import type { IRange, Nullable } from '@univerjs/core';
-import { Disposable, ICommandService, Inject, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
+import { Disposable, generateRandomId, ICommandService, Inject, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle } from '@univerjs/core';
 import { RefRangeService } from '@univerjs/sheets';
 import { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
 import { BehaviorSubject } from 'rxjs';
-import type { IChartInjector } from '../chart-injectors/line-chart-injector';
 import type { ChartModel } from '../chart/chart-model';
 import { ChartType, DataDirection } from '../chart/constants';
 import { SheetChartDataSource } from '../chart/sheet-chart-data-source';
@@ -64,7 +63,7 @@ export class SheetsChartService extends Disposable {
         this._activeChartModel$.next(chartModel);
     }
 
-    getChartModels(unitId: string, subUnitId: string) {
+    getUnitChartModels(unitId: string, subUnitId: string) {
         const unitMap = this._chartModelIdMap.get(unitId);
         if (!unitMap) {
             return [];
@@ -76,14 +75,6 @@ export class SheetsChartService extends Disposable {
 
         const { _sheetsChartConfigService } = this;
         return Array.from(subUnitMap).map((id) => _sheetsChartConfigService.getChartModel(id));
-    }
-
-    addInjector(injector: IChartInjector) {
-        injector.injectChartConfig?.(this._sheetsChartConfigService);
-        const renderModel = this._sheetsChartRenderService.getRenderModel();
-        if (renderModel) {
-            injector.injectChartRender?.(renderModel);
-        }
     }
 
     getChartSuggestion(range: IRange) {
@@ -124,17 +115,13 @@ export class SheetsChartService extends Disposable {
             range,
         }, this._univerInstanceService, this._commandService);
 
-        const chartModelId = Tools.generateRandomId();
+        const chartModelId = generateRandomId();
         // Init suggest chart type and data direction to chart model
         const chartSuggestion = this.getChartSuggestion(range);
-        const chartModel = this._sheetsChartConfigService.createChartModel({
-            id: chartModelId,
+        const chartModel = this._sheetsChartConfigService.createChartModel(chartModelId, {
             dataSource$: dataSource.dataSource$,
             chartType: chartSuggestion.chartType,
-            dataConfig: {
-                defaultDirection: chartSuggestion.direction,
-                direction: chartSuggestion.direction,
-            },
+            direction: chartSuggestion.direction,
         });
 
         const collection = this.ensureChartModelCollection(unitId, subUnitId);

@@ -14,18 +14,25 @@
  * limitations under the License.
  */
 
-import type { ILegendSpec } from '@visactor/vchart/esm/component/legend';
-import type { VChartRenderSpecInterceptor } from '../render-engine';
-import { LegendPosition } from '../../chart/style.types';
+import type { Disposable, Nullable } from '@univerjs/core';
 
-export const legendStyleInterceptor: VChartRenderSpecInterceptor = (spec, style, config, instance) => {
-    const legendStyle = style.common?.legend;
-    const legend: ILegendSpec = {
-        type: 'discrete',
-        visible: legendStyle?.position !== LegendPosition.Hide,
-        orient: legendStyle?.position as any,
-    };
-    spec.legends = [legend];
+export interface IChartInstance<Spec = unknown> extends Disposable {
+    container: HTMLElement | string;
 
-    return spec;
-};
+    mount(id: string | HTMLElement): void;
+
+    render(spec: Spec): void;
+
+    setTheme(): void;
+
+    exportImg(): Promise<string>;
+
+    setBorderColor(color: Nullable<string>): void;
+
+    onDispose?(dispose: () => void): void;
+}
+
+export interface IChartInstanceConstructor<T = unknown> {
+    new (container: HTMLElement | string): IChartInstance<T>;
+}
+

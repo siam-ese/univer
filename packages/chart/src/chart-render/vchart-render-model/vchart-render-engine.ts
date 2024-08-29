@@ -18,19 +18,24 @@ import VChart from '@visactor/vchart';
 import type { ISpec } from '@visactor/vchart';
 import type { Nullable } from '@univerjs/core';
 import { Disposable } from '@univerjs/core';
-import type { RenderSpecInterceptor } from '../types';
-import type { IChartRenderEngine } from './render-engine';
+import type { RenderSpecOperator } from '../types';
+import type { IChartInstance } from '../chart-instance';
 
 export type VChartSpec = ISpec;
 export const VChartRenderEngineName = 'VChart';
 
-export type VChartRenderSpecInterceptor = RenderSpecInterceptor<VChartSpec>;
-export class VChartRenderEngine extends Disposable implements IChartRenderEngine<VChartSpec> {
+export type VChartRenderSpecOperator = RenderSpecOperator<VChartSpec>;
+export class VChartRenderEngine extends Disposable implements IChartInstance<VChartSpec> {
     static override name = VChartRenderEngineName;
     private _vchart: VChart | null;
+    public container: HTMLElement | string = '';
 
-    constructor(public container: HTMLElement | string) {
+    constructor() {
         super();
+    }
+
+    mount(id: string | HTMLElement): void {
+        this.container = id;
     }
 
     private _ensureChartInstance() {
@@ -54,7 +59,6 @@ export class VChartRenderEngine extends Disposable implements IChartRenderEngine
         instance.updateSpec(spec, false, {
             reuse: false,
         });
-        // instance.renderSync();
     }
 
     setBorderColor(color: Nullable<string>): void {

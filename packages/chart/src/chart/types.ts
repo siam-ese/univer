@@ -48,8 +48,6 @@ export interface IChartData {
             label: string;
         }>;
         keys: string[];
-        // labels: string[];
-        // getValueByIndex: (index: number) => string | undefined;
     };
     series: Array<{
         index: number;

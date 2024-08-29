@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-export { lineChartInjector } from './chart-injectors/line-chart-injector';
-export { ChartRenderModel } from './chart-render/chart-render-model';
-export { VChartRenderEngine } from './chart-render/render-engine/vchart-render-engine';
+// export { lineChartInjector } from './chart-injectors/line-chart-injector';
+export type { IChartRenderModel } from './chart-render/chart-render-model';
+export { VChartRenderEngine } from './chart-render/vchart-render-model/vchart-render-engine';
 export { ChartModel } from './chart/chart-model';
 export { ChartType, DataDirection, CategoryType } from './chart/constants';
 export type { IChartDataConfig } from './chart/types';
@@ -26,6 +26,6 @@ export { UniverSheetsChartPlugin, SHEETS_CHART_PLUGIN_NAME, type IUniverSheetsCh
 export { SheetsChartConfigService } from './services/sheets-chart-config.service';
 export { SheetsChartRenderService } from './services/sheets-chart-render.service';
 export { SheetsChartService } from './services/sheets-chart.service';
-export { isNil } from './chart/chart-data-pipeline';
+export { isNil } from './chart/chart-data-operators';
 export { defaultChartStyle } from './chart/constants/default-chart-style';
 

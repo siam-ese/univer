@@ -15,11 +15,11 @@
  */
 
 import { Tools } from '@univerjs/core';
-import type { VChartRenderSpecInterceptor } from '../render-engine';
-import { defaultChartStyle } from '../../chart/constants/default-chart-style';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
 
 const { textStyle } = defaultChartStyle;
-export const fontSizeInterceptor: VChartRenderSpecInterceptor = (spec, style) => {
+export const fontSizeOperator: VChartRenderSpecOperator = (spec, style) => {
     const commonStyle = style.common;
     const fontSize = commonStyle?.fontSize ?? textStyle.fontSize;
 

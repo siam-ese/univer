@@ -17,10 +17,11 @@
 import type { Nullable } from '@univerjs/core';
 import { Disposable, Inject, LifecycleStages, OnLifecycle } from '@univerjs/core';
 import { BehaviorSubject } from 'rxjs';
-import type { IChartModelOption } from '../chart/chart-model';
+import type { IChartModelInit } from '../chart/chart-model';
 import { ChartModel } from '../chart/chart-model';
 import type { ChartType } from '../chart/constants';
 import type { IChartConfigConverter, IChartData } from '../chart/types';
+import { generalConverter } from '../chart/converters/generalConverter';
 import { SheetsChartRenderService } from './sheets-chart-render.service';
 import { IChartHostProvider } from './chart-host-provider';
 
@@ -36,7 +37,7 @@ export class SheetsChartConfigService extends Disposable {
     private _converters = new Set<IChartConfigConverter>();
 
     constructor(
-        @Inject(SheetsChartRenderService) private _chartRenderAdapter: SheetsChartRenderService,
+        @Inject(SheetsChartRenderService) private _chartRenderService: SheetsChartRenderService,
         @IChartHostProvider private _chartHostProvider: IChartHostProvider
     ) {
         super();
@@ -46,17 +47,20 @@ export class SheetsChartConfigService extends Disposable {
                 this.removeChartModel(id);
             })
         );
+
+        this._initConverters();
     }
 
     setActiveChartModel(chartModel: ChartModel) {
         this._activeChartModel$.next(chartModel);
     }
 
-    addConverter(handler: IChartConfigConverter) {
-        this._converters.add(handler);
+    private _initConverters() {
+        const { _converters } = this;
+        _converters.add(generalConverter);
     }
 
-    convertChartConfig(chartType: ChartType, chartData: IChartData) {
+    toChartConfig(chartType: ChartType, chartData: IChartData) {
         const converter = Array.from(this._converters).find((converter) => converter.canConvert(chartType));
 
         return converter ? converter.convert(chartType, chartData) : null;
@@ -66,22 +70,22 @@ export class SheetsChartConfigService extends Disposable {
         return this._models.get(id);
     }
 
-    createChartModel(option: Omit<IChartModelOption, 'convertConfig'>) {
-        const chartModel = new ChartModel({
+    createChartModel(id: string, option: Omit<IChartModelInit, 'toChartConfig'>) {
+        const chartModel = new ChartModel(id, {
             ...option,
-            convertConfig: this.convertChartConfig.bind(this),
+            toChartConfig: this.toChartConfig.bind(this),
         });
 
         this.disposeWithMe(
             chartModel.config$.subscribe((config) => {
                 if (config) {
-                    this._chartRenderAdapter.render(chartModel.id, config, chartModel.style);
+                    this._chartRenderService.render(chartModel.id, config, chartModel.style);
                 }
             })
         );
         this.disposeWithMe(
             chartModel.style$.subscribe((style) => {
-                this._chartRenderAdapter.renderStyle(chartModel.id, style);
+                this._chartRenderService.renderStyle(chartModel.id, style);
             })
         );
 

@@ -15,88 +15,88 @@
  */
 
 import { Disposable } from '@univerjs/core';
-import { addInterceptors, ChartRenderModel } from '../chart-render/chart-render-model';
-import type { IChartRenderEngine, IChartRenderEngineConstructor } from '../chart-render/render-engine/render-engine';
+import type { IChartRenderModel } from '../chart-render/chart-render-model';
+import type { IChartInstance } from '../chart-render/chart-instance';
 import type { ChartStyle } from '../chart/style.types';
 import type { IChartConfig } from '../chart/types';
+import { VChartRenderModel } from '../chart-render/vchart-render-model';
 import { IChartHostProvider } from './chart-host-provider';
 
 export class SheetsChartRenderService extends Disposable {
-    private _renderModelMap = new Map<string, ChartRenderModel>();
-    private _renderEngineConstructors = new Map<string, IChartRenderEngineConstructor>();
-    private _renderEngineMap = new Map<string, IChartRenderEngine>();
-    private _currentEngineName: string = '';
+    private _renderModelMap = new Map<string, IChartRenderModel>();
+    private _chartInstanceMap = new Map<string, IChartInstance>();
+    private _chartConfigMap = new Map<string, IChartConfig>();
+    private _currentModel: IChartRenderModel | null = null;
 
     constructor(
         @IChartHostProvider private _chartHostProvider: IChartHostProvider
     ) {
         super();
+
+        this.registerRenderModel('VChart', new VChartRenderModel());
     }
 
-    registerRenderEngine(name: string, ctor: IChartRenderEngineConstructor) {
-        this._currentEngineName = name;
-        const renderModel = new ChartRenderModel();
-        addInterceptors(renderModel);
+    registerRenderModel(name: string, renderModel: IChartRenderModel) {
         this._renderModelMap.set(name, renderModel);
-        this._renderEngineConstructors.set(name, ctor);
-
-        return renderModel;
+        this._currentModel = renderModel;
     }
 
-    getRenderModel(name: string = this._currentEngineName) {
+    getRenderModel(name: string) {
         return this._renderModelMap.get(name);
     }
 
-    switchModelTo(name: string) {
-        this._currentEngineName = name;
+    private _ensureChartInstance(id: string) {
+        const { _chartInstanceMap, _currentModel } = this;
+        if (_chartInstanceMap.has(id)) {
+            return _chartInstanceMap.get(id)!;
+        }
+        const chartInstance = _currentModel!.createChartInstance();
+        _chartInstanceMap.set(id, chartInstance);
+        return chartInstance;
     }
 
     async render(id: string, config: IChartConfig, style: ChartStyle) {
-        const { _currentEngineName, _renderModelMap, _renderEngineConstructors, _renderEngineMap } = this;
-        const renderModel = _renderModelMap.get(_currentEngineName);
-        const Ctor = _renderEngineConstructors.get(_currentEngineName);
-
-        if (!renderModel) {
+        const { _currentModel, _chartConfigMap } = this;
+        if (!_currentModel) {
             return;
         }
+        _chartConfigMap.set(id, config);
 
-        let renderEngine = _renderEngineMap.get(id);
+        const chartInstance = this._ensureChartInstance(id);
 
-        if (!renderEngine && Ctor) {
-            const host = this._chartHostProvider.createHost(id);
+        const chartHost = this._chartHostProvider.createHost(id);
+        chartInstance.mount(chartHost.id);
+        chartInstance.onDispose?.(() => chartHost.dispose?.());
 
-            renderEngine = new Ctor(host.id);
-            host.dispose && renderEngine.onDispose?.(host.dispose);
-            _renderEngineMap.set(id, renderEngine);
-        }
-
-        if (renderEngine) {
-            const spec = renderModel.getRenderSpec(renderModel.getChartConfig(config), style, renderEngine);
-            renderEngine.render(spec);
-        }
+        const spec = _currentModel.stylizeSpec(_currentModel.toSpec(config), {
+            chartConfig: config,
+            chartStyle: style,
+            chartInstance,
+        });
+        chartInstance.render(spec);
     }
 
     renderStyle(id: string, style: ChartStyle) {
-        const { _currentEngineName, _renderModelMap, _renderEngineMap } = this;
-        const renderModel = _renderModelMap.get(_currentEngineName);
-        const renderEngine = _renderEngineMap.get(id);
-        if (!renderEngine || !renderModel) {
+        const { _currentModel, _chartConfigMap } = this;
+        if (!_currentModel) {
             return;
         }
+        const chartInstance = this._ensureChartInstance(id);
 
-        const spec = renderModel.getRenderSpec(renderModel.config, style, renderEngine);
-
-        renderEngine.render(spec);
+        const config = _chartConfigMap.get(id);
+        if (!config) {
+            return;
+        }
+        const spec = _currentModel.stylizeSpec(_currentModel.toSpec(config), {
+            chartConfig: config,
+            chartStyle: style,
+            chartInstance,
+        });
+        chartInstance.render(spec);
     }
 
     override dispose() {
         super.dispose();
-        this._currentEngineName = '';
-
-        this._renderEngineConstructors.clear();
-
-        this._renderEngineMap.forEach((engine) => engine.dispose());
-        this._renderEngineMap.clear();
 
         this._renderModelMap.forEach((model) => model.dispose());
         this._renderModelMap.clear();

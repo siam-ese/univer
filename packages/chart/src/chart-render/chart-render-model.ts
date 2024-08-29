@@ -14,94 +14,18 @@
  * limitations under the License.
  */
 
-import type { IChartConfig } from '../chart/types';
+import type { IDisposable } from '@univerjs/core';
 import type { ChartStyle } from '../chart/style.types';
-import type {
-    ChartConfigInterceptor,
-    IChartRenderSpecConverter,
-    RenderSpecInterceptor,
-} from './types';
-import { stackInterceptor } from './render-spec-interceptors/stack-interceptor';
-import { chartBoxStyleInterceptor } from './render-spec-interceptors/chart-box-style-interceptor';
-import { fontSizeInterceptor } from './render-spec-interceptors/font-size-interceptor';
-import { chartBorderInterceptor } from './render-spec-interceptors/chart-border-interceptor';
-import type { IChartRenderEngine } from './render-engine';
-import { titleStyleInterceptor } from './render-spec-interceptors/title-style-interceptor';
-import { seriesStyleInterceptor } from './render-spec-interceptors/series-style-interceptor';
-import { dataLabelInterceptor } from './render-spec-interceptors/data-label-interceptor';
-import { legendStyleInterceptor } from './render-spec-interceptors/legend-style-interceptor';
-import { chartAxesInterceptor } from './render-spec-interceptors/chart-axes-interceptor';
+import type { IChartConfig } from '../chart/types';
+import type { IChartInstance } from './chart-instance';
 
-export function addInterceptors(renderModel: ChartRenderModel) {
-    renderModel.addRenderSpecInterceptor(stackInterceptor);
-    renderModel.addRenderSpecInterceptor(chartBoxStyleInterceptor);
-    renderModel.addRenderSpecInterceptor(fontSizeInterceptor);
-    renderModel.addRenderSpecInterceptor(chartBorderInterceptor);
-    renderModel.addRenderSpecInterceptor(titleStyleInterceptor);
-    renderModel.addRenderSpecInterceptor(seriesStyleInterceptor);
-    renderModel.addRenderSpecInterceptor(dataLabelInterceptor);
-    renderModel.addRenderSpecInterceptor(legendStyleInterceptor);
-    renderModel.addRenderSpecInterceptor(chartAxesInterceptor);
+export interface IChartRenderModelStylizeInit<Spec> {
+    chartStyle: ChartStyle;
+    chartConfig: IChartConfig;
+    chartInstance: IChartInstance<Spec>;
 }
-
-export class ChartRenderModel<Spec extends object = any> {
-    private _renderSpecConverters = new Set<IChartRenderSpecConverter<Spec>>();
-    private _chartConfigInterceptors = new Set<ChartConfigInterceptor>();
-    private _renderSpecInterceptors = new Set<RenderSpecInterceptor<Spec>>();
-    private _config: IChartConfig;
-
-    get config() {
-        return this._config;
-    }
-
-    addRenderSpecConverter(converter: IChartRenderSpecConverter<Spec>) {
-        this._renderSpecConverters.add(converter);
-    }
-
-    addChartConfigInterceptor(operator: ChartConfigInterceptor) {
-        this._chartConfigInterceptors.add(operator);
-    }
-
-    addRenderSpecInterceptor(operator: RenderSpecInterceptor<Spec>) {
-        this._renderSpecInterceptors.add(operator);
-    }
-
-    getChartConfig(config: IChartConfig) {
-        const {
-            _chartConfigInterceptors,
-        } = this;
-
-        // onBeforeConvert
-        _chartConfigInterceptors.forEach((interceptor) => {
-            config = interceptor(config);
-        });
-
-        this._config = config;
-
-        return config;
-    }
-
-    getRenderSpec(config: IChartConfig, style: ChartStyle, renderEngine: IChartRenderEngine): Spec | undefined {
-        const {
-            _renderSpecInterceptors,
-            _renderSpecConverters,
-        } = this;
-
-        const converter = Array.from(_renderSpecConverters).find((converter) => converter.canConvert(config));
-        if (!converter) {
-            return;
-        }
-        // Converting
-        const spec = converter.convert(config);
-        // onBeforeRender
-        _renderSpecInterceptors.forEach((interceptor) => interceptor(spec, style, config, renderEngine));
-        // console.log('Final spec', spec);
-        return spec;
-    }
-
-    dispose() {
-        this._renderSpecConverters.clear();
-        this._chartConfigInterceptors.clear();
-        this._renderSpecInterceptors.clear();
-    }
+export interface IChartRenderModel<Spec extends Record<string, any> = Record<string, any>> extends IDisposable {
+    toSpec(chartConfig: IChartConfig): Spec;
+    stylizeSpec(spec: Spec, stylizeInit: IChartRenderModelStylizeInit<Spec>): Spec;
+    createChartInstance(): IChartInstance<Spec>;
 }

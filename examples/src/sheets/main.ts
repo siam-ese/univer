@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { UniverSheetsChartPlugin, VChartRenderEngine } from '@univerjs/chart';
+import { UniverSheetsChartPlugin } from '@univerjs/chart';
 import { UniverSheetsChartUIPlugin } from '@univerjs/chart-ui';
 import type { Nullable } from '@univerjs/core';
 import { LocaleType, LogLevel, Univer, UniverInstanceType, UserManagerService } from '@univerjs/core';
@@ -96,11 +96,7 @@ univer.registerPlugin(UniverSheetsConditionalFormattingUIPlugin);
 univer.registerPlugin(UniverSheetsDrawingUIPlugin);
 
 // chart
-univer.registerPlugin(UniverSheetsChartPlugin, {
-    renderEngines: {
-        VChart: VChartRenderEngine,
-    },
-});
+univer.registerPlugin(UniverSheetsChartPlugin);
 univer.registerPlugin(UniverSheetsChartUIPlugin);
 
 // create univer sheet instance

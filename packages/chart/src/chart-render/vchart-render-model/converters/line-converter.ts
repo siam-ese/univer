@@ -15,8 +15,8 @@
  */
 
 import type { ICartesianChartSpec } from '@visactor/vchart';
-import type { IChartRenderSpecConverter } from '../types';
-import { ChartType } from '../../chart/constants';
+import type { IChartRenderSpecConverter } from '../../types';
+import { ChartType } from '../../../chart/constants';
 import { SpecField } from './constants';
 
 export const lineConverter: IChartRenderSpecConverter<ICartesianChartSpec & { seriesField: string }> = {
