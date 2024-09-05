@@ -15,7 +15,8 @@
  */
 
 import { generateRandomId } from '@univerjs/core';
-import { ChartBorderDashType, LegendPosition } from '../style.types';
+import { AreaLineStyle, ChartBorderDashType, LabelContentType, LegendPosition, PieLabelPosition, RadarShape, SeriesLabelPosition } from '../style.types';
+import { ChartTypeBits } from '../constants';
 
 export const defaultChartStyle = {
     allSeriesId: generateRandomId(10),
@@ -34,8 +35,27 @@ export const defaultChartStyle = {
         dashType: ChartBorderDashType.Solid,
     },
     textStyle: {
-        fontSize: 14,
+        labelFontSize: 12,
+        titleFontSize: 16,
         color: '#1f2329',
         align: 'left',
+        position: SeriesLabelPosition.Auto,
+    },
+    area: {
+        lineStyle: AreaLineStyle.Line,
+    },
+    pie: {
+        labelContentType: LabelContentType.CategoryName | LabelContentType.Value | LabelContentType.Percentage,
+        radius: 0.8,
+        doughnutHole: 0.73,
+        borderColor: '#fff',
+        labelPosition: PieLabelPosition.Outside,
+    },
+    combination: {
+        firstChartType: ChartTypeBits.Column,
+        otherChartType: ChartTypeBits.Line,
+    },
+    radar: {
+        shape: RadarShape.Polygon,
     },
 };

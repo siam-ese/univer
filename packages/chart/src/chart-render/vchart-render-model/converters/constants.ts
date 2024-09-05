@@ -15,14 +15,12 @@
  */
 
 export enum SpecField {
-    // xFieldId = '__xFieldId__',
     xField = '__xField__',
     yField = '__yField__',
-    seriesField = '__seriesField__',
-    seriesIndex = '__seriesIndex__',
-}
-
-export enum PieSpecField {
-    categoryField = '__categoryField__',
     valueField = '__valueField__',
+    seriesIndex = '__seriesIndex__',
+    seriesField = '__seriesField__',
+    seriesFieldLabel = '__seriesFieldLabel__',
+    categoryField = '__categoryField__',
+    categoryFieldLabel = '__categoryFieldLabel__',
 }

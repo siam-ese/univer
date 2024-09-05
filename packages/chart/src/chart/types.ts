@@ -15,7 +15,7 @@
  */
 
 import type { CellValue, Nullable } from '@univerjs/core';
-import type { CategoryType, ChartType, DataDirection } from './constants';
+import type { CategoryType, ChartTypeBits, DataDirection } from './constants';
 
 /** Snapshot */
 export interface IChartSnapshot {
@@ -60,12 +60,14 @@ export interface IChartData {
 };
 
 export interface IChartConfig {
-    type: ChartType;
-    units: IChartUnit[];
+    type: ChartTypeBits;
+    category: IChartData['category'];
+    series: IChartData['series'];
+    // units: IChartUnit[];
 }
 
 export interface IChartUnit {
-    type: ChartType;
+    type: ChartTypeBits;
     data: {
         category: IChartData['category'];
         series: IChartData['series'];
@@ -74,7 +76,7 @@ export interface IChartUnit {
 }
 
 export interface IChartConfigConverter {
-    canConvert(type: ChartType): boolean;
-    convert(type: ChartType, data: IChartData): IChartConfig;
+    canConvert(type: ChartTypeBits): boolean;
+    convert(type: ChartTypeBits, data: IChartData): IChartConfig;
 }
 

@@ -14,20 +14,71 @@
  * limitations under the License.
  */
 
+import type { ChartTypeBits } from './constants';
+
 export type DeepPartial<T, P extends keyof T = keyof T> = T extends object ? {
     [key in P]+?: DeepPartial<T[key]>;
 } : T;
+
+export enum SeriesLabelPosition {
+    Auto = 'auto',
+    Top = 'top',
+    Bottom = 'bottom',
+    Center = 'left',
+    Outside = 'outside',
+}
+
+export enum PieLabelPosition {
+    Inside = 'inside',
+    Outside = 'outside',
+}
+
+export enum RadarShape {
+    Polygon = 'polygon',
+    Circle = 'circle',
+}
+
+export enum LabelContentType {
+    Empty = 0,
+    CategoryName = 1 << 1,
+    SeriesName = 1 << 2,
+    Value = 1 << 3,
+    Percentage = 1 << 4,
+}
+
+export const labelContentTypeList = [
+    LabelContentType.CategoryName,
+    LabelContentType.SeriesName,
+    LabelContentType.Value,
+    LabelContentType.Percentage,
+];
+
+export enum LabelAlign {
+    Left = 'left',
+    Right = 'right',
+    Center = 'center',
+}
 
 export interface ILabelStyle {
     visible: boolean;
     content: string;
     fontSize: number;
     color: string;
-    align: 'left' | 'right' | 'center';
+    align: LabelAlign;
     bold: boolean;
     strikethrough: boolean;
     italic: boolean;
     underline: boolean;
+}
+
+export interface ISeriesLabelStyle extends ILabelStyle {
+    contentType: number;
+    position: SeriesLabelPosition;
+}
+
+export interface IPieLabelStyle extends Omit<ILabelStyle, 'align' | 'content' > {
+    contentType: number;
+    position: PieLabelPosition;
 }
 
 export interface IDataPointStyle {
@@ -40,6 +91,7 @@ export enum ChartBorderDashType {
     Dotted = 'dotted',
 }
 export interface ISeriesStyle {
+    chartType?: ChartTypeBits.Line | ChartTypeBits.Column | ChartTypeBits.Area;
     color: string;
     fillOpacity: number;
     border: {
@@ -48,20 +100,18 @@ export interface ISeriesStyle {
         color: string;
         dashType: ChartBorderDashType;
     };
-    label: ILabelStyle;
+    label: ISeriesLabelStyle;
     dataPoints: {
         [index: number]: IDataPointStyle;
     };
 }
 
-export interface IAllSeriesStyle {
-    border: ISeriesStyle['border'];
-    label: ISeriesStyle['label'];
+export interface IAllSeriesStyle extends Pick<ISeriesStyle, 'chartType' | 'border' | 'label'> {
+
 }
 
 export enum StackType {
-    // None,
-    Normal = '0',
+    Stacked = '0',
     Percent = '1',
 }
 
@@ -74,7 +124,6 @@ export enum LegendPosition {
 }
 export interface ILegendStyle {
     position: LegendPosition;
-    // visible: boolean;
     label: Omit<ILabelStyle, 'visible' | 'align' | 'content' >;
 }
 
@@ -101,15 +150,22 @@ export interface IYAxisOptions {
     max: number;
 }
 
+export enum AreaLineStyle {
+    Line = 'line',
+    Smooth = 'smooth',
+    Step = 'step',
+}
 export interface IChartStyle {
     common: {
         stackType: StackType;
+        gradientFill: boolean;
         backgroundColor: string;
+        titleFontSize: number;
         fontSize: number;
         fontColor: string;
         borderColor: string;
         title: Omit<ILabelStyle, 'visible'>;
-        subtitle: Omit< ILabelStyle, 'visible'>;
+        subtitle: Omit<ILabelStyle, 'visible'>;
         xAxisTitle: Omit<ILabelStyle, 'visible'>;
         yAxisTitle: Omit<ILabelStyle, 'visible'>;
         allSeriesStyle: IAllSeriesStyle;
@@ -120,7 +176,17 @@ export interface IChartStyle {
             [id: string]: ISeriesStyle;
         };
     };
-    pie: {};
+    pie: {
+        doughnutHole: number;
+        labelStyle: IPieLabelStyle;
+    };
+    area: {
+        lineStyle: AreaLineStyle;
+    };
+    radar: {
+        shape: RadarShape;
+        fill: boolean;
+    };
 }
 
 /* chart style */

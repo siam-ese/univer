@@ -68,7 +68,8 @@
     },
     "dependencies": {
         "@univerjs/icons": "^0.1.74",
-        "clsx": "^2.1.1"
+        "clsx": "^2.1.1",
+        "rc-collapse": "3.8.0"
     },
     "devDependencies": {
         "@univerjs/chart": "workspace:*",

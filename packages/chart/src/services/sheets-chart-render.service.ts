@@ -55,7 +55,7 @@ export class SheetsChartRenderService extends Disposable {
         return chartInstance;
     }
 
-    async render(id: string, config: IChartConfig, style: ChartStyle) {
+    render(id: string, config: IChartConfig, style: ChartStyle) {
         const { _currentModel, _chartConfigMap } = this;
         if (!_currentModel) {
             return;
@@ -73,6 +73,7 @@ export class SheetsChartRenderService extends Disposable {
             chartStyle: style,
             chartInstance,
         });
+
         chartInstance.render(spec);
     }
 
@@ -92,12 +93,16 @@ export class SheetsChartRenderService extends Disposable {
             chartStyle: style,
             chartInstance,
         });
+
         chartInstance.render(spec);
     }
 
     override dispose() {
         super.dispose();
 
+        this._chartInstanceMap.clear();
+        this._chartConfigMap.clear();
+        this._currentModel = null;
         this._renderModelMap.forEach((model) => model.dispose());
         this._renderModelMap.clear();
     }

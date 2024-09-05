@@ -19,19 +19,30 @@ import type { IChartConfig } from '../../chart/types';
 import type { IChartInstance } from '../chart-instance';
 import type { IChartRenderModel, IChartRenderModelStylizeInit } from '../chart-render-model';
 import type { IChartRenderSpecConverter, RenderSpecOperator } from '../types';
-import { lineConverter } from './converters/line-converter';
-import { pieConverter } from './converters/pie-converter';
-import { chartAxesOperator } from './render-spec-operators/chart-axes-operator';
-import { chartBorderOperator } from './render-spec-operators/chart-border-operator';
-import { chartBoxStyleOperator } from './render-spec-operators/chart-box-style-operator';
-import { dataLabelOperator } from './render-spec-operators/data-label-operator';
-import { fontSizeOperator } from './render-spec-operators/font-size-operator';
-import { legendStyleOperator } from './render-spec-operators/legend-style-operator';
-import { seriesStyleOperator } from './render-spec-operators/series-style-operator';
-import { stackOperator } from './render-spec-operators/stack-operator';
-import { titleStyleOperator } from './render-spec-operators/title-style-operator';
+import { cartesianChartConverter } from './converters/cartesian-chart-converter';
+import { pieChartConverter } from './converters/pie-chart-converter';
+import { radarChartConverter } from './converters/radar-chart-converter';
+import { combinationChartConverter } from './converters/combination-chart-converter';
+import {
+    areaStyleOperator,
+    barStyleOperator,
+    chartAxesOperator,
+    chartBorderOperator,
+    chartBoxStyleOperator,
+    combinationStyleOperator,
+    dataLabelOperator,
+    fillOperator,
+    fontSizeOperator,
+    labelMapOperator,
+    legendStyleOperator,
+    pieStyleOperator,
+    seriesStyleOperator,
+    stackOperator,
+    titleStyleOperator,
+} from './render-spec-operators';
 import type { VChartSpec } from './vchart-render-engine';
 import { VChartRenderEngine } from './vchart-render-engine';
+import { radarStyleOperator } from './render-spec-operators/radar-style.operator';
 
 export class VChartRenderModel extends Disposable implements IChartRenderModel {
     private _specConverters: Set<IChartRenderSpecConverter<VChartSpec>> = new Set();
@@ -40,8 +51,10 @@ export class VChartRenderModel extends Disposable implements IChartRenderModel {
     constructor() {
         super();
         const { _specConverters, _specOperators } = this;
-        _specConverters.add(lineConverter);
-        _specConverters.add(pieConverter);
+        _specConverters.add(cartesianChartConverter);
+        _specConverters.add(pieChartConverter);
+        _specConverters.add(radarChartConverter);
+        _specConverters.add(combinationChartConverter);
 
         this._addSpecOperators();
     }
@@ -58,6 +71,13 @@ export class VChartRenderModel extends Disposable implements IChartRenderModel {
         _specOperators.add(dataLabelOperator);
         _specOperators.add(legendStyleOperator);
         _specOperators.add(chartAxesOperator);
+        _specOperators.add(fillOperator);
+        _specOperators.add(areaStyleOperator);
+        _specOperators.add(pieStyleOperator);
+        _specOperators.add(radarStyleOperator);
+        _specOperators.add(labelMapOperator);
+        _specOperators.add(combinationStyleOperator);
+        _specOperators.add(barStyleOperator);
     }
 
     createChartInstance(): IChartInstance<VChartSpec> {
@@ -78,7 +98,7 @@ export class VChartRenderModel extends Disposable implements IChartRenderModel {
         for (const Operator of _specOperators) {
             Operator(spec, chartStyle, chartConfig, chartInstance);
         }
-
+        // console.log('final spec', spec);
         return spec;
     }
 }

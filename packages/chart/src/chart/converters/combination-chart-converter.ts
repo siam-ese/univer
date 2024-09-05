@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-import { Button } from '@univerjs/design';
-import React, { useState } from 'react';
-import { DataTabPanel } from './DataTabPanel';
-import { StyleTabPanel } from './style-tab-panel';
-
-export const ChartEditPanel = () => {
-    const [tab, setTab] = useState(1);
-    return (
-        <div>
-            <div>
-                <Button onClick={() => setTab(0)}>Data Panel</Button>
-                <Button onClick={() => setTab(1)}>Style Panel</Button>
-            </div>
-            <div>
-                {tab === 0 ? <DataTabPanel /> : <StyleTabPanel />}
-            </div>
-        </div>
-    );
-};
+// export const combinationChartConverter: IChartConfigConverter = {
+//     canConvert(bit) {
+//         return bit === ChartTypeBits.Combination;
+//     },
+//     convert: (chartType, chartData) => {
+//         return {
+//             type: chartType,
+//             units: [{
+//                 type: chartType,
+//                 data: {
+//                     category: chartData.category,
+//                     series: chartData.series,
+//                 },
+//             }],
+//         };
+//     },
+// };

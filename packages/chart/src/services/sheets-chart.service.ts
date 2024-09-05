@@ -20,7 +20,7 @@ import { RefRangeService } from '@univerjs/sheets';
 import { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
 import { BehaviorSubject } from 'rxjs';
 import type { ChartModel } from '../chart/chart-model';
-import { ChartType, DataDirection } from '../chart/constants';
+import { ChartTypeBits, DataDirection } from '../chart/constants';
 import { SheetChartDataSource } from '../chart/sheet-chart-data-source';
 import type { IChartSnapshot } from '../chart/types';
 import { SheetsChartConfigService } from './sheets-chart-config.service';
@@ -79,12 +79,12 @@ export class SheetsChartService extends Disposable {
 
     getChartSuggestion(range: IRange) {
         const { startRow, endRow, startColumn, endColumn } = range;
-        const rowsGreaterThanColumns = endRow - startRow > endColumn - startColumn;
+        const rowsGreaterThanColumns = endRow - startRow >= endColumn - startColumn;
 
         return {
             direction: rowsGreaterThanColumns ? DataDirection.Column : DataDirection.Row,
-            // chartType: rowsGreaterThanColumns ? ChartType.Line : ChartType.Bar,
-            chartType: ChartType.Bar,
+            // chartType: rowsGreaterThanColumns ? ChartTypeBits.Line : ChartTypeBits.Bar,
+            chartType: ChartTypeBits.Combination,
         };
     }
 
@@ -124,16 +124,21 @@ export class SheetsChartService extends Disposable {
             direction: chartSuggestion.direction,
         });
 
-        const collection = this.ensureChartModelCollection(unitId, subUnitId);
-        collection.add(chartModel.id);
+        dataSource.dataSourceEmitter$.subscribe((dataSource$) => {
+            chartModel.setDataSource(dataSource$);
+        });
 
-        this._dataSourceMap.set(chartModel.id, dataSource);
+        const collection = this.ensureChartModelCollection(unitId, subUnitId);
+
+        collection.add(chartModel.id);
 
         chartModel.onDispose(() => {
             collection.delete(chartModel.id);
             dataSource.dispose();
             this._dataSourceMap.delete(chartModel.id);
         });
+
+        this._dataSourceMap.set(chartModel.id, dataSource);
 
         return chartModel;
     }

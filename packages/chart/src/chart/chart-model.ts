@@ -15,19 +15,19 @@
  */
 
 import type { Nullable } from '@univerjs/core';
-import { Disposable, Tools } from '@univerjs/core';
-import type { Observable } from 'rxjs';
-import { BehaviorSubject, combineLatest, combineLatestWith, debounceTime, distinctUntilChanged, filter, map, tap } from 'rxjs';
+import { Disposable, generateRandomId, Tools } from '@univerjs/core';
+import type { Observable, Subscription } from 'rxjs';
+import { BehaviorSubject, combineLatest, combineLatestWith, debounceTime, distinctUntilChanged, filter, map } from 'rxjs';
 import { aggregateOperator, buildChartData, dataDirectionToColumn, findCategoryOperator, findHeaderOperator, findSeriesOperator } from './chart-data-operators';
-import { ChartType, DataDirection } from './constants';
+import { ChartTypeBits, DataDirection } from './constants';
 import type { ChartStyle } from './style.types';
 import type { ChartDataSource, IChartConfig, IChartData, IChartDataConfig } from './types';
 
 export interface IChartModelInit {
-    chartType?: ChartType;
+    chartType?: ChartTypeBits;
     dataSource$: Observable<ChartDataSource>;
     direction?: DataDirection;
-    toChartConfig: (chartType: ChartType, chartData: IChartData) => Nullable<IChartConfig>;
+    toChartConfig: (chartType: ChartTypeBits, chartData: IChartData) => Nullable<IChartConfig>;
 }
 
 export class ChartModel extends Disposable {
@@ -36,7 +36,7 @@ export class ChartModel extends Disposable {
     get dataSource() { return this._dataSource; }
 
     /** chart type */
-    private _chartType$ = new BehaviorSubject<ChartType>(ChartType.Line);
+    private _chartType$ = new BehaviorSubject<ChartTypeBits>(ChartTypeBits.Line);
     chartType$ = this._chartType$.asObservable();
     get chartType() {
         return this._chartType$.getValue();
@@ -56,45 +56,47 @@ export class ChartModel extends Disposable {
     style$ = this._style$.asObservable();
     get style() { return this._style$.getValue (); }
 
+    private _subscriptions: Subscription[] = [];
+
     constructor(public readonly id: string, private _options: IChartModelInit) {
         super();
 
         const { chartType, dataSource$, direction } = _options;
-        this.id = id || Tools.generateRandomId();
-
-        this._dataSource$ = dataSource$;
+        this.id = id || generateRandomId();
 
         if (chartType) {
-            this.setChart(chartType);
+            this.setChartType(chartType);
         }
         if (direction) {
-            this.applyDataConfig({
+            this.assignDataConfig({
                 defaultDirection: direction,
                 direction,
             });
         }
 
+        this.setDataSource(dataSource$);
+    }
+
+    setDataSource(dataSource$: Observable<ChartDataSource>) {
+        this._dataSource$ = dataSource$;
         this._init();
     }
 
     private _init() {
+        const { _subscriptions } = this;
+        _subscriptions.forEach((sub) => sub.unsubscribe());
+
         const direction$ = this.dataConfig$.pipe(
             map((config) => config.direction),
             distinctUntilChanged()
         );
+
         const dataSource$ = this._dataSource$.pipe(
             combineLatestWith(direction$),
             map(([dataSource, direction]) => {
                 this._dataSource = direction === DataDirection.Column ? dataDirectionToColumn(dataSource) : dataSource;
 
                 return this._dataSource;
-            }),
-            tap((dataSource) => {
-                const dataConfig = this._buildConfig(dataSource, this.dataConfig);
-                // build series and category when data source change
-                this._dataConfig$.next(dataConfig);
-                // init style
-                this._initStyle(dataSource, dataConfig);
             })
         );
 
@@ -111,26 +113,38 @@ export class ChartModel extends Disposable {
             })
         );
 
-        this.disposeWithMe(
-            combineLatest([
-                this.chartType$.pipe(distinctUntilChanged()),
-                chartDataWithConfig$,
-            ]).pipe(
-                debounceTime(100),
-                filter(([chartType]) => Boolean(chartType))
-            )
-                .subscribe(([_chartType, [dataSource, dataConfig]]) => {
-                    const { toChartConfig } = this._options;
-                    const chartType = _chartType!;
+        _subscriptions[0] = dataSource$.subscribe((dataSource) => {
+            const dataConfig = this._buildConfig(dataSource, this.dataConfig);
+            // build series and category when data source change
+            this._dataConfig$.next(dataConfig);
+            // init style
+            this._initStyle(dataSource, dataConfig);
+            // Only subscribe once
+            _subscriptions[0].unsubscribe();
+        });
 
-                    const chartData = buildChartData(dataSource, dataConfig);
-                    const chartConfig = toChartConfig(chartType, chartData);
+        _subscriptions[1] = combineLatest([
+            this.chartType$.pipe(distinctUntilChanged()),
+            chartDataWithConfig$,
+        ]).pipe(
+            debounceTime(100),
+            filter(([chartType]) => Boolean(chartType))
+        )
+            .subscribe(([_chartType, [dataSource, dataConfig]]) => {
+                const { toChartConfig } = this._options;
+                const chartType = _chartType!;
 
-                    if (chartConfig) {
-                        this._config$.next(chartConfig);
-                    }
-                })
-        );
+                const chartData = buildChartData(dataSource, dataConfig);
+                const chartConfig = toChartConfig(chartType, chartData);
+
+                if (chartConfig) {
+                    this._config$.next(chartConfig);
+                }
+            });
+
+        this.disposeWithMe(() => {
+            _subscriptions.forEach((sub) => sub.unsubscribe());
+        });
     }
 
     private _buildConfig(dataSource: ChartDataSource, dataConfig: IChartDataConfig) {
@@ -174,11 +188,22 @@ export class ChartModel extends Disposable {
         this._style$.next(Tools.deepMerge(this.style, newStyle));
     }
 
-    applyDataConfig(config: Partial<IChartDataConfig>) {
-        this._dataConfig$.next(Tools.deepMerge(this._dataConfig$.getValue(), config));
+    assignDataConfig(config: Partial<IChartDataConfig>) {
+        const dataConfig = Object.assign({}, this._dataConfig$.getValue(), config);
+        this._dataConfig$.next(dataConfig);
     }
 
-    setChart(type: ChartType) {
+    setStyle(style: ChartStyle | ((style: ChartStyle) => ChartStyle)) {
+        const newStyle = typeof style === 'function' ? style(this.style) : style;
+        this._style$.next(newStyle);
+    }
+
+    setDataConfig(config: IChartDataConfig | ((config: IChartDataConfig) => IChartDataConfig)) {
+        const newConfig = typeof config === 'function' ? config(this.dataConfig) : config;
+        this._dataConfig$.next(newConfig);
+    }
+
+    setChartType(type: ChartTypeBits) {
         this._chartType$.next(type);
     }
 
@@ -190,6 +215,8 @@ export class ChartModel extends Disposable {
         super.dispose();
 
         this._chartType$.complete();
+        this._dataConfig$.complete();
         this._config$.complete();
+        this._style$.complete();
     }
 }

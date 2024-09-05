@@ -1,0 +1,63 @@
+.chart-edit-panel {
+    &-tabs {
+        display: flex;
+        align-items: center;
+    }
+    &-tab {
+        padding: var(--padding-sm);
+        flex-grow: 1;
+        text-align: center;
+    }
+    &-tab-btn {
+        color: rgb(var(--text-color-secondary));
+        position: relative;
+        &-active {
+            color: rgb(var(--primary-color));
+        }
+        &-active::after {
+            content: '';
+            width: 80%;
+            height: 4px;
+            border-radius: 2px;
+            display: block;
+            position: absolute;
+            background-color: rgb(var(--primary-color));
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        &:hover {
+            background-color: transparent;
+        }
+    }
+    h5 {
+        margin: var(--margin-xs) 0 var(--margin-sm);
+        font-size: var(--font-size-xs);
+    }
+
+    :global(.chart-edit-panel-select) {
+        width: 100%;
+    }
+
+    :global(.chart-edit-panel-label) {
+        font-size: var(--font-size-sm);
+        color: var(--text-color);
+    }
+
+    :global(.chart-edit-panel-top-gap) {
+        margin-top: var(--margin-xs);
+    }
+
+    :global(.chart-edit-panel-top-gap-sm) {
+        margin-top: var(--margin-sm);
+    }
+
+    :global(.chart-edit-panel-row) {
+        display: flex;
+        gap: var(--margin-sm);
+    }
+
+    :global(.chart-edit-panel-row-half) {
+        flex-basis: 50%;
+    }
+}

@@ -30,7 +30,13 @@ export interface ISheetChartDataSourceOption {
 
 export class SheetChartDataSource extends Disposable {
     private _dataSource$ = new Subject<ChartDataSource>();
-    dataSource$ = this._dataSource$.asObservable();
+
+    private _dataSourceEmitter$ = new BehaviorSubject<Observable<ChartDataSource>>(this._dataSource$.asObservable());
+    dataSourceEmitter$ = this._dataSourceEmitter$.asObservable();
+
+    get dataSource$() {
+        return this._dataSourceEmitter$.getValue();
+    }
 
     private _range$: BehaviorSubject<IRange>;
     range$: Observable<IRange>;
@@ -39,7 +45,7 @@ export class SheetChartDataSource extends Disposable {
         return this._range$.getValue();
     }
 
-    private _watchRangeDisposer: IDisposable;
+    private _disposableList: IDisposable[] = [];
 
     constructor(
         private _option: ISheetChartDataSourceOption,
@@ -50,15 +56,14 @@ export class SheetChartDataSource extends Disposable {
         const { range } = _option;
         this._range$ = new BehaviorSubject<IRange>(range);
         this.range$ = this._range$.asObservable();
-
         this._watchRange(range);
 
         setTimeout(() => {
-            this._updateDataSourceByRange(range);
+            this._emitRangeValues(range);
         });
     }
 
-    private _updateDataSourceByRange(range: IRange) {
+    private _getRangeValues(range: IRange) {
         const getCellValuesFromRange = (r: IRange) => {
             const { unitId, subUnitId } = this._option;
             const workbook = this._univerInstanceService.getUniverSheetInstance(unitId);
@@ -69,36 +74,45 @@ export class SheetChartDataSource extends Disposable {
 
             return workSheet.getRange(r).getValues().map((cells) => cells.map((cell) => cell?.v));
         };
-        const rangeValues = getCellValuesFromRange(range);
-        rangeValues && this._dataSource$.next(rangeValues);
+        return getCellValuesFromRange(range);
+    }
+
+    private _emitRangeValues(range: IRange) {
+        const rangeValues = this._getRangeValues(range);
+        if (rangeValues) {
+            this._dataSource$.next(rangeValues);
+        }
     }
 
     private _watchRange(range: IRange) {
-        this._watchRangeDisposer?.dispose();
+        this._disposableList.forEach((disposable) => disposable.dispose());
+
         const { unitId, subUnitId } = this._option;
-        this._watchRangeDisposer = this._commandService.onCommandExecuted((command) => {
+        this._disposableList[0] = this._commandService.onCommandExecuted((command) => {
             if (command.id === SetRangeValuesCommand.id) {
                 const { subUnitId: commandSubUnitId, unitId: commandUnitId, range: commandRange } = command.params as ISetRangeValuesCommandParams;
                 if (commandSubUnitId === subUnitId
                     && commandUnitId === unitId
                     && commandRange && Rectangle.contains(range, commandRange)
                 ) {
-                    this._updateDataSourceByRange(this.range);
+                    this._emitRangeValues(this.range);
                 }
             }
         });
     }
 
     setRange(range: IRange) {
+        this._dataSourceEmitter$.next(this._dataSource$.asObservable());
         this._range$.next(range);
+        this._emitRangeValues(range);
         this._watchRange(range);
-        this._updateDataSourceByRange(range);
     }
 
     override dispose() {
         super.dispose();
         this._dataSource$.complete();
         this._range$.complete();
-        this._watchRangeDisposer?.dispose();
+        this._disposableList.forEach((disposable) => disposable.dispose());
+        this._disposableList = [];
     }
 }

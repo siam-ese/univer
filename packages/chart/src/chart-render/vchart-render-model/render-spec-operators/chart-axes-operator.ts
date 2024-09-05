@@ -18,6 +18,7 @@ import type { ICartesianAxisSpec } from '@visactor/vchart';
 import { Tools } from '@univerjs/core';
 import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
+import { applyLabelStyle } from './tools';
 
 const { axis: defaultAxis } = defaultChartStyle;
 
@@ -26,18 +27,18 @@ export const chartAxesOperator: VChartRenderSpecOperator = (spec, style, config,
     const { xAxis, yAxis } = style.common || {};
     const specXAxisIndex = spec.axes?.findIndex((axis) => (axis as ICartesianAxisSpec).orient === 'bottom');
     const specYAxisIndex = spec.axes?.findIndex((axis) => (axis as ICartesianAxisSpec).orient === 'left');
-    if (specXAxisIndex !== -1) {
+    if (specXAxisIndex && specXAxisIndex !== -1) {
         const { label: xAxisLabel, gridLine: xAxisGridLine } = xAxis || {};
 
         Tools.set(spec, `axes.${specXAxisIndex}.label.visible`, xAxis?.labelVisible ?? defaultAxis.labelVisible);
         Tools.set(spec, `axes.${specXAxisIndex}.domainLine.visible`, xAxis?.lineVisible ?? defaultAxis.lineVisible);
         Tools.set(spec, `axes.${specXAxisIndex}.inverse`, xAxis?.reverse ?? defaultAxis.reverse);
-        Tools.set(spec, `axes.${specXAxisIndex}.label.style.fill`, xAxisLabel?.color ?? defaultChartStyle.textStyle.color);
-        Tools.set(spec, `axes.${specXAxisIndex}.label.style.fontSize`, xAxisLabel?.fontSize ?? defaultChartStyle.textStyle.fontSize);
-        Tools.set(spec, `axes.${specXAxisIndex}.label.style.fontStyle`, xAxisLabel?.italic ? 'italic' : 'normal');
-        Tools.set(spec, `axes.${specXAxisIndex}.label.style.fontWeight`, xAxisLabel?.bold ? 'bold' : 'normal');
-        Tools.set(spec, `axes.${specXAxisIndex}.label.style.underline`, Boolean(xAxisLabel?.underline));
-        Tools.set(spec, `axes.${specXAxisIndex}.label.style.lineThrough`, Boolean(xAxisLabel?.strikethrough));
+
+        applyLabelStyle(spec, `axes.${specXAxisIndex}.label.style`, {
+            color: defaultChartStyle.textStyle.color,
+            fontSize: defaultChartStyle.textStyle.titleFontSize,
+            ...xAxisLabel,
+        });
 
         Tools.set(spec, `axes.${specXAxisIndex}.grid.visible`, xAxisGridLine?.visible ?? defaultAxis.gridLineVisible);
         if (xAxisGridLine?.color) {
@@ -48,7 +49,7 @@ export const chartAxesOperator: VChartRenderSpecOperator = (spec, style, config,
         }
     }
 
-    if (specYAxisIndex !== -1) {
+    if (specYAxisIndex && specYAxisIndex !== -1) {
         const { label: yAxisLabel, gridLine: yAxisGridLine } = yAxis || {};
         if (yAxis?.max !== undefined) {
             Tools.set(spec, `axes.${specYAxisIndex}.max`, yAxis.max);
@@ -59,12 +60,11 @@ export const chartAxesOperator: VChartRenderSpecOperator = (spec, style, config,
         Tools.set(spec, `axes.${specYAxisIndex}.label.visible`, yAxis?.labelVisible ?? defaultAxis.labelVisible);
         Tools.set(spec, `axes.${specYAxisIndex}.domainLine.visible`, yAxis?.lineVisible ?? defaultAxis.lineVisible);
 
-        Tools.set(spec, `axes.${specYAxisIndex}.label.style.fill`, yAxisLabel?.color ?? defaultChartStyle.textStyle.color);
-        Tools.set(spec, `axes.${specYAxisIndex}.label.style.fontSize`, yAxisLabel?.fontSize ?? defaultChartStyle.textStyle.fontSize);
-        Tools.set(spec, `axes.${specYAxisIndex}.label.style.fontStyle`, yAxisLabel?.italic ? 'italic' : 'normal');
-        Tools.set(spec, `axes.${specYAxisIndex}.label.style.fontWeight`, yAxisLabel?.bold ? 'bold' : 'normal');
-        Tools.set(spec, `axes.${specYAxisIndex}.label.style.underline`, Boolean(yAxisLabel?.underline));
-        Tools.set(spec, `axes.${specYAxisIndex}.label.style.lineThrough`, Boolean(yAxisLabel?.strikethrough));
+        applyLabelStyle(spec, `axes.${specYAxisIndex}.label.style`, {
+            color: defaultChartStyle.textStyle.color,
+            fontSize: defaultChartStyle.textStyle.titleFontSize,
+            ...yAxisLabel,
+        });
 
         Tools.set(spec, `axes.${specYAxisIndex}.grid.visible`, yAxisGridLine?.visible ?? defaultAxis.gridLineVisible);
         if (yAxisGridLine?.color) {

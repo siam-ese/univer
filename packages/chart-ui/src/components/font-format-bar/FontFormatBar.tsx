@@ -15,12 +15,15 @@
  */
 
 import React, { useState } from 'react';
-import { ColorPicker, Dropdown, Menu, MenuItem } from '@univerjs/design';
+import { ColorPicker, Dropdown } from '@univerjs/design';
 import { useDependency } from '@univerjs/core';
 import { ComponentManager } from '@univerjs/ui';
-import { MoreDownSingle } from '@univerjs/icons';
+import { AlignTextBothSingle, MoreDownSingle } from '@univerjs/icons';
 import clsx from 'clsx';
-import { fontSizeOptions } from '../options';
+import { defaultChartStyle } from '@univerjs/chart';
+import type { OptionType } from '../options';
+import { fontSizeOptions, textAlignOptions } from '../options';
+import { DropdownMenu } from '../dropdown-menu';
 import styles from './index.module.less';
 
 export interface IFontFormatStyle {
@@ -30,19 +33,38 @@ export interface IFontFormatStyle {
     italic: boolean;
     underline: boolean;
     strikethrough: boolean;
+    align?: string;
+    controls?: {
+        // fontSize?: boolean;
+        // color?: boolean;
+        // bold?: boolean;
+        // italic?: boolean;
+        // underline?: boolean;
+        // strikethrough?: boolean;
+        align?: boolean;
+    };
 }
 
+export type PropertyChangeFunction<T, K extends keyof T = keyof T> = (name: K, value: T[K]) => void;
+
 export interface IFontFormatBarProps extends Partial<IFontFormatStyle> {
-    onChange?: <K extends keyof IFontFormatStyle = keyof IFontFormatStyle>(name: K, value: IFontFormatStyle[K]) => void;
+    className?: string;
+    onChange?: PropertyChangeFunction<Omit<IFontFormatStyle, 'controls'>>;
 }
 
 export const FontFormatBar = (props: IFontFormatBarProps) => {
-    const { fontSize,
-            color,
-            bold,
-            italic,
-            underline,
-            strikethrough, onChange } = props;
+    const {
+        className,
+        fontSize = defaultChartStyle.textStyle.titleFontSize,
+        color,
+        bold,
+        italic,
+        underline,
+        strikethrough,
+        controls,
+        onChange,
+    } = props;
+
     const componentManager = useDependency(ComponentManager);
     const BoldSingleIcon = componentManager.get('BoldSingle');
     const ItalicSingleIcon = componentManager.get('ItalicSingle');
@@ -50,38 +72,18 @@ export const FontFormatBar = (props: IFontFormatBarProps) => {
     const StrikethroughSingle = componentManager.get('StrikethroughSingle');
     const FontIcon = componentManager.get('FontColor');
 
-    const [fontSizeDropdownVisible, setFontSizeDropdownVisible] = useState(false);
     const [colorDropdownVisible, setColorDropdownVisible] = useState(false);
 
     return (
-        <div className={styles.fontFormatBar}>
-            <Dropdown
-                visible={fontSizeDropdownVisible}
-                onVisibleChange={setFontSizeDropdownVisible}
-                overlay={(
-                    <Menu>
-                        {fontSizeOptions.map((item) => {
-                            return (
-                                <MenuItem
-                                    key={item.value}
-                                    onClick={() => {
-                                        onChange?.('fontSize', Number(item.value));
-                                        setFontSizeDropdownVisible(false);
-                                    }}
-                                >
-                                    {item.label}
-                                </MenuItem>
-                            );
-                        })}
-                    </Menu>
+        <div className={clsx(styles.fontFormatBar, className)}>
+            <DropdownMenu menus={fontSizeOptions as unknown as OptionType[]} onSelect={(item) => onChange?.('fontSize', Number(item.value))}>
+                {(visible) => (
+                    <div className={clsx(styles.fontFormatBarItem, styles.fontFormatBarMenuItem)}>
+                        <span>{fontSize}</span>
+                        <MoreDownSingle className={clsx(styles.fontFormatBarMenuIcon, { [styles.fontFormatBarRotateIcon]: visible })} />
+                    </div>
                 )}
-            >
-                <div className={clsx(styles.fontFormatBarItem, styles.fontFormatBarMenuItem)}>
-                    <span>{fontSize}</span>
-                    <MoreDownSingle className={clsx(styles.fontFormatBarMenuIcon, { [styles.fontFormatBarRotateIcon]: fontSizeDropdownVisible })} />
-                </div>
-            </Dropdown>
-            {/* <Select value="" onChange={() => {}} /> */}
+            </DropdownMenu>
             <Dropdown
                 visible={colorDropdownVisible}
                 onVisibleChange={setColorDropdownVisible}
@@ -93,13 +95,20 @@ export const FontFormatBar = (props: IFontFormatBarProps) => {
                 )}
             >
                 <div className={clsx(styles.fontFormatBarItem, styles.fontFormatBarMenuItem)}>
-                    <div>
+                    <div className={styles.fontFormatFontColorBox}>
                         {FontIcon && <FontIcon />}
                         <div className={styles.fontFormatBarColorBar} style={{ backgroundColor: color }}></div>
                     </div>
                     <MoreDownSingle className={clsx(styles.fontFormatBarMenuIcon, { [styles.fontFormatBarRotateIcon]: colorDropdownVisible })} />
                 </div>
             </Dropdown>
+            {controls?.align !== false && (
+                <DropdownMenu menus={textAlignOptions as unknown as OptionType[]} onSelect={(item) => onChange?.('align', item.value)}>
+                    <div className={clsx(styles.fontFormatBarItem)}>
+                        <AlignTextBothSingle />
+                    </div>
+                </DropdownMenu>
+            )}
             <div
                 onClick={() => onChange?.('bold', !bold)}
                 className={clsx(styles.fontFormatBarItem, {

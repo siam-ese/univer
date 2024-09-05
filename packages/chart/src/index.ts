@@ -18,7 +18,7 @@
 export type { IChartRenderModel } from './chart-render/chart-render-model';
 export { VChartRenderEngine } from './chart-render/vchart-render-model/vchart-render-engine';
 export { ChartModel } from './chart/chart-model';
-export { ChartType, DataDirection, CategoryType } from './chart/constants';
+export { chartBitsUtils, ChartAttributeBits, ChartTypeBits, DataDirection, CategoryType } from './chart/constants';
 export type { IChartDataConfig } from './chart/types';
 export * from './chart/style.types';
 export { SheetsChartController } from './controllers/sheets-chart.controller';

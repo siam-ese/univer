@@ -14,12 +14,69 @@
  * limitations under the License.
  */
 
-export enum ChartType {
-    Line = 'Line',
-    Bar = 'Bar',
-    Pie = 'Pie',
-    BarStacked = 'LineStacked',
+export enum ChartAttributeBits {
+    Stack = 1 << 30,
+    PercentStack = 1 << 29,
+    Horizontal = 1 << 28,
 }
+
+export enum ChartTypeBits {
+    /** Line chart */
+    Line = 1 << 1,
+    /** Bar chart */
+    Column = 1 << 2,
+    ColumnStacked = ChartTypeBits.Column | ChartAttributeBits.Stack,
+    ColumnPercentStacked = ChartTypeBits.Column | ChartAttributeBits.PercentStack,
+
+    Bar = 1 << 2 | ChartAttributeBits.Horizontal,
+    BarStacked = ChartTypeBits.Bar | ChartAttributeBits.Stack,
+    BarPercentStacked = ChartTypeBits.Bar | ChartAttributeBits.PercentStack,
+    /** Pie chart */
+    Pie = 1 << 3,
+    Doughnut = 1 << 8 | ChartTypeBits.Pie,
+    /** Area chart */
+    Area = 1 << 4,
+    AreaStacked = ChartTypeBits.Area | ChartAttributeBits.Stack,
+    AreaPercentStacked = ChartTypeBits.Area | ChartAttributeBits.PercentStack,
+    /** Radar chart */
+    Radar = 1 << 5,
+    /** Scatter chart */
+    Scatter = 1 << 6,
+    /** Combination chart */
+    Combination = 1 << 7,
+
+}
+
+const chartTypeStrings = {
+    [ChartTypeBits.Line]: 'line',
+    [ChartTypeBits.Column]: 'bar',
+    [ChartTypeBits.ColumnStacked]: 'bar',
+    [ChartTypeBits.ColumnPercentStacked]: 'bar',
+    [ChartTypeBits.Bar]: 'bar',
+    [ChartTypeBits.BarStacked]: 'bar',
+    [ChartTypeBits.BarPercentStacked]: 'bar',
+    [ChartTypeBits.Pie]: 'pie',
+    [ChartTypeBits.Area]: 'area',
+    [ChartTypeBits.AreaStacked]: 'area',
+    [ChartTypeBits.AreaPercentStacked]: 'area',
+    [ChartTypeBits.Radar]: 'radar',
+    [ChartTypeBits.Scatter]: 'scatter',
+    [ChartTypeBits.Combination]: 'combination',
+    [ChartTypeBits.Doughnut]: 'pie',
+} as const;
+
+export const chartBitsUtils = {
+    has(bit: number, attribute: number) {
+        return (bit & attribute) === attribute;
+    },
+    baseOn(bit: number, base: number) {
+        return (bit & base) !== 0 && bit >= base;
+    },
+    chartBitToString(bit: ChartTypeBits) {
+        return chartTypeStrings[bit];
+    },
+};
+
 export enum DataDirection {
     Row = 'Row',
     Column = 'Column',

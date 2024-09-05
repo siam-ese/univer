@@ -16,7 +16,7 @@
 
 import type { Disposable, Nullable } from '@univerjs/core';
 
-export interface IChartInstance<Spec = unknown> extends Disposable {
+export interface IChartInstance<Spec = Record<string, any>> extends Disposable {
     container: HTMLElement | string;
 
     mount(id: string | HTMLElement): void;
@@ -32,7 +32,7 @@ export interface IChartInstance<Spec = unknown> extends Disposable {
     onDispose?(dispose: () => void): void;
 }
 
-export interface IChartInstanceConstructor<T = unknown> {
+export interface IChartInstanceConstructor<T = Record<string, any>> {
     new (container: HTMLElement | string): IChartInstance<T>;
 }
 

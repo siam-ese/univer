@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import React, { useState } from 'react';
-import { Checkbox, ColorPicker, Dropdown, Select } from '@univerjs/design';
-import { MoreDownSingle } from '@univerjs/icons';
-import clsx from 'clsx';
+import React from 'react';
+import { Checkbox, Select } from '@univerjs/design';
 import { tickThicknessOptions } from '../options';
+import panelStyles from '../../views/chart-edit-panel/index.module.less';
+import { ColorPickerControl } from '../color-picker-control';
 import styles from './index.module.less';
 
 export interface IGridLineAndTickOptions {
@@ -28,40 +28,22 @@ export interface IGridLineAndTickOptions {
 }
 
 export interface IGridLineAndTickOptionsProps extends Partial<IGridLineAndTickOptions> {
+    className?: string;
     onChange?: <K extends keyof IGridLineAndTickOptions = keyof IGridLineAndTickOptions> (key: K, value: IGridLineAndTickOptions[K]) => void;
 }
 
 export const GridLineAndTickOptions = (props: IGridLineAndTickOptionsProps) => {
-    const { gridLine, color, width, onChange } = props;
+    const { className, gridLine, color, width, onChange } = props;
 
-    const [colorDropdownVisible, setColorDropdownVisible] = useState(false);
     return (
-        <div>
+        <div className={className}>
             <Checkbox checked={gridLine} onChange={(checked) => onChange?.('gridLine', Boolean(checked))}>Major gridlines</Checkbox>
-            <div>
-                <div>
+            <div className={panelStyles.styleTabPanelRow}>
+                <div className={panelStyles.styleTabPanelRowHalf}>
                     <h5>GridLine color</h5>
-                    <Dropdown
-                        visible={colorDropdownVisible}
-                        onVisibleChange={setColorDropdownVisible}
-                        overlay={(
-                            <div className={styles.gridLineAndTickOptionsColorPickerOverlay}>
-                                <ColorPicker color={color} onChange={(c) => onChange?.('color', c)} />
-                            </div>
-                        )}
-                    >
-                        <div className={styles.gridLineAndTickOptionsColorPicker}>
-                            {color
-                                ? <div className={styles.gridLineAndTickOptionsColorPickerView} style={{ backgroundColor: color }}></div>
-                                : <div>Default</div>}
-                            <MoreDownSingle className={clsx({
-                                [styles.gridLineAndTickOptionsRotateIcon]: colorDropdownVisible,
-                            })}
-                            />
-                        </div>
-                    </Dropdown>
+                    <ColorPickerControl color={color ?? ''} onChange={(c) => onChange?.('color', c)} />
                 </div>
-                <div>
+                <div className={styles.styleTabPanelRowHalf}>
                     <h5>GridLine thickness</h5>
                     <Select value={String(width ?? '')} onChange={(w) => onChange?.('width', Number(w))} options={tickThicknessOptions}></Select>
                 </div>

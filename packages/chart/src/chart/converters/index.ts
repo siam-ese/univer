@@ -14,21 +14,5 @@
  * limitations under the License.
  */
 
-import { Select } from '@univerjs/design';
-import React from 'react';
-import { dataLabelPositionOptions } from '../options';
-
-export const DataLabelOptions = () => {
-    return (
-        <div>
-            <div>
-                <h4>Label Position</h4>
-                <Select value="" onChange={() => {}} options={dataLabelPositionOptions}></Select>
-            </div>
-            <div>
-                <h4>Title Format</h4>
-                {/* <FontFormatBar /> */}
-            </div>
-        </div>
-    );
-};
+// export { combinationChartConverter } from './combination-chart-converter';
+export { generalChartConverter } from './general-chart-converter';

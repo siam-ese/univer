@@ -15,22 +15,22 @@
  */
 
 import type { IBarChartSpec } from '@visactor/vchart';
-import { ChartType } from '../../../chart/constants';
-import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+import { chartBitsUtils, ChartTypeBits } from '../../../chart/constants';
 import { StackType } from '../../../chart/style.types';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 
 export const stackOperator: VChartRenderSpecOperator = (spec, style, config) => {
     const stackType = style.common?.stackType;
-    if (!stackType) {
-        return spec;
+
+    const barLikeSpec = spec as IBarChartSpec;
+
+    if ([
+        ChartTypeBits.Column,
+        ChartTypeBits.Area,
+    ].some((type) => chartBitsUtils.baseOn(config.type, type))) {
+        barLikeSpec.percent = stackType === StackType.Percent;
+        barLikeSpec.stack = Boolean(stackType);
     }
 
-    if (config.type === ChartType.Bar) {
-        if (stackType === StackType.Percent) {
-            (spec as IBarChartSpec).percent = true;
-        }
-        (spec as IBarChartSpec).stack = true;
-    }
-
-    return spec;
+    return barLikeSpec;
 };

@@ -20,7 +20,7 @@ import { ComponentManager, IMenuService, ISidebarService } from '@univerjs/ui';
 import { IDrawingManagerService } from '@univerjs/drawing';
 
 import type { IDisposable } from '@univerjs/core';
-import { ChartEditPanel } from '../components/ChartEditPanel';
+import { ChartEditPanel } from '../views/chart-edit-panel';
 
 const CHART_EDIT_PANEL_KEY = 'sheet.chart.edit.panel';
 
@@ -52,6 +52,7 @@ export class SheetsChartUIController extends Disposable {
 
     openPanel() {
         this._sidebarDisposable = this._sidebarService.open({
+            width: 340,
             children: {
                 label: CHART_EDIT_PANEL_KEY,
             },

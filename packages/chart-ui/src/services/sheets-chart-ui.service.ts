@@ -16,33 +16,53 @@
 
 import type { IRange, Nullable } from '@univerjs/core';
 import { Disposable, Inject, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
-import type { ChartModel, ChartType, DataDirection, DeepPartial, IAllSeriesStyle, IChartDataConfig, ILabelStyle, ILegendStyle, ISeriesStyle, IXAxisOptions, IYAxisOptions, StackType } from '@univerjs/chart';
-import { CategoryType, SheetsChartConfigService, SheetsChartService } from '@univerjs/chart';
-import { map, type Observable } from 'rxjs';
-import type { ISelectProps } from '@univerjs/design';
+import type { AreaLineStyle, ChartModel, ChartTypeBits, DataDirection, DeepPartial, IAllSeriesStyle, IChartDataConfig, ILabelStyle, ILegendStyle, IPieLabelStyle, ISeriesStyle, IXAxisOptions, IYAxisOptions, RadarShape } from '@univerjs/chart';
+import { CategoryType, ChartAttributeBits, chartBitsUtils, SheetsChartConfigService, SheetsChartService, StackType } from '@univerjs/chart';
+import { combineLatestWith, distinctUntilChanged, map, type Observable } from 'rxjs';
+
+function formatAxisOptionLabel(column: number, dataRange: IRange) {
+    return `${Tools.chatAtABC(column)}${dataRange.startRow + 1}:${Tools.chatAtABC(column)}${dataRange.endRow + 1}`;
+}
+
 // eslint-disable-next-line max-lines-per-function
 export function registryChartConfigState(service: SheetsChartUIService) {
-    service.registerViewState('stackType', (chartModel) => ({
-        set(v) {
-            if (v) {
+    service.registerViewState('headers', (chartModel) => chartModel.dataConfig$.pipe(map((config) => config.headers)));
+    service.registerViewState('chartType', (chartModel) => ({
+        set(type) {
+            if (chartBitsUtils.has(type, ChartAttributeBits.Stack)) {
                 chartModel.applyStyle({
                     common: {
-                        stackType: v,
+                        stackType: StackType.Stacked,
                     },
                 });
             }
-        },
-        get() {
-            return chartModel.style$.pipe(map((style) => style.common?.stackType));
-        },
-    }));
-    service.registerViewState('chartType', (chartModel) => ({
-        set(v) {
-            Tools.set(chartModel, 'style.common.stack', v);
-            chartModel.setChart(v);
+            if (chartBitsUtils.has(type, ChartAttributeBits.PercentStack)) {
+                chartModel.applyStyle({
+                    common: {
+                        stackType: StackType.Percent,
+                    },
+                });
+            }
+
+            chartModel.setChartType(type);
         },
         get() {
             return chartModel.chartType$;
+        },
+    }));
+    service.registerViewState('stackType', (chartModel) => ({
+        set(v) {
+            chartModel.applyStyle({
+                common: {
+                    stackType: v || undefined,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(
+                map((style) => style.common?.stackType),
+                distinctUntilChanged()
+            );
         },
     }));
 
@@ -54,7 +74,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                     // Trigger update data source
                     dataSource.setRange(v);
 
-                    chartModel.applyDataConfig({
+                    chartModel.assignDataConfig({
                         categoryIndex: undefined,
                         categoryType: undefined,
                         seriesIndexes: undefined,
@@ -72,17 +92,26 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             if (typeof v !== 'number') {
                 return;
             }
-            chartModel.applyDataConfig({
+            chartModel.assignDataConfig({
                 categoryIndex: v,
             });
         },
         get() {
-            return chartModel.dataConfig$.pipe(map((dataConfig) => dataConfig.categoryIndex));
+            return chartModel.dataConfig$.pipe(
+                map((dataConfig) => dataConfig.categoryIndex),
+                distinctUntilChanged()
+            );
         },
     }));
-    service.registerViewState('categoryList', (chartModel) => ({
-        get() {
-            return chartModel.dataConfig$.pipe(map((dataConfig) => {
+
+    service.registerViewState('categoryList', (chartModel) => {
+        const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
+        if (!dataSourceRange$) {
+            return chartModel.dataConfig$.pipe(map(() => []));
+        }
+        return chartModel.dataConfig$.pipe(
+            combineLatestWith(dataSourceRange$),
+            map(([dataConfig, dataRange]) => {
                 const { categoryResourceIndexes, seriesResourceIndexes, headers } = dataConfig;
                 const indexes = categoryResourceIndexes?.concat(seriesResourceIndexes || [])
                     .sort((a, b) => (a || 0) - (b || 0));
@@ -92,14 +121,8 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                 }
 
                 const options = indexes.map((idx) => {
-                    let label: string;
-                    if (headers) {
-                        label = headers[idx]?.toString() || '';
-                    } else {
-                        const values = chartModel.getDataByIndex(idx);
-                        const firstValue = values.find((v) => v !== null && v !== undefined);
-                        label = firstValue?.toString() || '';
-                    }
+                    const header = headers?.[idx];
+                    const label = header ?? formatAxisOptionLabel(dataRange.startColumn + idx, dataRange);
 
                     return {
                         label,
@@ -108,12 +131,12 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                 });
 
                 return options;
-            }));
-        },
-    }));
+            })
+        );
+    });
     service.registerViewState('seriesValues', (chartModel) => ({
         set(values) {
-            chartModel.applyDataConfig({
+            chartModel.assignDataConfig({
                 seriesIndexes: values,
             });
         },
@@ -127,37 +150,69 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     }));
     service.registerViewState('seriesList', (chartModel) => ({
         get() {
-            return chartModel.dataConfig$.pipe(map((dataConfig) => {
-                const { seriesResourceIndexes = [], headers } = dataConfig;
+            const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
+            if (!dataSourceRange$) {
+                return chartModel.dataConfig$.pipe(map(() => []));
+            }
 
-                const options = seriesResourceIndexes.map((col, index) => {
-                    let label: string;
-                    if (headers) {
-                        label = headers[col]?.toString() || '';
-                    } else {
-                        // const values = chartModel.getDataByIndex(col);
-                        // const firstValue = values.find((v) => v !== null && v !== undefined);
-                        label = `系列 ${index + 1}`;
-                    }
+            return chartModel.dataConfig$.pipe(
+                combineLatestWith(dataSourceRange$),
+                map(([dataConfig, dataRange]) => {
+                    const { seriesIndexes = [], headers } = dataConfig;
 
-                    return {
-                        label,
-                        value: String(col),
-                    };
-                });
+                    const options = seriesIndexes.map((idx) => {
+                        const header = headers?.[idx];
+                        const label = header ?? formatAxisOptionLabel(dataRange.startColumn + idx, dataRange);
 
-                return options;
-            }));
+                        return {
+                            label,
+                            value: String(idx),
+                        };
+                    });
+
+                    return options;
+                })
+            );
+        },
+    }));
+    service.registerViewState('seriesResourceList', (chartModel) => ({
+        get() {
+            const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
+            if (!dataSourceRange$) {
+                return chartModel.dataConfig$.pipe(map(() => []));
+            }
+
+            return chartModel.dataConfig$.pipe(
+                combineLatestWith(dataSourceRange$),
+                map(([dataConfig, dataRange]) => {
+                    const { seriesResourceIndexes = [], headers } = dataConfig;
+
+                    const options = seriesResourceIndexes.map((idx) => {
+                        const header = headers?.[idx];
+                        const label = header ?? formatAxisOptionLabel(dataRange.startColumn + idx, dataRange);
+
+                        return {
+                            label,
+                            value: String(idx),
+                        };
+                    });
+
+                    return options;
+                })
+            );
         },
     }));
     service.registerViewState('aggregate', (chartModel) => ({
         set(value) {
-            chartModel.applyDataConfig({
+            chartModel.assignDataConfig({
                 aggregate: value,
             });
         },
         get() {
-            return chartModel.dataConfig$.pipe(map((dataConfig) => dataConfig.aggregate || false));
+            return chartModel.dataConfig$.pipe(
+                map((dataConfig) => dataConfig.aggregate || false),
+                distinctUntilChanged()
+            );
         },
     }));
 
@@ -168,7 +223,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                 const dataSource = service.getDataSource(id);
                 if (dataSource) {
                     // Trigger update data source
-                    chartModel.applyDataConfig({
+                    chartModel.assignDataConfig({
                         direction: value,
                         categoryIndex: undefined,
                         categoryType: undefined,
@@ -179,12 +234,30 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             }
         },
         get() {
-            return chartModel.dataConfig$.pipe(map((dataConfig) => dataConfig.direction));
+            return chartModel.dataConfig$.pipe(
+                map((dataConfig) => dataConfig.direction),
+                distinctUntilChanged()
+            );
         },
     }));
-    service.registerViewState('defaultDirection', (chartModel) => {
-        return chartModel.dataConfig$.pipe(map((dataConfig) => dataConfig.defaultDirection));
-    });
+    service.registerViewState('defaultDirection', (chartModel) => chartModel.dataConfig$.pipe(map((dataConfig) => dataConfig.defaultDirection)));
+
+    service.registerViewState('gradientFill', (chartModel) => ({
+        set(v) {
+            chartModel.applyStyle({
+                common: {
+                    gradientFill: v,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(
+                map((style) => Boolean(style.common?.gradientFill)),
+                distinctUntilChanged()
+            );
+        },
+    }));
+
     service.registerViewState('asCategory', (chartModel) => ({
         set(option) {
             const { dataConfig } = chartModel;
@@ -202,7 +275,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                     newDataConfig.seriesIndexes = newDataConfig.seriesIndexes?.filter((index) => index !== categoryIndex);
                 }
 
-                chartModel.applyDataConfig(newDataConfig);
+                chartModel.assignDataConfig(newDataConfig);
             } else if (typeof dataConfig.categoryIndex === 'number') { // unchecked
                 const newDataConfig: Partial<IChartDataConfig> = {
                     categoryIndex: undefined,
@@ -211,7 +284,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                 if (seriesIncludes(dataConfig.categoryIndex)) {
                     newDataConfig.seriesIndexes = [dataConfig.categoryIndex].concat(dataConfig.seriesIndexes || []);
                 }
-                chartModel.applyDataConfig(newDataConfig);
+                chartModel.assignDataConfig(newDataConfig);
             }
         },
         get() {
@@ -241,7 +314,10 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.backgroundColor));
+            return chartModel.style$.pipe(
+                map((style) => style.common?.backgroundColor),
+                distinctUntilChanged()
+            );
         },
     }));
     service.registerViewState('borderColor', (chartModel) => ({
@@ -253,7 +329,10 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.borderColor));
+            return chartModel.style$.pipe(
+                map((style) => style.common?.borderColor),
+                distinctUntilChanged()
+            );
         },
     }));
     service.registerViewState('fontSize', (chartModel) => ({
@@ -265,7 +344,10 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.fontSize));
+            return chartModel.style$.pipe(
+                map((style) => style.common?.fontSize),
+                distinctUntilChanged()
+            );
         },
     }));
     service.registerViewState('titleStyle', (chartModel) => ({
@@ -277,7 +359,10 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.title));
+            return chartModel.style$.pipe(
+                map((style) => style.common?.title),
+                distinctUntilChanged()
+            );
         },
     }));
     service.registerViewState('subtitleStyle', (chartModel) => ({
@@ -289,7 +374,10 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.subtitle));
+            return chartModel.style$.pipe(
+                map((style) => style.common?.subtitle),
+                distinctUntilChanged()
+            );
         },
     }));
     service.registerViewState('xAxisTitleStyle', (chartModel) => ({
@@ -301,7 +389,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.xAxisTitle));
+            return chartModel.style$.pipe(map((style) => style.common?.xAxisTitle), distinctUntilChanged());
         },
     }));
     service.registerViewState('yAxisTitleStyle', (chartModel) => ({
@@ -313,7 +401,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.yAxisTitle));
+            return chartModel.style$.pipe(map((style) => style.common?.yAxisTitle), distinctUntilChanged());
         },
     }));
 
@@ -326,21 +414,15 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.yAxisTitle));
+            return chartModel.style$.pipe(map((style) => style.common?.yAxisTitle), distinctUntilChanged());
         },
     }));
 
     service.registerViewState('allSeriesStyle', (chartModel) => ({
         set(style) {
-            // const seriesStyleMap: { [id: string]: DeepPartial<ISeriesStyle> } = {};
-            // chartModel.dataConfig.seriesIndexes?.forEach((index) => {
-            //     const key = String(index);
-            //     seriesStyleMap[key] = style;
-            // });
             chartModel.applyStyle({
                 common: {
                     allSeriesStyle: style,
-                    // seriesStyleMap,
                 },
             });
         },
@@ -349,22 +431,24 @@ export function registryChartConfigState(service: SheetsChartUIService) {
         },
     }));
     service.registerViewState('seriesStyleMap', (chartModel) => {
-        return chartModel.style$.pipe(map((style) => {
-            const seriesStyleMap = style.common?.seriesStyleMap || {};
-            return {
-                get(id) {
-                    return seriesStyleMap[id];
-                },
-                set(id, style) {
-                    seriesStyleMap[id] = style;
-                    chartModel.applyStyle({
-                        common: {
-                            seriesStyleMap,
-                        },
-                    });
-                },
-            };
-        }));
+        return chartModel.style$.pipe(
+            map((style) => style.common?.seriesStyleMap),
+            map((seriesStyleMap) => {
+                return {
+                    get(id) {
+                        return seriesStyleMap?.[id];
+                    },
+                    set(id, style) {
+                        chartModel.applyStyle({
+                            common: {
+                                seriesStyleMap: {
+                                    [id]: style,
+                                },
+                            },
+                        });
+                    },
+                };
+            }));
     });
     service.registerViewState('legendStyle', (chartModel) => ({
         set(legend) {
@@ -402,23 +486,89 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             return chartModel.style$.pipe(map((style) => style.common?.yAxis));
         },
     }));
+    service.registerViewState('areaLineStyle', (chartModel) => ({
+        set(lineStyle) {
+            chartModel.applyStyle({
+                area: {
+                    lineStyle: lineStyle ?? undefined,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.area?.lineStyle));
+        },
+    }));
+    service.registerViewState('pieLabelStyle', (chartModel) => ({
+        set(labelStyle) {
+            chartModel.applyStyle({
+                pie: {
+                    labelStyle: labelStyle ?? undefined,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.pie?.labelStyle));
+        },
+    }));
+    service.registerViewState('doughnutHole', (chartModel) => ({
+        set(value) {
+            chartModel.applyStyle({
+                pie: {
+                    doughnutHole: value,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.pie?.doughnutHole), distinctUntilChanged());
+        },
+    }));
+    service.registerViewState('radarShape', (chartModel) => ({
+        set(value) {
+            chartModel.applyStyle({
+                radar: {
+                    shape: value,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.radar?.shape), distinctUntilChanged());
+        },
+    }));
+    service.registerViewState('radarFill', (chartModel) => ({
+        set(value) {
+            chartModel.applyStyle({
+                radar: {
+                    fill: value,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.radar?.fill), distinctUntilChanged());
+        },
+    }));
 };
 
-type ExtractValuable<T> = T extends null | undefined ? never : T;
-export type SelectOption = ExtractValuable<ISelectProps['options']>;
-
+export interface IChartOptionType {
+    label: string;
+    value: string;
+}
+// type ExtractValuable<T> = T extends null | undefined ? never : T;
+// export type SelectOption = ExtractValuable<ISelectProps['options']>;
 export interface IChartConfigStateMap {
+    headers: IChartConfigState<IChartDataConfig['headers']>;
     defaultDirection: IChartConfigState<Nullable<DataDirection>>;
     direction: IChartConfigState<Nullable<DataDirection>>;
     aggregate: IChartConfigState<boolean>;
+    gradientFill: IChartConfigState<boolean>;
     stackType: IChartConfigState<Nullable<StackType>>;
-    chartType: IChartConfigState<ChartType>;
+    chartType: IChartConfigState<ChartTypeBits>;
     dataRange: IChartConfigState<Nullable<IRange>>;
     categoryIndex: IChartConfigState<Nullable<number>>;
-    categoryList: IChartConfigState<SelectOption>;
+    categoryList: IChartConfigState<IChartOptionType[]>;
     seriesValues: IChartConfigState<number[]>;
-    seriesList: IChartConfigState<SelectOption>;
-    asCategory: IChartConfigState<Nullable<SelectOption[number]>>;
+    seriesList: IChartConfigState<IChartOptionType[]>;
+    seriesResourceList: IChartConfigState<IChartOptionType[]>;
+    asCategory: IChartConfigState<Nullable<IChartOptionType>>;
     backgroundColor: IChartConfigState<Nullable<string>>;
     borderColor: IChartConfigState<Nullable<string>>;
     fontSize: IChartConfigState<number | undefined, number>;
@@ -431,12 +581,18 @@ export interface IChartConfigStateMap {
     legendStyle: IChartConfigState<Nullable<DeepPartial<ILegendStyle>>, Partial<ILegendStyle>>;
     xAxisOptions: IChartConfigState<Nullable<DeepPartial<IXAxisOptions>>, Partial<IXAxisOptions>>;
     yAxisOptions: IChartConfigState<Nullable<DeepPartial<IYAxisOptions>>, Partial<IYAxisOptions>>;
+    areaLineStyle: IChartConfigState<Nullable<AreaLineStyle>>;
+    pieLabelStyle: IChartConfigState<Nullable<DeepPartial<IPieLabelStyle>>>;
+    doughnutHole: IChartConfigState<Nullable<number>, number>;
+    radarShape: IChartConfigState<Nullable<RadarShape>, RadarShape>;
+    radarFill: IChartConfigState<Nullable<boolean>, boolean>;
 }
 
 export type ChartConfigStateKey = keyof IChartConfigStateMap;
 export type ChartConfigStateValue = InferChartConfigStateValue<ChartConfigStateKey>;
 
-export type InferChartConfigStateValue<T extends ChartConfigStateKey, M = IChartConfigStateMap[T]> = M extends IChartConfigState<infer V> ? V : never;
+export type InferChartConfigStateValue<T extends ChartConfigStateKey, M = IChartConfigStateMap[T]> = M extends IChartConfigState<infer V>
+    ? V : never;
 
 export type IChartConfigState<GetValue, SetValue = GetValue> = {
     set?(value: SetValue): void;

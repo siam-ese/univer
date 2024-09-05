@@ -14,7 +14,76 @@
  * limitations under the License.
  */
 
-import { ChartBorderDashType, defaultChartStyle, LegendPosition } from '@univerjs/chart';
+import { AreaLineStyle, ChartBorderDashType, ChartTypeBits, defaultChartStyle, LabelContentType, LegendPosition, PieLabelPosition, RadarShape, SeriesLabelPosition, StackType } from '@univerjs/chart';
+import type { IChartOptionType } from '../services/sheets-chart-ui.service';
+
+export type OptionType = IChartOptionType;
+
+export const chartTypeOptions = [
+    {
+        label: '折线图',
+        value: ChartTypeBits.Line,
+    },
+    {
+        label: '柱状图',
+        value: ChartTypeBits.Column,
+    },
+
+    {
+        label: '条形图',
+        value: ChartTypeBits.Bar,
+    },
+    {
+        label: '堆叠条形图',
+        value: ChartTypeBits.BarStacked,
+    },
+    {
+        label: '百分比堆叠条形图',
+        value: ChartTypeBits.BarPercentStacked,
+    },
+    {
+        label: '饼图',
+        value: ChartTypeBits.Pie,
+    },
+    {
+        label: '环形图',
+        value: ChartTypeBits.Doughnut,
+    },
+    {
+        label: '面积图',
+        value: ChartTypeBits.Area,
+    },
+    {
+        label: '堆叠面积图',
+        value: ChartTypeBits.AreaStacked,
+    },
+    {
+        label: '百分比堆叠面积图',
+        value: ChartTypeBits.AreaPercentStacked,
+    },
+    {
+        label: '雷达图',
+        value: ChartTypeBits.Radar,
+    },
+    {
+        label: '组合图',
+        value: ChartTypeBits.Combination,
+    },
+].map((option) => ({ ...option, value: String(option.value) }));
+
+export const seriesChartTypeOptions = chartTypeOptions.filter((option) => {
+    const seriesChartTypes = [
+        ChartTypeBits.Line,
+        ChartTypeBits.Bar,
+        // ChartTypeBits.BarStacked,
+        // ChartTypeBits.BarPercentStacked,
+        ChartTypeBits.Area,
+        // ChartTypeBits.AreaStacked,
+        // ChartTypeBits.AreaPercentStacked,
+    ].map((type) => String(type));
+
+    return seriesChartTypes.includes(option.value);
+});
 
 export const titleOptions = [
     {
@@ -125,7 +194,21 @@ export const borderWidthOptions = [0, 1, 2, 4, 8].map((width) => ({
     value: String(width),
 }));
 
-export const dataLabelPositionOptions = ['default', 'outside', 'center', 'top', 'bottom'].map((value) => ({
+export const dataLabelPositionOptions = [
+    SeriesLabelPosition.Auto,
+    SeriesLabelPosition.Outside,
+    SeriesLabelPosition.Center,
+    SeriesLabelPosition.Top,
+    SeriesLabelPosition.Bottom,
+].map((value) => ({
+    label: value,
+    value,
+}));
+
+export const pieDataLabelPositionOptions = [
+    PieLabelPosition.Inside,
+    PieLabelPosition.Outside,
+].map((value) => ({
     label: value,
     value,
 }));
@@ -144,3 +227,65 @@ export const tickThicknessOptions = [1, 2, 3].map((value) => ({
     label: `${value}px`,
     value: String(value),
 }));
+
+export const stackTypeOptions: OptionType[] = [
+    {
+        label: 'None',
+        value: '',
+    },
+    {
+        label: 'Stacked',
+        value: StackType.Stacked,
+    },
+    {
+        label: 'Percent',
+        value: StackType.Percent,
+    },
+];
+
+export const areaLineTypeOptions = [
+    {
+        label: 'Line',
+        value: AreaLineStyle.Line,
+    },
+    {
+        label: 'Smooth',
+        value: AreaLineStyle.Smooth,
+    },
+    {
+        label: 'Step',
+        value: AreaLineStyle.Step,
+    },
+];
+
+export const pieDonutHoleOptions = [0, 0.25, 0.5, 0.75].map((value) => ({
+    label: `${value * 100}%`,
+    value: String(value),
+}));
+
+export const pieLabelContentOptions = [
+    {
+        label: 'Category',
+        value: LabelContentType.CategoryName,
+    },
+    {
+        label: 'Value',
+        value: LabelContentType.Value,
+    },
+    {
+        label: 'Percentage',
+        value: LabelContentType.Percentage,
+    },
+].map((option) => ({ ...option, value: String(option.value) }));
+
+export const radarShapeOptions = [
+    {
+        label: 'Polygon',
+        value: RadarShape.Polygon,
+    },
+    {
+        label: 'Circle',
+        value: RadarShape.Circle,
+    },
+];
+

@@ -27,14 +27,12 @@ const dashValues = {
 
 const supportedChartUnit = ['bar', 'line'];
 export const seriesStyleOperator: VChartRenderSpecOperator = (spec, style, config) => {
-    const specSeriesStyle = config.units.map((unit) => {
-        return unit.data.series.map((series) => {
-            return {
-                index: series.index,
-                name: series.name,
-            };
-        });
-    }).flat();
+    const specSeriesStyle = config.series.map((series) => {
+        return {
+            index: series.index,
+            name: series.name,
+        };
+    });
     const allSeriesStyle = style.common?.allSeriesStyle;
     const seriesStyleMap = style.common?.seriesStyleMap;
 

@@ -17,6 +17,7 @@
 import { Tools } from '@univerjs/core';
 import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
+import { applyLabelStyle } from './tools';
 
 const { textStyle } = defaultChartStyle;
 export const titleStyleOperator: VChartRenderSpecOperator = (spec, style) => {
@@ -25,11 +26,10 @@ export const titleStyleOperator: VChartRenderSpecOperator = (spec, style) => {
 
     Tools.set(spec, 'title.text', titleStyle?.content ?? '');
     Tools.set(spec, 'title.align', titleStyle?.align ?? textStyle.align);
-    Tools.set(spec, 'title.textStyle.fill', titleStyle?.color ?? textStyle.color);
-    Tools.set(spec, 'title.textStyle.fontWeight', titleStyle?.bold ? 'bold' : 'normal');
-    Tools.set(spec, 'title.textStyle.fontStyle', titleStyle?.italic ? 'italic' : 'normal');
-    Tools.set(spec, 'title.textStyle.lineThrough', !!titleStyle?.strikethrough);
-    Tools.set(spec, 'title.textStyle.underline', !!titleStyle?.underline);
+    applyLabelStyle(spec, 'title.textStyle', {
+        ...titleStyle,
+        color: titleStyle?.color ?? textStyle.color,
+    });
 
     return spec;
 };

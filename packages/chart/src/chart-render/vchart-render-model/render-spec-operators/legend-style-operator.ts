@@ -14,18 +14,27 @@
  * limitations under the License.
  */
 
-import type { ILegendSpec } from '@visactor/vchart/esm/component/legend';
+import { Tools } from '@univerjs/core';
 import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 import { LegendPosition } from '../../../chart/style.types';
 
 export const legendStyleOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
     const legendStyle = style.common?.legend;
-    const legend: ILegendSpec = {
-        type: 'discrete',
-        visible: legendStyle?.position !== LegendPosition.Hide,
-        orient: legendStyle?.position as any,
-    };
-    spec.legends = [legend];
+    if (!Array.isArray(spec.legends)) {
+        spec.legends = [];
+    }
+
+    const discreteLegendIndex = spec.legends.findIndex((legend) => legend.type === 'discrete');
+    if (discreteLegendIndex === -1) {
+        spec.legends.push({
+            type: 'discrete',
+            visible: legendStyle?.position !== LegendPosition.Hide,
+            orient: legendStyle?.position as any,
+        });
+    } else {
+        Tools.set(spec.legends, `${discreteLegendIndex}.visible`, legendStyle?.position !== LegendPosition.Hide);
+        Tools.set(spec.legends, `${discreteLegendIndex}.orient`, legendStyle?.position);
+    }
 
     return spec;
 };

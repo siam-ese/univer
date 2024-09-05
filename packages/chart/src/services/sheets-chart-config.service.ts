@@ -16,12 +16,12 @@
 
 import type { Nullable } from '@univerjs/core';
 import { Disposable, Inject, LifecycleStages, OnLifecycle } from '@univerjs/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, combineLatestWith, debounceTime } from 'rxjs';
 import type { IChartModelInit } from '../chart/chart-model';
 import { ChartModel } from '../chart/chart-model';
-import type { ChartType } from '../chart/constants';
-import type { IChartConfigConverter, IChartData } from '../chart/types';
-import { generalConverter } from '../chart/converters/generalConverter';
+import type { ChartTypeBits } from '../chart/constants';
+import type { IChartConfig, IChartConfigConverter, IChartData } from '../chart/types';
+import { generalChartConverter } from '../chart/converters';
 import { SheetsChartRenderService } from './sheets-chart-render.service';
 import { IChartHostProvider } from './chart-host-provider';
 
@@ -57,10 +57,12 @@ export class SheetsChartConfigService extends Disposable {
 
     private _initConverters() {
         const { _converters } = this;
-        _converters.add(generalConverter);
+
+        _converters.add(generalChartConverter);
+        // _converters.add(combinationChartConverter);
     }
 
-    toChartConfig(chartType: ChartType, chartData: IChartData) {
+    toChartConfig(chartType: ChartTypeBits, chartData: IChartData) {
         const converter = Array.from(this._converters).find((converter) => converter.canConvert(chartType));
 
         return converter ? converter.convert(chartType, chartData) : null;
@@ -76,16 +78,25 @@ export class SheetsChartConfigService extends Disposable {
             toChartConfig: this.toChartConfig.bind(this),
         });
 
+        let latestConfig: Nullable<IChartConfig>;
+        this.disposeWithMe(() => {
+            latestConfig = undefined;
+        });
+
         this.disposeWithMe(
-            chartModel.config$.subscribe((config) => {
-                if (config) {
-                    this._chartRenderService.render(chartModel.id, config, chartModel.style);
+            chartModel.config$.pipe(
+                combineLatestWith(chartModel.style$),
+                debounceTime(200)
+            ).subscribe(([config, style]) => {
+                if (!config) {
+                    return;
                 }
-            })
-        );
-        this.disposeWithMe(
-            chartModel.style$.subscribe((style) => {
-                this._chartRenderService.renderStyle(chartModel.id, style);
+                if (latestConfig !== config) {
+                    latestConfig = config;
+                    this._chartRenderService.render(chartModel.id, config, style);
+                } else {
+                    this._chartRenderService.renderStyle(chartModel.id, style);
+                }
             })
         );
 
