@@ -68,7 +68,7 @@ export class SheetsChartRenderService extends Disposable {
         chartInstance.mount(chartHost.id);
         chartInstance.onDispose?.(() => chartHost.dispose?.());
 
-        const spec = _currentModel.stylizeSpec(_currentModel.toSpec(config), {
+        const spec = _currentModel.stylizeSpec(_currentModel.toSpec(config, style), {
             chartConfig: config,
             chartStyle: style,
             chartInstance,
@@ -88,7 +88,7 @@ export class SheetsChartRenderService extends Disposable {
         if (!config) {
             return;
         }
-        const spec = _currentModel.stylizeSpec(_currentModel.toSpec(config), {
+        const spec = _currentModel.stylizeSpec(_currentModel.toSpec(config, style), {
             chartConfig: config,
             chartStyle: style,
             chartInstance,

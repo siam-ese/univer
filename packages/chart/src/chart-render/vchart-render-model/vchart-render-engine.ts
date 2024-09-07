@@ -44,6 +44,7 @@ export class VChartRenderEngine extends Disposable implements IChartInstance<VCh
                 type: '',
             }, {
                 dom: this.container,
+                animation: false,
             });
         }
         return this._vchart!;
@@ -56,9 +57,9 @@ export class VChartRenderEngine extends Disposable implements IChartInstance<VCh
 
     render(spec: VChartSpec): void {
         const instance = this._ensureChartInstance();
-        instance.updateSpec(spec, false, {
-            reuse: false,
-        });
+        // instance.updateSpec(spec, false);
+
+        instance.updateSpec(spec, false);
     }
 
     setBorderColor(color: Nullable<string>): void {

@@ -21,7 +21,7 @@ import type { IChartModelInit } from '../chart/chart-model';
 import { ChartModel } from '../chart/chart-model';
 import type { ChartTypeBits } from '../chart/constants';
 import type { IChartConfig, IChartConfigConverter, IChartData } from '../chart/types';
-import { generalChartConverter } from '../chart/converters';
+import { combinationConfigConverter, generalConfigConverter } from '../chart/converters';
 import { SheetsChartRenderService } from './sheets-chart-render.service';
 import { IChartHostProvider } from './chart-host-provider';
 
@@ -58,8 +58,8 @@ export class SheetsChartConfigService extends Disposable {
     private _initConverters() {
         const { _converters } = this;
 
-        _converters.add(generalChartConverter);
-        // _converters.add(combinationChartConverter);
+        _converters.add(generalConfigConverter);
+        _converters.add(combinationConfigConverter);
     }
 
     toChartConfig(chartType: ChartTypeBits, chartData: IChartData) {
@@ -73,10 +73,13 @@ export class SheetsChartConfigService extends Disposable {
     }
 
     createChartModel(id: string, option: Omit<IChartModelInit, 'toChartConfig'>) {
-        const chartModel = new ChartModel(id, {
-            ...option,
-            toChartConfig: this.toChartConfig.bind(this),
-        });
+        // const chartModel = new ChartModel(id, {
+        //     ...option,
+        //     toChartConfig: this.toChartConfig.bind(this),
+        // });
+        const chartModel = new ChartModel(id, option);
+
+        this._models.set(chartModel.id, chartModel);
 
         let latestConfig: Nullable<IChartConfig>;
         this.disposeWithMe(() => {
@@ -99,8 +102,6 @@ export class SheetsChartConfigService extends Disposable {
                 }
             })
         );
-
-        this._models.set(chartModel.id, chartModel);
 
         return chartModel;
     }

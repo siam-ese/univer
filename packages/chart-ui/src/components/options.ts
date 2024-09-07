@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { AreaLineStyle, ChartBorderDashType, ChartTypeBits, defaultChartStyle, LabelContentType, LegendPosition, PieLabelPosition, RadarShape, SeriesLabelPosition, StackType } from '@univerjs/chart';
+import { AreaLineStyle, ChartBorderDashType, ChartTypeBits, defaultChartStyle, LabelContentType, LegendPosition, LinePointShape, PieLabelPosition, RadarShape, SeriesLabelPosition, StackType } from '@univerjs/chart';
 import type { IChartOptionType } from '../services/sheets-chart-ui.service';
 
 export type OptionType = IChartOptionType;
@@ -174,6 +174,17 @@ export const lineOpacityOptions = [1, 0.9, 0.7, 0.5, 0.3, 0.1, 0].map((opacity) 
     value: String(opacity),
 }));
 
+export const axisPositionOptions = [
+    {
+        label: 'Left axis',
+        value: 'left',
+    },
+    {
+        label: 'Right axis',
+        value: 'right',
+    },
+];
+
 export const borderDashTypeOptions = [
     {
         label: '实线',
@@ -188,6 +199,30 @@ export const borderDashTypeOptions = [
         value: ChartBorderDashType.Dotted,
     },
 ];
+
+export const linePointShapeOptions = [
+    {
+        label: 'Circle',
+        value: LinePointShape.Circle,
+    },
+    {
+        label: 'Square',
+        value: LinePointShape.Square,
+    },
+    {
+        label: 'Triangle',
+        value: LinePointShape.Triangle,
+    },
+    {
+        label: 'Diamond',
+        value: LinePointShape.Diamond,
+    },
+];
+
+export const linePointSizeOptions = [0, 2, 5, 7, 10, 14].map((size) => ({
+    label: `${size}px`,
+    value: String(size),
+}));
 
 export const borderWidthOptions = [0, 1, 2, 4, 8].map((width) => ({
     label: `${width}px`,

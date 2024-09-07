@@ -33,6 +33,8 @@ import styles from './index.module.less';
 const getUnitId = (univerInstanceService: IUniverInstanceService) => univerInstanceService.getCurrentUnitForType<Workbook>(UniverInstanceType.UNIVER_SHEET)!.getUnitId();
 const getSubUnitId = (univerInstanceService: IUniverInstanceService) => univerInstanceService.getCurrentUnitForType<Workbook>(UniverInstanceType.UNIVER_SHEET)!.getActiveSheet()?.getSheetId();
 
+const ableStackCharts = [ChartTypeBits.Area, ChartTypeBits.Column];
+
 export const DataTabPanel = () => {
     const sheetsChartUIService = useSheetsChartUIService();
     const univerInstanceService = useDependency(IUniverInstanceService);
@@ -66,7 +68,17 @@ export const DataTabPanel = () => {
         }
     };
 
+    const [seriesStyleMap] = useChartConfigState('seriesStyleMap', sheetsChartUIService);
     const [asCategory, setAsCategory] = useChartConfigState('asCategory', sheetsChartUIService);
+
+    // Show stack control under chart type between able stack charts and combination chart with able stack inner chart
+    const showStackControl = chartType && (
+        ableStackCharts.some((type) => chartBitsUtils.baseOn(chartType, type))
+        || (chartType === ChartTypeBits.Combination && seriesValues?.some((value) => {
+            const innerChartType = seriesStyleMap?.get(String(value))?.chartType;
+            return innerChartType ? ableStackCharts.some((type) => chartBitsUtils.baseOn(innerChartType, type)) : true;
+        }))
+    );
 
     return (
         <div>
@@ -84,7 +96,9 @@ export const DataTabPanel = () => {
             </div>
             <div>
                 <h5>Stack</h5>
-                <Select className="chart-edit-panel-select" value={stackType || ''} options={stackTypeOptions} onChange={(v) => setStackType(v as StackType)}></Select>
+                {showStackControl && (
+                    <Select className="chart-edit-panel-select" value={stackType || ''} options={stackTypeOptions} onChange={(v) => setStackType(v as StackType)}></Select>
+                )}
             </div>
             <div>
                 <h5>Data Range</h5>

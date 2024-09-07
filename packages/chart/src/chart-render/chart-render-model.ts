@@ -25,7 +25,7 @@ export interface IChartRenderModelStylizeInit<Spec> {
     chartInstance: IChartInstance<Spec>;
 }
 export interface IChartRenderModel<Spec extends Record<string, any> = Record<string, any>> extends IDisposable {
-    toSpec(chartConfig: IChartConfig): Spec;
+    toSpec(chartConfig: IChartConfig, style: ChartStyle): Spec;
     stylizeSpec(spec: Spec, stylizeInit: IChartRenderModelStylizeInit<Spec>): Spec;
     createChartInstance(): IChartInstance<Spec>;
 }

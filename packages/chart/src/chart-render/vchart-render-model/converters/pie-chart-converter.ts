@@ -47,17 +47,16 @@ export const pieChartConverter: IChartRenderSpecConverter<IPieChartSpec> = {
                 style: {
                     lineWidth: 1.5,
                 },
-                state: {
-                    hover: {
-                        outerRadius: 0.85,
-                        outerBorder: {
-                            distance: 1,
-                            lineWidth: 1,
-                            stroke: '#4e83fd',
-                        },
-                    },
-
-                },
+                // state: {
+                //     hover: {
+                //         outerRadius: 0.85,
+                //         outerBorder: {
+                //             distance: 1,
+                //             lineWidth: 1,
+                //             stroke: '#4e83fd',
+                //         },
+                //     },
+                // },
             },
             legends: [
                 {
@@ -78,7 +77,7 @@ export const pieChartConverter: IChartRenderSpecConverter<IPieChartSpec> = {
                             return datum ? datum[SpecField.categoryFieldLabel] : '';
                         },
                         valueStyle: {
-                            fontSize: defaultChartStyle.textStyle.labelFontSize,
+                            fontSize: defaultChartStyle.textStyle.fontSize,
                         },
                     },
                     content: {
@@ -86,13 +85,13 @@ export const pieChartConverter: IChartRenderSpecConverter<IPieChartSpec> = {
                             return datum ? datum[SpecField.categoryFieldLabel] : '';
                         },
                         keyStyle: {
-                            fontSize: defaultChartStyle.textStyle.labelFontSize,
+                            fontSize: defaultChartStyle.textStyle.fontSize,
                         },
                         value: (datum) => {
                             return datum ? `${datum[SpecField.valueField]}(${datum._percent_}%)` : '';
                         },
                         valueStyle: {
-                            fontSize: defaultChartStyle.textStyle.labelFontSize,
+                            fontSize: defaultChartStyle.textStyle.fontSize,
                         },
                     },
                 },

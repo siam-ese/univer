@@ -84,7 +84,7 @@ export class SheetsChartService extends Disposable {
         return {
             direction: rowsGreaterThanColumns ? DataDirection.Column : DataDirection.Row,
             // chartType: rowsGreaterThanColumns ? ChartTypeBits.Line : ChartTypeBits.Bar,
-            chartType: ChartTypeBits.Combination,
+            chartType: ChartTypeBits.Column,
         };
     }
 

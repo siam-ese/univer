@@ -21,14 +21,14 @@ import { defaultChartStyle } from '../../../chart/constants/default-chart-style'
 const { textStyle } = defaultChartStyle;
 export const fontSizeOperator: VChartRenderSpecOperator = (spec, style) => {
     const commonStyle = style.common;
-    const fontSize = commonStyle?.fontSize ?? textStyle.titleFontSize;
+    const fontSize = commonStyle?.fontSize ?? textStyle.fontSize;
+    const titleFontSize = commonStyle?.fontSize ?? textStyle.titleFontSize;
 
-    Tools.set(spec, 'title.textStyle.titleFontSize', fontSize);
+    Tools.set(spec, 'title.textStyle.titleFontSize', titleFontSize);
     spec.axes?.forEach((axis) => {
         Tools.set(axis, 'label.style.fontSize', fontSize);
-        Tools.set(axis, 'title.style.fontSize', fontSize);
+        Tools.set(axis, 'title.style.fontSize', titleFontSize);
     });
-    // spec.background = commonStyle?.fontSize;
 
     return spec;
 };

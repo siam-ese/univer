@@ -15,76 +15,181 @@
  */
 
 import type { ICommonChartSpec } from '@visactor/vchart';
-import { ChartTypeBits } from '../../../chart/constants';
+import { generateRandomId } from '@univerjs/core';
+import { chartBitsUtils, ChartTypeBits } from '../../../chart/constants';
 import type { IChartRenderSpecConverter } from '../../types';
+import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
 import { SpecField } from './constants';
 import { createLabelMap } from './tools';
 
+const { combination } = defaultChartStyle;
+
 export const combinationChartConverter: IChartRenderSpecConverter<ICommonChartSpec> = {
     canConvert(config) {
-        return config.type === ChartTypeBits.Combination;
+        if (config.type === ChartTypeBits.Radar
+            || chartBitsUtils.baseOn(config.type, ChartTypeBits.Pie)
+        ) {
+            return false;
+        }
+        return true;
     },
-
-    convert(config) {
+    // eslint-disable-next-line max-lines-per-function
+    convert(config, style) {
         const { category, series } = config;
         const hasCategory = Boolean(category);
 
-        const { categoryNameMap } = createLabelMap(config);
-        const seriesIndexes: number[] = [];
+        const { seriesNameMap, categoryNameMap } = createLabelMap(config);
+        const leftSeriesId = new Set<string>();
+        const rightSeriesId = new Set<string>();
 
-        const values = series.map((ser, seriesIndex) => {
-            seriesIndexes.push(seriesIndex);
+        const chartData: Array<{
+            id: string;
+            chartType: string;
+            values: Array<Record<string, any>>;
+        }> = [];
 
-            return ser.items.map((item, valueIndex) => {
+        const seriesStyleMap = style.common?.seriesStyleMap;
+
+        const randomSeriesGroupIdMap = new Map<string, string>();
+
+        function ensureGroupId(key: string) {
+            if (!randomSeriesGroupIdMap.has(key)) {
+                randomSeriesGroupIdMap.set(key, `${generateRandomId()}&${key}`);
+            }
+            return randomSeriesGroupIdMap.get(key)!;
+        }
+
+        series.forEach((ser, seriesIndex) => {
+            const seriesId = String(ser.index);
+
+            const seriesStyle = seriesStyleMap?.[seriesId];
+
+            const seriesChartTypeBit = config.type !== ChartTypeBits.Combination
+                ? config.type
+                : seriesIndex === 0 ? combination.firstChartType : combination.otherChartType;
+
+            const seriesChartType = chartBitsUtils.chartBitToString(seriesChartTypeBit);
+
+            const groupId = ensureGroupId(`${seriesChartType}&${seriesStyle?.rightYAxis ? 'right' : 'left'}`);
+
+            if (seriesStyle?.rightYAxis) {
+                rightSeriesId.add(groupId);
+            } else {
+                leftSeriesId.add(groupId);
+            }
+
+            let item = chartData.find((item) => item.id === groupId);
+            if (!item) {
+                item = {
+                    id: groupId,
+                    chartType: seriesChartType,
+                    values: [],
+                };
+                chartData.push(item);
+            }
+
+            const values = ser.items.map((item, valueIndex) => {
                 const xField = category?.keys[valueIndex] || valueIndex;
                 return {
                     [SpecField.seriesIndex]: seriesIndex,
-                    [SpecField.seriesField]: String(ser.index),
+                    [SpecField.seriesField]: seriesId,
                     [SpecField.yField]: item.value,
                     [SpecField.xField]: xField,
                     [SpecField.seriesFieldLabel]: ser.name,
+                    [SpecField.categoryFieldLabel]: categoryNameMap[xField],
                 };
             });
-        }).flat();
+
+            item.values = item.values.concat(values);
+        });
+
+        const axes: ICommonChartSpec['axes'] = [
+            {
+                type: 'linear',
+                orient: 'left',
+                seriesId: Array.from(leftSeriesId),
+                nice: true,
+            },
+            {
+                type: 'linear',
+                orient: 'right',
+                seriesId: Array.from(rightSeriesId),
+                nice: true,
+            },
+            {
+                type: 'band',
+                orient: 'bottom',
+                visible: hasCategory,
+                label: {
+                    formatMethod: (text, datum) => {
+                        return categoryNameMap[datum?.id];
+                    },
+                },
+                tick: {
+                    visible: false,
+                },
+                bandPadding: 0.2,
+                paddingInner: 0.2,
+                paddingOuter: 0.1,
+            },
+        ];
 
         return {
             type: 'common',
-            data: {
-                id: 'combination',
-                values,
-            },
-            axes: [
-                { orient: 'left', seriesIndex: seriesIndexes },
-                {
-                    type: 'band',
-                    orient: 'bottom',
-                    visible: hasCategory,
-                    label: {
-                        formatMethod: (text, datum) => {
-                            return categoryNameMap[datum?.id];
-                        },
-                    },
-                    bandPadding: 0.2,
-                    paddingInner: 0.2,
-                    paddingOuter: 0.1,
-                },
-            ],
+            data: chartData,
+            series: chartData.map((item, index) => {
+                return {
+                    type: item.chartType as 'line' | 'bar' | 'area',
+                    id: item.id,
+                    dataIndex: index,
+                    xField: item.chartType === 'bar' ? [SpecField.xField, SpecField.seriesField] : SpecField.xField,
+                    yField: SpecField.yField,
+                    seriesField: SpecField.seriesField,
+                };
+            }),
+            axes: axes.filter((axis) => {
+                const seriesId = axis.seriesId;
+                return Array.isArray(seriesId) ? seriesId.length > 0 : true;
+            }) as ICommonChartSpec['axes'],
             tooltip: {
                 dimension: {
+                    visible: hasCategory,
                     title: {
-                        value: (datum) => categoryNameMap[datum?.[SpecField.xField]],
+                        value: (datum) => {
+                            return datum?.[SpecField.categoryFieldLabel];
+                        },
                         visible: hasCategory,
+                    },
+                    content: {
+                        key: (datum) => datum?.[SpecField.seriesFieldLabel],
+                        value: (datum) => datum?.[SpecField.yField],
                     },
                 },
                 mark: {
+                    visible: hasCategory,
                     title: {
-                        value: (datum) => categoryNameMap[datum?.[SpecField.xField]],
+                        value: (datum) => {
+                            return datum?.[SpecField.categoryFieldLabel];
+                        },
+                    },
+                    content: {
+                        key: (datum) => datum?.[SpecField.seriesFieldLabel],
+                        value: (datum) => datum?.[SpecField.yField],
                     },
                 },
             },
-            legends: {
-                visible: true,
-            },
+            legends: [
+                {
+                    type: 'discrete',
+                    item: {
+                        label: {
+                            formatMethod: (text, item, index) => {
+                                return item.id ? seriesNameMap[item.id] : text;
+                            },
+                        },
+                    },
+                },
+            ],
         }; ;
     },
 };

@@ -26,7 +26,7 @@ type SpecWithLabelMap<T> = T & {
 };
 export interface IChartRenderSpecConverter<ChartRenderSpec = unknown> {
     canConvert: (config: IChartConfig) => boolean;
-    convert: (config: IChartConfig) => SpecWithLabelMap<ChartRenderSpec>;
+    convert: (config: IChartConfig, style: ChartStyle) => SpecWithLabelMap<ChartRenderSpec>;
 }
 export type ChartConfigInterceptor = (config: IChartConfig) => IChartConfig;
 export type RenderSpecOperator<ChartRenderSpec = unknown> = (spec: SpecWithLabelMap<ChartRenderSpec>, style: ChartStyle, config: IChartConfig, instance: IChartInstance) => void;

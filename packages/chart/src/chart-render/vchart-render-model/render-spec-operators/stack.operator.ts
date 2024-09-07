@@ -15,9 +15,11 @@
  */
 
 import type { IBarChartSpec } from '@visactor/vchart';
+import { Tools } from '@univerjs/core';
 import { chartBitsUtils, ChartTypeBits } from '../../../chart/constants';
 import { StackType } from '../../../chart/style.types';
 import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+import { SpecField } from '../converters/constants';
 
 export const stackOperator: VChartRenderSpecOperator = (spec, style, config) => {
     const stackType = style.common?.stackType;
@@ -32,5 +34,14 @@ export const stackOperator: VChartRenderSpecOperator = (spec, style, config) => 
         barLikeSpec.stack = Boolean(stackType);
     }
 
-    return barLikeSpec;
+    spec.series?.forEach((ser) => {
+        if (ser.type === 'bar') {
+            const stacked = Boolean(stackType);
+            Tools.set(ser, 'percent', stackType === StackType.Percent);
+            Tools.set(ser, 'stack', stacked);
+            if (stacked) {
+                Tools.set(ser, 'xField', SpecField.xField);
+            }
+        }
+    });
 };

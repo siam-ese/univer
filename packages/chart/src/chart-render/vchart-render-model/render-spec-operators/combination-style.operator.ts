@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-// export const combinationChartConverter: IChartConfigConverter = {
-//     canConvert(bit) {
-//         return bit === ChartTypeBits.Combination;
-//     },
-//     convert: (chartType, chartData) => {
-//         return {
-//             type: chartType,
-//             units: [{
-//                 type: chartType,
-//                 data: {
-//                     category: chartData.category,
-//                     series: chartData.series,
-//                 },
-//             }],
-//         };
-//     },
-// };
+import type { ICommonChartSpec } from '@visactor/vchart';
+import { ChartTypeBits } from '../../../chart/constants';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+
+export const combinationStyleOperator: VChartRenderSpecOperator = (_spec, style, config, instance) => {
+    if (config.type !== ChartTypeBits.Combination) return _spec;
+    const spec = _spec as ICommonChartSpec;
+
+    return spec;
+};

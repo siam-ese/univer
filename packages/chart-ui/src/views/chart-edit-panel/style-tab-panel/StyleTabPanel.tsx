@@ -40,7 +40,8 @@ export const StyleTabPanel = () => {
     const [chartType] = useChartConfigState('chartType', sheetsChartUIService);
     const [backgroundColor, setBackgroundColor] = useChartConfigState('backgroundColor', sheetsChartUIService, '');
     const [borderColor, setBorderColor] = useChartConfigState('borderColor', sheetsChartUIService, '');
-    const [fontSize, setFontSize] = useChartConfigState('fontSize', sheetsChartUIService, textStyle.titleFontSize);
+    const [fontSize, setFontSize] = useChartConfigState('fontSize', sheetsChartUIService, textStyle.fontSize);
+    const [titleFontSize, setTitleFontSize] = useChartConfigState('titleFontSize', sheetsChartUIService, textStyle.titleFontSize);
     // const [seriesList] = useChartConfigState('seriesList', sheetsChartUIService);
     // const [allSeriesStyle, setAllSeriesStyle] = useChartConfigState('allSeriesStyle', sheetsChartUIService);
     // const [seriesStyleMap, setSeriesStyleMap] = useChartConfigState('seriesStyleMap', sheetsChartUIService);
@@ -117,10 +118,24 @@ export const StyleTabPanel = () => {
                         <div className={styles.styleTabPanelRowHalf}>
                             <div className={styles.styleTabPanelLabel}>字体大小</div>
                             <div className={styles.styleTabPanelFontSizeBar}>
-                                <Button type="text" className={styles.styleTabPanelFontSizeBtn} onClick={() => setFontSize(fontSize - 1)}>
+                                <Button
+                                    type="text"
+                                    className={styles.styleTabPanelFontSizeBtn}
+                                    onClick={() => {
+                                        setFontSize(fontSize - 1);
+                                        setTitleFontSize(titleFontSize - 1);
+                                    }}
+                                >
                                     <FontSizeReduceSingle />
                                 </Button>
-                                <Button type="text" className={styles.styleTabPanelFontSizeBtn} onClick={() => setFontSize(fontSize + 1)}>
+                                <Button
+                                    type="text"
+                                    className={styles.styleTabPanelFontSizeBtn}
+                                    onClick={() => {
+                                        setFontSize(fontSize + 1);
+                                        setTitleFontSize(titleFontSize + 1);
+                                    }}
+                                >
                                     <FontSizeIncreaseSingle />
                                 </Button>
                             </div>

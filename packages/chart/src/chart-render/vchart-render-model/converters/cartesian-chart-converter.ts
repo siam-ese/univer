@@ -15,7 +15,7 @@
  */
 
 import type { ICartesianChartSpec } from '@visactor/vchart';
-import { chartBitsUtils, ChartTypeBits } from '../../../chart/constants';
+import { chartBitsUtils } from '../../../chart/constants';
 import type { IChartRenderSpecConverter } from '../../types';
 import { SpecField } from './constants';
 import { createLabelMap } from './tools';
@@ -24,13 +24,13 @@ type ExpectedSpec = ICartesianChartSpec & { seriesField: string };
 
 export const cartesianChartConverter: IChartRenderSpecConverter<ExpectedSpec> = {
     canConvert(config) {
-        if (config.type === ChartTypeBits.Combination
-            || config.type === ChartTypeBits.Radar
-            || chartBitsUtils.baseOn(config.type, ChartTypeBits.Pie)
-        ) {
-            return false;
-        }
-        return true;
+        // if (config.type === ChartTypeBits.Combination
+        //     || config.type === ChartTypeBits.Radar
+        //     || chartBitsUtils.baseOn(config.type, ChartTypeBits.Pie)
+        // ) {
+        return false;
+        // }
+        // return true;
     },
     // eslint-disable-next-line max-lines-per-function
     convert(config) {
@@ -49,6 +49,7 @@ export const cartesianChartConverter: IChartRenderSpecConverter<ExpectedSpec> = 
                     [SpecField.yField]: item.value,
                     [SpecField.xField]: xField,
                     [SpecField.seriesFieldLabel]: ser.name,
+                    [SpecField.categoryFieldLabel]: categoryNameMap[xField],
                 });
             });
         }).flat();
@@ -86,7 +87,7 @@ export const cartesianChartConverter: IChartRenderSpecConverter<ExpectedSpec> = 
                     title: {
                         visible: hasCategory,
                         value: (datum) => {
-                            return categoryNameMap[datum?.[SpecField.xField]];
+                            return datum?.[SpecField.categoryFieldLabel];
                         },
                     },
                 },

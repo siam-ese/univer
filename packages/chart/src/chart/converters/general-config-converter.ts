@@ -16,9 +16,10 @@
 
 import type { IChartConfigConverter } from '../types';
 
-export const generalChartConverter: IChartConfigConverter = {
+export const generalConfigConverter: IChartConfigConverter = {
     canConvert(bit) {
         return true;
+        // return false;
         // return bit !== ChartTypeBits.Combination;
     },
     convert: (chartType, chartData) => {
@@ -27,15 +28,5 @@ export const generalChartConverter: IChartConfigConverter = {
             category: chartData.category,
             series: chartData.series,
         };
-        // return {
-        //     type: chartType,
-        //     units: [{
-        //         type: chartType,
-        //         data: {
-        //             category: chartData.category,
-        //             series: chartData.series,
-        //         },
-        //     }],
-        // };
     },
 };

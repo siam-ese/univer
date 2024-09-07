@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-// export { combinationChartConverter } from './combination-chart-converter';
-export { generalChartConverter } from './general-chart-converter';
+export { combinationConfigConverter } from './combination-config-converter';
+export { generalConfigConverter } from './general-config-converter';

@@ -16,7 +16,7 @@
 
 import type { IRange, Nullable } from '@univerjs/core';
 import { Disposable, Inject, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
-import type { AreaLineStyle, ChartModel, ChartTypeBits, DataDirection, DeepPartial, IAllSeriesStyle, IChartDataConfig, ILabelStyle, ILegendStyle, IPieLabelStyle, ISeriesStyle, IXAxisOptions, IYAxisOptions, RadarShape } from '@univerjs/chart';
+import type { AreaLineStyle, ChartModel, ChartTypeBits, DataDirection, DeepPartial, IAllSeriesStyle, IChartDataContext, ILabelStyle, ILegendStyle, IPieLabelStyle, ISeriesStyle, IXAxisOptions, IYAxisOptions, RadarShape } from '@univerjs/chart';
 import { CategoryType, ChartAttributeBits, chartBitsUtils, SheetsChartConfigService, SheetsChartService, StackType } from '@univerjs/chart';
 import { combineLatestWith, distinctUntilChanged, map, type Observable } from 'rxjs';
 
@@ -26,7 +26,7 @@ function formatAxisOptionLabel(column: number, dataRange: IRange) {
 
 // eslint-disable-next-line max-lines-per-function
 export function registryChartConfigState(service: SheetsChartUIService) {
-    service.registerViewState('headers', (chartModel) => chartModel.dataConfig$.pipe(map((config) => config.headers)));
+    service.registerViewState('headers', (chartModel) => chartModel.dataContext$.pipe(map((config) => config.headers)));
     service.registerViewState('chartType', (chartModel) => ({
         set(type) {
             if (chartBitsUtils.has(type, ChartAttributeBits.Stack)) {
@@ -74,7 +74,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                     // Trigger update data source
                     dataSource.setRange(v);
 
-                    chartModel.assignDataConfig({
+                    chartModel.assignDataContext({
                         categoryIndex: undefined,
                         categoryType: undefined,
                         seriesIndexes: undefined,
@@ -92,13 +92,13 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             if (typeof v !== 'number') {
                 return;
             }
-            chartModel.assignDataConfig({
+            chartModel.assignDataContext({
                 categoryIndex: v,
             });
         },
         get() {
-            return chartModel.dataConfig$.pipe(
-                map((dataConfig) => dataConfig.categoryIndex),
+            return chartModel.dataContext$.pipe(
+                map((dataContext) => dataContext.categoryIndex),
                 distinctUntilChanged()
             );
         },
@@ -107,12 +107,12 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     service.registerViewState('categoryList', (chartModel) => {
         const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
         if (!dataSourceRange$) {
-            return chartModel.dataConfig$.pipe(map(() => []));
+            return chartModel.dataContext$.pipe(map(() => []));
         }
-        return chartModel.dataConfig$.pipe(
+        return chartModel.dataContext$.pipe(
             combineLatestWith(dataSourceRange$),
-            map(([dataConfig, dataRange]) => {
-                const { categoryResourceIndexes, seriesResourceIndexes, headers } = dataConfig;
+            map(([dataContext, dataRange]) => {
+                const { categoryResourceIndexes, seriesResourceIndexes, headers } = dataContext;
                 const indexes = categoryResourceIndexes?.concat(seriesResourceIndexes || [])
                     .sort((a, b) => (a || 0) - (b || 0));
 
@@ -136,13 +136,13 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     });
     service.registerViewState('seriesValues', (chartModel) => ({
         set(values) {
-            chartModel.assignDataConfig({
+            chartModel.assignDataContext({
                 seriesIndexes: values,
             });
         },
         get() {
-            return chartModel.dataConfig$.pipe(map((dataConfig) => {
-                const { seriesIndexes = [] } = dataConfig;
+            return chartModel.dataContext$.pipe(map((dataContext) => {
+                const { seriesIndexes = [] } = dataContext;
 
                 return seriesIndexes;
             }));
@@ -152,13 +152,13 @@ export function registryChartConfigState(service: SheetsChartUIService) {
         get() {
             const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
             if (!dataSourceRange$) {
-                return chartModel.dataConfig$.pipe(map(() => []));
+                return chartModel.dataContext$.pipe(map(() => []));
             }
 
-            return chartModel.dataConfig$.pipe(
+            return chartModel.dataContext$.pipe(
                 combineLatestWith(dataSourceRange$),
-                map(([dataConfig, dataRange]) => {
-                    const { seriesIndexes = [], headers } = dataConfig;
+                map(([dataContext, dataRange]) => {
+                    const { seriesIndexes = [], headers } = dataContext;
 
                     const options = seriesIndexes.map((idx) => {
                         const header = headers?.[idx];
@@ -179,13 +179,13 @@ export function registryChartConfigState(service: SheetsChartUIService) {
         get() {
             const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
             if (!dataSourceRange$) {
-                return chartModel.dataConfig$.pipe(map(() => []));
+                return chartModel.dataContext$.pipe(map(() => []));
             }
 
-            return chartModel.dataConfig$.pipe(
+            return chartModel.dataContext$.pipe(
                 combineLatestWith(dataSourceRange$),
-                map(([dataConfig, dataRange]) => {
-                    const { seriesResourceIndexes = [], headers } = dataConfig;
+                map(([dataContext, dataRange]) => {
+                    const { seriesResourceIndexes = [], headers } = dataContext;
 
                     const options = seriesResourceIndexes.map((idx) => {
                         const header = headers?.[idx];
@@ -204,13 +204,13 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     }));
     service.registerViewState('aggregate', (chartModel) => ({
         set(value) {
-            chartModel.assignDataConfig({
+            chartModel.assignDataContext({
                 aggregate: value,
             });
         },
         get() {
-            return chartModel.dataConfig$.pipe(
-                map((dataConfig) => dataConfig.aggregate || false),
+            return chartModel.dataContext$.pipe(
+                map((dataContext) => dataContext.aggregate || false),
                 distinctUntilChanged()
             );
         },
@@ -223,7 +223,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                 const dataSource = service.getDataSource(id);
                 if (dataSource) {
                     // Trigger update data source
-                    chartModel.assignDataConfig({
+                    chartModel.assignDataContext({
                         direction: value,
                         categoryIndex: undefined,
                         categoryType: undefined,
@@ -234,13 +234,13 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             }
         },
         get() {
-            return chartModel.dataConfig$.pipe(
-                map((dataConfig) => dataConfig.direction),
+            return chartModel.dataContext$.pipe(
+                map((dataContext) => dataContext.direction),
                 distinctUntilChanged()
             );
         },
     }));
-    service.registerViewState('defaultDirection', (chartModel) => chartModel.dataConfig$.pipe(map((dataConfig) => dataConfig.defaultDirection)));
+    service.registerViewState('defaultDirection', (chartModel) => chartModel.dataContext$.pipe(map((dataContext) => dataContext.defaultDirection)));
 
     service.registerViewState('gradientFill', (chartModel) => ({
         set(v) {
@@ -260,13 +260,13 @@ export function registryChartConfigState(service: SheetsChartUIService) {
 
     service.registerViewState('asCategory', (chartModel) => ({
         set(option) {
-            const { dataConfig } = chartModel;
-            const seriesIncludes = (idx: number) => dataConfig.seriesResourceIndexes?.indexOf(idx) !== -1;
+            const { dataContext } = chartModel;
+            const seriesIncludes = (idx: number) => dataContext.seriesResourceIndexes?.indexOf(idx) !== -1;
 
             if (option) { // checked
                 const categoryIndex = Number(option.value);
 
-                const newDataConfig: Partial<IChartDataConfig> = {
+                const newDataConfig: Partial<IChartDataContext> = {
                     categoryIndex,
                     categoryType: CategoryType.Text,
                 };
@@ -275,25 +275,25 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                     newDataConfig.seriesIndexes = newDataConfig.seriesIndexes?.filter((index) => index !== categoryIndex);
                 }
 
-                chartModel.assignDataConfig(newDataConfig);
-            } else if (typeof dataConfig.categoryIndex === 'number') { // unchecked
-                const newDataConfig: Partial<IChartDataConfig> = {
+                chartModel.assignDataContext(newDataConfig);
+            } else if (typeof dataContext.categoryIndex === 'number') { // unchecked
+                const newDataConfig: Partial<IChartDataContext> = {
                     categoryIndex: undefined,
                     categoryType: undefined,
                 };
-                if (seriesIncludes(dataConfig.categoryIndex)) {
-                    newDataConfig.seriesIndexes = [dataConfig.categoryIndex].concat(dataConfig.seriesIndexes || []);
+                if (seriesIncludes(dataContext.categoryIndex)) {
+                    newDataConfig.seriesIndexes = [dataContext.categoryIndex].concat(dataContext.seriesIndexes || []);
                 }
-                chartModel.assignDataConfig(newDataConfig);
+                chartModel.assignDataContext(newDataConfig);
             }
         },
         get() {
-            return chartModel.dataConfig$.pipe(map((dataConfig) => {
+            return chartModel.dataContext$.pipe(map((dataContext) => {
                 const dataSource = service.getDataSource(chartModel.id);
                 if (dataSource) {
-                    const categoryIndex = dataConfig.categoryIndex
-                        ?? dataConfig.categoryResourceIndexes?.[0]
-                        ?? dataConfig.seriesResourceIndexes?.[0];
+                    const categoryIndex = dataContext.categoryIndex
+                        ?? dataContext.categoryResourceIndexes?.[0]
+                        ?? dataContext.seriesResourceIndexes?.[0];
                     const columnValue = dataSource.range.startColumn + categoryIndex!;
 
                     return {
@@ -346,6 +346,21 @@ export function registryChartConfigState(service: SheetsChartUIService) {
         get() {
             return chartModel.style$.pipe(
                 map((style) => style.common?.fontSize),
+                distinctUntilChanged()
+            );
+        },
+    }));
+    service.registerViewState('titleFontSize', (chartModel) => ({
+        set(fontSize) {
+            chartModel.applyStyle({
+                common: {
+                    titleFontSize: fontSize,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(
+                map((style) => style.common?.titleFontSize),
                 distinctUntilChanged()
             );
         },
@@ -555,7 +570,7 @@ export interface IChartOptionType {
 // type ExtractValuable<T> = T extends null | undefined ? never : T;
 // export type SelectOption = ExtractValuable<ISelectProps['options']>;
 export interface IChartConfigStateMap {
-    headers: IChartConfigState<IChartDataConfig['headers']>;
+    headers: IChartConfigState<IChartDataContext['headers']>;
     defaultDirection: IChartConfigState<Nullable<DataDirection>>;
     direction: IChartConfigState<Nullable<DataDirection>>;
     aggregate: IChartConfigState<boolean>;
@@ -572,6 +587,7 @@ export interface IChartConfigStateMap {
     backgroundColor: IChartConfigState<Nullable<string>>;
     borderColor: IChartConfigState<Nullable<string>>;
     fontSize: IChartConfigState<number | undefined, number>;
+    titleFontSize: IChartConfigState<number | undefined, number>;
     titleStyle: IChartConfigState<Nullable<DeepPartial<ILabelStyle>>, Partial<ILabelStyle>>;
     subtitleStyle: IChartConfigState<Nullable<DeepPartial<ILabelStyle>>, Partial<ILabelStyle>>;
     xAxisTitleStyle: IChartConfigState<Nullable<DeepPartial<ILabelStyle>>, Partial<ILabelStyle>>;

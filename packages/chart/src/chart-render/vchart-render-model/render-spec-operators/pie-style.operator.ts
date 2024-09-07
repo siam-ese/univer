@@ -48,7 +48,7 @@ export const pieStyleOperator: VChartRenderSpecOperator = (_spec, style, config)
     // Tools.set(spec, 'label.style.type', 'text');
     applyLabelStyle(spec, 'label.style', {
         // color: defaultChartStyle.textStyle.color,
-        fontSize: defaultChartStyle.textStyle.labelFontSize,
+        fontSize: defaultChartStyle.textStyle.fontSize,
         ...style.pie?.labelStyle,
     });
 

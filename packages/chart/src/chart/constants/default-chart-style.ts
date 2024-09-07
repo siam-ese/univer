@@ -15,11 +15,15 @@
  */
 
 import { generateRandomId } from '@univerjs/core';
-import { AreaLineStyle, ChartBorderDashType, LabelContentType, LegendPosition, PieLabelPosition, RadarShape, SeriesLabelPosition } from '../style.types';
+import { AreaLineStyle, ChartBorderDashType, LabelContentType, LegendPosition, LinePointShape, PieLabelPosition, RadarShape, SeriesLabelPosition } from '../style.types';
 import { ChartTypeBits } from '../constants';
 
 export const defaultChartStyle = {
     allSeriesId: generateRandomId(10),
+    linePoint: {
+        shape: LinePointShape.Circle,
+        size: 4,
+    },
     axis: {
         lineVisible: true,
         labelVisible: true,
@@ -35,7 +39,7 @@ export const defaultChartStyle = {
         dashType: ChartBorderDashType.Solid,
     },
     textStyle: {
-        labelFontSize: 12,
+        fontSize: 12,
         titleFontSize: 16,
         color: '#1f2329',
         align: 'left',

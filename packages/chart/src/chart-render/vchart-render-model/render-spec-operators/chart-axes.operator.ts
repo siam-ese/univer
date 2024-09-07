@@ -36,7 +36,7 @@ export const chartAxesOperator: VChartRenderSpecOperator = (spec, style, config,
 
         applyLabelStyle(spec, `axes.${specXAxisIndex}.label.style`, {
             color: defaultChartStyle.textStyle.color,
-            fontSize: defaultChartStyle.textStyle.titleFontSize,
+            fontSize: defaultChartStyle.textStyle.fontSize,
             ...xAxisLabel,
         });
 
@@ -62,7 +62,7 @@ export const chartAxesOperator: VChartRenderSpecOperator = (spec, style, config,
 
         applyLabelStyle(spec, `axes.${specYAxisIndex}.label.style`, {
             color: defaultChartStyle.textStyle.color,
-            fontSize: defaultChartStyle.textStyle.titleFontSize,
+            fontSize: defaultChartStyle.textStyle.fontSize,
             ...yAxisLabel,
         });
 

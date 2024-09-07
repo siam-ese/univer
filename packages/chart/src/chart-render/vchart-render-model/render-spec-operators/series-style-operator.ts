@@ -16,7 +16,7 @@
 
 import { Tools } from '@univerjs/core';
 import type { VChartRenderSpecOperator } from '../vchart-render-engine';
-import type { ISeriesStyle } from '../../../chart/style.types';
+import type { IAllSeriesStyle, ISeriesStyle } from '../../../chart/style.types';
 import { ChartBorderDashType } from '../../../chart/style.types';
 
 const dashValues = {
@@ -25,12 +25,54 @@ const dashValues = {
     [ChartBorderDashType.Dashed]: [6, 2],
 };
 
-const supportedChartUnit = ['bar', 'line'];
+const supportedChartUnit = ['bar', 'line'] as const;
+
+const seriesStylizers = {
+    bar(seriesSpec: Record<string, any>, seriesStyle: Partial<IAllSeriesStyle & ISeriesStyle>) {
+        if (seriesStyle.color) {
+            Tools.set(seriesSpec, 'line.style.fill', seriesStyle.color);
+        }
+        if (seriesStyle.fillOpacity) {
+            Tools.set(seriesSpec, 'line.style.fillOpacity', seriesStyle.fillOpacity);
+        }
+        const borderStyle = seriesStyle.border;
+        if (borderStyle?.dashType) {
+            Tools.set(seriesSpec, 'bar.style.outerBorder.lineDash', dashValues[borderStyle.dashType]);
+        }
+        if (borderStyle?.width) {
+            Tools.set(seriesSpec, 'bar.style.outerBorder.lineWidth', borderStyle.width);
+        }
+        if (borderStyle?.opacity) {
+            Tools.set(seriesSpec, 'bar.style.outerBorder.strokeOpacity', borderStyle.opacity);
+        }
+        if (borderStyle?.color) {
+            Tools.set(seriesSpec, 'bar.style.outerBorder.stroke', borderStyle.color);
+        }
+    },
+    line(seriesSpec: Record<string, any>, seriesStyle: Partial<IAllSeriesStyle & ISeriesStyle>) {
+        if (seriesStyle.color) {
+            Tools.set(seriesSpec, 'line.style.fill', seriesStyle.color);
+        }
+        if (seriesStyle.fillOpacity) {
+            Tools.set(seriesSpec, 'line.style.fillOpacity', seriesStyle.fillOpacity);
+        }
+
+        const borderStyle = seriesStyle.border;
+
+        if (borderStyle?.dashType) {
+            Tools.set(seriesSpec, 'line.style.lineDash', dashValues[borderStyle.dashType]);
+        }
+        if (borderStyle?.width) {
+            Tools.set(seriesSpec, 'line.style.lineWidth', borderStyle.width);
+        }
+    },
+};
+
 export const seriesStyleOperator: VChartRenderSpecOperator = (spec, style, config) => {
     const specSeriesStyle = config.series.map((series) => {
         return {
             index: series.index,
-            name: series.name,
+            name: String(series.index),
         };
     });
     const allSeriesStyle = style.common?.allSeriesStyle;
@@ -43,26 +85,11 @@ export const seriesStyleOperator: VChartRenderSpecOperator = (spec, style, confi
     specSeriesStyle.forEach((item) => {
         const styleItem = seriesStyleMap?.[item.index];
 
-        const applyBorderStyle: Partial<ISeriesStyle['border']> = Object.assign({}, allSeriesStyle?.border, styleItem?.border);
-        // const applyLabelStyle: Partial<ISeriesStyle['label']> = Object.assign({}, allSeriesStyle?.label, styleItem?.label);
+        const mergedStyle: Partial<IAllSeriesStyle & ISeriesStyle> = Tools.deepMerge({}, allSeriesStyle, styleItem);
 
         supportedChartUnit.forEach((unit) => {
-            if (applyBorderStyle?.dashType) {
-                Tools.set(item, `${unit}.style.outerBorder.lineDash`, dashValues[applyBorderStyle.dashType]);
-            }
-            if (applyBorderStyle?.width) {
-                Tools.set(item, `${unit}.style.outerBorder.lineWidth`, applyBorderStyle.width);
-            }
-            if (applyBorderStyle?.opacity) {
-                Tools.set(item, `${unit}.style.outerBorder.strokeOpacity`, applyBorderStyle.opacity);
-            }
-            if (applyBorderStyle?.color) {
-                Tools.set(item, `${unit}.style.outerBorder.stroke`, applyBorderStyle.color);
-            }
-
-            // if (applyLabelStyle.visible) {
-            //     Tools.set(item, 'label.style.visible', applyLabelStyle.visible);
-            // }
+            const stylizer = seriesStylizers[unit];
+            stylizer(item, mergedStyle);
         });
     });
     spec.seriesStyle = specSeriesStyle;

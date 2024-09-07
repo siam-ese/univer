@@ -23,12 +23,12 @@ export function createLabelMap(config: IChartConfig) {
     // Map series index to series name
     const seriesNameMap: Record<string, string> = {};
 
-    series.forEach((ser, seriesIndex) => {
+    series.forEach((ser) => {
+        seriesNameMap[ser.index] = ser.name;
         ser.items.forEach((_item, valueIndex) => {
             const xField = category?.keys[valueIndex] || valueIndex;
             const xFieldLabel = category?.items[valueIndex].label || '';
             categoryNameMap[xField] = xFieldLabel;
-            seriesNameMap[seriesIndex] = ser.name;
         });
     });
 

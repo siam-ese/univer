@@ -22,10 +22,10 @@ export interface IChartSnapshot {
     id: string;
 }
 
-export type ChartDataSource = Array<Array<Nullable<CellValue>>>;
 export type ChartDataSourceValue = Nullable<CellValue>;
+export type ChartDataSource = Array<Array<ChartDataSourceValue>>;
 
-export interface IChartDataConfig {
+export interface IChartDataContext {
     defaultDirection?: DataDirection;
     direction?: DataDirection;
     aggregate?: boolean; // effect on both of data and render
@@ -38,45 +38,41 @@ export interface IChartDataConfig {
     seriesResourceIndexes?: number[];
 }
 
+interface IChartDataItem {
+    value: ChartDataSourceValue;
+    label: string;
+}
+interface IChartDataCategory {
+    index: number;
+    name: string;
+    type: CategoryType;
+    items: IChartDataItem[];
+    keys: string[];
+}
+
+interface IChartDataSeries {
+    index: number;
+    name: string;
+    items: IChartDataItem[];
+}
+
 export interface IChartData {
-    category?: {
-        index: number;
-        name: string;
-        type: CategoryType;
-        items: Array<{
-            value: ChartDataSourceValue;
-            label: string;
-        }>;
-        keys: string[];
-    };
-    series: Array<{
-        index: number;
-        name: string;
-        items: Array<{
-            value: ChartDataSourceValue;
-            label: string;
-        }>;
-    }>;
+    category?: IChartDataCategory;
+    series: IChartDataSeries[];
 };
+
+// export interface IChartConfigSeries extends IChartDataSeries {
+//     chartType: ChartTypeBits;
+//     rightYAxis?: boolean;
+// }
 
 export interface IChartConfig {
     type: ChartTypeBits;
     category: IChartData['category'];
     series: IChartData['series'];
-    // units: IChartUnit[];
-}
-
-export interface IChartUnit {
-    type: ChartTypeBits;
-    data: {
-        category: IChartData['category'];
-        series: IChartData['series'];
-        formatCode?: string;
-    }; // for dataSource to chartConfig
 }
 
 export interface IChartConfigConverter {
     canConvert(type: ChartTypeBits): boolean;
     convert(type: ChartTypeBits, data: IChartData): IChartConfig;
 }
-

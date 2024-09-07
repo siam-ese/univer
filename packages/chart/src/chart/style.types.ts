@@ -85,13 +85,31 @@ export interface IDataPointStyle {
     color: string; // set to color
 };
 
+export enum LinePointShape {
+    Circle = 'circle',
+    Square = 'square',
+    Triangle = 'triangle',
+    Diamond = 'diamond',
+}
+export interface ILinePointStyle {
+    shape: LinePointShape;
+    size: number;
+    color: string;
+}
+
 export enum ChartBorderDashType {
     Solid = 'solid',
     Dashed = 'dashed',
     Dotted = 'dotted',
 }
+
+export enum ChartCartesianAxisPosition {
+    Left = 'left',
+    Right = 'right',
+}
 export interface ISeriesStyle {
     chartType?: ChartTypeBits.Line | ChartTypeBits.Column | ChartTypeBits.Area;
+    rightYAxis?: boolean;
     color: string;
     fillOpacity: number;
     border: {
@@ -101,12 +119,13 @@ export interface ISeriesStyle {
         dashType: ChartBorderDashType;
     };
     label: ISeriesLabelStyle;
+    linePoint: ILinePointStyle;
     dataPoints: {
         [index: number]: IDataPointStyle;
     };
 }
 
-export interface IAllSeriesStyle extends Pick<ISeriesStyle, 'chartType' | 'border' | 'label'> {
+export interface IAllSeriesStyle extends Pick<ISeriesStyle, 'chartType' | 'border' | 'label' | 'rightYAxis' | 'linePoint'> {
 
 }
 

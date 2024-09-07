@@ -114,59 +114,59 @@ export function sumArray(ary: ChartDataSourceValue[]) {
 }
 
 export const dataDirectionOperator: IChartDataPipelineOperator = (ctx) => {
-    const { dataConfig } = ctx;
-    const direction = dataConfig.direction || dataConfig.defaultDirection;
+    const { dataContext } = ctx;
+    const direction = dataContext.direction || dataContext.defaultDirection;
     if (direction === DataDirection.Column) {
         ctx.dataSource = dataDirectionToColumn(ctx.dataSource);
     }
 };
 
-export const findHeaderOperator: IChartDataPipelineOperator = ({ dataConfig, dataSource }) => {
+export const findHeaderOperator: IChartDataPipelineOperator = ({ dataContext, dataSource }) => {
     const header: ChartDataSourceValue[] = dataSource.map((line) => line[0]);
 
     const counts = countTypesFromArray(header);
     if (counts.strings >= counts.numbers) {
-        dataConfig.headers = header.map(toString);
+        dataContext.headers = header.map(toString);
         dataSource.forEach((items) => items.shift());
     } else {
-        dataConfig.headers = undefined;
+        dataContext.headers = undefined;
     }
 };
 
-export const findCategoryOperator: IChartDataPipelineOperator = ({ dataConfig, dataSource }) => {
+export const findCategoryOperator: IChartDataPipelineOperator = ({ dataContext, dataSource }) => {
     const categoryIndexes = findCategoryIndexes(dataSource);
 
-    dataConfig.categoryResourceIndexes = categoryIndexes;
+    dataContext.categoryResourceIndexes = categoryIndexes;
 
-    if (isNil(dataConfig.categoryIndex)) {
-        dataConfig.categoryIndex = categoryIndexes[0];
+    if (isNil(dataContext.categoryIndex)) {
+        dataContext.categoryIndex = categoryIndexes[0];
     }
 
-    dataConfig.categoryType = isNil(dataConfig.categoryIndex)
+    dataContext.categoryType = isNil(dataContext.categoryIndex)
         ? undefined
-        : countTypesFromArray(dataSource[dataConfig.categoryIndex]).strings > 0 ? CategoryType.Text : CategoryType.Linear;
+        : countTypesFromArray(dataSource[dataContext.categoryIndex]).strings > 0 ? CategoryType.Text : CategoryType.Linear;
 };
 
-export const findSeriesOperator: IChartDataPipelineOperator = ({ dataConfig, dataSource }) => {
+export const findSeriesOperator: IChartDataPipelineOperator = ({ dataContext, dataSource }) => {
     const seriesResourceIndexesSet = new Set<number>();
     dataSource.forEach((_, i) => {
-        if (!dataConfig.categoryResourceIndexes?.includes(i)) {
+        if (!dataContext.categoryResourceIndexes?.includes(i)) {
             seriesResourceIndexesSet.add(i);
         }
     });
-    dataConfig.seriesIndexes = dataConfig.seriesIndexes
-        ? dataConfig.seriesIndexes.filter((i) => seriesResourceIndexesSet.has(i))
+    dataContext.seriesIndexes = dataContext.seriesIndexes
+        ? dataContext.seriesIndexes.filter((i) => seriesResourceIndexesSet.has(i))
         : Array.from(seriesResourceIndexesSet);
-    dataConfig.seriesResourceIndexes = Array.from(seriesResourceIndexesSet);
+    dataContext.seriesResourceIndexes = Array.from(seriesResourceIndexesSet);
 };
 
 export const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
-    const { dataSource, dataConfig } = ctx;
-    if (!dataConfig.aggregate) {
+    const { dataSource, dataContext } = ctx;
+    if (!dataContext.aggregate) {
         return;
     }
 
-    const categoryData = !isNil(dataConfig.categoryIndex) ? dataSource[dataConfig.categoryIndex] : undefined;
+    const categoryData = !isNil(dataContext.categoryIndex) ? dataSource[dataContext.categoryIndex] : undefined;
     if (!categoryData) {
         return;
     }
@@ -174,7 +174,7 @@ export const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
     const getCategoryTextByIndex = (idx: number) => toString(categoryData[idx]);
     ctx.dataSource = ctx.dataSource.map((items, itemsIndex) => {
         const groups = groupBy(items, (_, i) => getCategoryTextByIndex(i));
-        if (itemsIndex === dataConfig.categoryIndex) {
+        if (itemsIndex === dataContext.categoryIndex) {
             return groups.map((group) => group.name);
         } else {
             return groups.map((group) => sumArray(group.values));

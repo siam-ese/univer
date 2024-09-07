@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-import type { ChartDataSource, IChartData, IChartDataConfig } from '../types';
+import type { ChartDataSource, IChartData, IChartDataContext } from '../types';
 import { toString } from './operators';
 
 export type IChartDataPipelineOperator = (ctx: IChartDataPipelineContext) => void;
 export interface IChartDataPipelineContext {
     dataSource: ChartDataSource;
-    dataConfig: IChartDataConfig;
+    dataContext: IChartDataContext;
 }
 
-export function buildChartData(dataSource: ChartDataSource, dataConfig: IChartDataConfig): IChartData {
-    const { headers } = dataConfig;
+export function buildChartData(dataSource: ChartDataSource, dataContext: IChartDataContext): IChartData {
+    const { headers } = dataContext;
 
-    const seriesIndexes = dataConfig.seriesIndexes || [];
+    const seriesIndexes = dataContext.seriesIndexes || [];
 
     const result: IChartData = {
         series: seriesIndexes.map((index) => {
@@ -42,14 +42,14 @@ export function buildChartData(dataSource: ChartDataSource, dataConfig: IChartDa
         }),
     };
 
-    const categoryIndex = dataConfig.categoryIndex;
+    const categoryIndex = dataContext.categoryIndex;
     if (categoryIndex !== undefined) {
         const categoryData = dataSource[categoryIndex];
 
         result.category = {
             index: categoryIndex,
             name: toString(headers?.[categoryIndex]),
-            type: dataConfig.categoryType!,
+            type: dataContext.categoryType!,
             items: categoryData.map((value) => ({
                 value,
                 label: toString(value),

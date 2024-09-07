@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-export { chartAxesOperator } from './chart-axes-operator';
-export { chartBorderOperator } from './chart-border-operator';
-export { chartBoxStyleOperator } from './chart-box-style-operator';
-export { dataLabelOperator } from './data-label-operator';
-export { fillOperator } from './fill-operator';
-export { fontSizeOperator } from './font-size-operator';
-export { legendStyleOperator } from './legend-style-operator';
+export { chartAxesOperator } from './chart-axes.operator';
+export { chartBorderOperator } from './chart-border.operator';
+export { chartBoxStyleOperator } from './chart-box-style.operator';
+export { dataLabelOperator } from './data-label.operator';
+export { fillOperator } from './fill.operator';
+export { fontSizeOperator } from './font-size.operator';
+export { legendStyleOperator } from './legend-style.operator';
 export { seriesStyleOperator } from './series-style-operator';
-export { stackOperator } from './stack-operator';
-export { titleStyleOperator } from './title-style-operator';
-export { areaStyleOperator } from './area-style-operator';
-export { pieStyleOperator } from './pie-style-operator';
-export { labelMapOperator } from './label-map-operator';
-export { combinationStyleOperator } from './combination-style-operator';
-export { barStyleOperator } from './bar-style-operator';
+export { stackOperator } from './stack.operator';
+export { titleStyleOperator } from './title-style.operator';
+export { areaStyleOperator } from './area-style.operator';
+export { pieStyleOperator } from './pie-style.operator';
+export { combinationStyleOperator } from './combination-style.operator';
+export { barStyleOperator } from './bar-style.operator';
+export { hoverMarkStyleOperator } from './hover-mark-style.operator';

@@ -19,6 +19,7 @@ import type { IChartConfig } from '../../chart/types';
 import type { IChartInstance } from '../chart-instance';
 import type { IChartRenderModel, IChartRenderModelStylizeInit } from '../chart-render-model';
 import type { IChartRenderSpecConverter, RenderSpecOperator } from '../types';
+import type { ChartStyle } from '../../chart/style.types';
 import { cartesianChartConverter } from './converters/cartesian-chart-converter';
 import { pieChartConverter } from './converters/pie-chart-converter';
 import { radarChartConverter } from './converters/radar-chart-converter';
@@ -33,7 +34,7 @@ import {
     dataLabelOperator,
     fillOperator,
     fontSizeOperator,
-    labelMapOperator,
+    hoverMarkStyleOperator,
     legendStyleOperator,
     pieStyleOperator,
     seriesStyleOperator,
@@ -50,13 +51,18 @@ export class VChartRenderModel extends Disposable implements IChartRenderModel {
 
     constructor() {
         super();
-        const { _specConverters, _specOperators } = this;
+
+        this._addSpecConverters();
+        this._addSpecOperators();
+    }
+
+    private _addSpecConverters() {
+        const { _specConverters } = this;
+
         _specConverters.add(cartesianChartConverter);
         _specConverters.add(pieChartConverter);
         _specConverters.add(radarChartConverter);
         _specConverters.add(combinationChartConverter);
-
-        this._addSpecOperators();
     }
 
     private _addSpecOperators() {
@@ -75,28 +81,28 @@ export class VChartRenderModel extends Disposable implements IChartRenderModel {
         _specOperators.add(areaStyleOperator);
         _specOperators.add(pieStyleOperator);
         _specOperators.add(radarStyleOperator);
-        _specOperators.add(labelMapOperator);
         _specOperators.add(combinationStyleOperator);
         _specOperators.add(barStyleOperator);
+        _specOperators.add(hoverMarkStyleOperator);
     }
 
     createChartInstance(): IChartInstance<VChartSpec> {
         return new VChartRenderEngine();
     }
 
-    toSpec(chartConfig: IChartConfig) {
+    toSpec(config: IChartConfig, style: ChartStyle) {
         const { _specConverters } = this;
-        const converter = Array.from(_specConverters).find((converter) => converter.canConvert(chartConfig));
+        const converter = Array.from(_specConverters).find((converter) => converter.canConvert(config));
 
-        return converter?.convert(chartConfig) || {};
+        return converter?.convert(config, style) || {};
     }
 
     stylizeSpec(spec: VChartSpec, stylizeInit: IChartRenderModelStylizeInit<VChartSpec>) {
         const { _specOperators } = this;
 
         const { chartStyle, chartConfig, chartInstance } = stylizeInit;
-        for (const Operator of _specOperators) {
-            Operator(spec, chartStyle, chartConfig, chartInstance);
+        for (const operator of _specOperators) {
+            operator(spec, chartStyle, chartConfig, chartInstance);
         }
         // console.log('final spec', spec);
         return spec;
