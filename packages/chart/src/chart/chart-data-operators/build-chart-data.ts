@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-import type { ChartDataSource, IChartData, IChartDataContext } from '../types';
+import type { ChartDataSource, IChartData, IChartDataContext, IChartDataTransformConfig } from '../types';
 import { toString } from './operators';
 
 export type IChartDataPipelineOperator = (ctx: IChartDataPipelineContext) => void;
 export interface IChartDataPipelineContext {
     dataSource: ChartDataSource;
     dataContext: IChartDataContext;
+    dataTransformConfig: IChartDataTransformConfig;
 }
 
 export function buildChartData(dataSource: ChartDataSource, dataContext: IChartDataContext): IChartData {

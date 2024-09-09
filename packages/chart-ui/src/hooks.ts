@@ -27,7 +27,7 @@ export function useSheetsChartUIService() {
     const sheetsChartConfigService = useDependency(SheetsChartConfigService);
     // chart ui service should update with activeChartModel change
     useObservable(sheetsChartConfigService.activeChartModel$);
-
+// console.log(activeChartModel, 'activeChartModel')
     return sheetsChartUIService;
 }
 
@@ -45,7 +45,7 @@ export function useChartConfigState<T extends ChartConfigStateKey = ChartConfigS
     service: SheetsChartUIService,
     defaultValue?: undefined
 ): [V | undefined, (value: V) => void] {
-    const viewState = useMemo(() => service.getViewState<V>(key), [service, key]);
+    const viewState = useMemo(() => service.getViewState<V>(key), [service, service.activeChartModel, key]);
 
     const observable = useMemo(() => viewState instanceof Observable ? viewState : viewState?.get(), [viewState]);
 

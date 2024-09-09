@@ -27,28 +27,17 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
     },
     // eslint-disable-next-line max-lines-per-function
     convert(config) {
-        // const unit = Array.isArray(config.units) ? config.units[0] : config.units;
         const { category, series } = config;
 
         const { categoryNameMap, seriesNameMap } = createLabelMap(config);
-        // const seriesNameMap: Record<string, string> = {};
-        // const categoryNameMap: Record<string, string> = {};
-        const values = series.map((ser, seriesIndex) => {
+        const values = series.map((ser) => {
             return ser.items.map((item, valueIndex) => {
-                // const xField = category?.keys[valueIndex] || valueIndex;
-                // const xFieldLabel = category?.items[valueIndex].label || '';
-                const categoryKey = category?.keys[valueIndex];
-                // const categoryLabel = category?.items[valueIndex].label || '';
-                // xFieldLabelMap[xField] = xFieldLabel;
-                // if (categoryKey) {
-                //     categoryNameMap[categoryKey] = categoryLabel;
-                // }
-                // seriesNameMap[seriesIndex] = ser.name;
+                const categoryKey = category?.keys[valueIndex] ?? `Category ${String(valueIndex + 1)}`;
 
                 return {
                     [SpecField.categoryField]: categoryKey,
                     [SpecField.categoryFieldLabel]: category?.items[valueIndex].label,
-                    [SpecField.seriesField]: String(seriesIndex),
+                    [SpecField.seriesField]: String(ser.index),
                     [SpecField.seriesFieldLabel]: ser.name,
                     [SpecField.valueField]: item.value,
                 }; ;
@@ -59,22 +48,6 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
             data: {
                 values,
             },
-            // pie: {
-            //     style: {
-            //         lineWidth: 1.5,
-            //     },
-            //     state: {
-            //         hover: {
-            //             outerRadius: 0.85,
-            //             outerBorder: {
-            //                 distance: 1,
-            //                 lineWidth: 1,
-            //                 stroke: '#4e83fd',
-            //             },
-            //         },
-
-            //     },
-            // },
             legends: [
                 {
                     type: 'discrete',
@@ -94,21 +67,41 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
                             return datum ? datum[SpecField.categoryFieldLabel] : '';
                         },
                         valueStyle: {
-                            fontSize: defaultChartStyle.textStyle.labelFontSize,
+                            fontSize: defaultChartStyle.textStyle.fontSize,
                         },
                     },
                     content: {
                         key: (datum) => {
-                            return datum ? datum[SpecField.categoryFieldLabel] : '';
+                            if (!datum) {
+                                return '';
+                            }
+
+                            return datum[SpecField.categoryFieldLabel] ?? datum[SpecField.seriesFieldLabel];
                         },
                         keyStyle: {
-                            fontSize: defaultChartStyle.textStyle.labelFontSize,
+                            fontSize: defaultChartStyle.textStyle.fontSize,
                         },
                         value: (datum) => {
-                            return datum ? `${datum[SpecField.valueField]}(${datum._percent_}%)` : '';
+                            return datum ? datum[SpecField.valueField] : '';
                         },
                         valueStyle: {
-                            fontSize: defaultChartStyle.textStyle.labelFontSize,
+                            fontSize: defaultChartStyle.textStyle.fontSize,
+                        },
+                    },
+                },
+                dimension: {
+                    content: {
+                        key: (datum) => {
+                            return datum ? datum[SpecField.seriesFieldLabel] : '';
+                        },
+                        value: (datum) => {
+                            return datum ? datum[SpecField.valueField] : '';
+                        },
+                        keyStyle: {
+                            fontSize: defaultChartStyle.textStyle.fontSize,
+                        },
+                        valueStyle: {
+                            fontSize: defaultChartStyle.textStyle.fontSize,
                         },
                     },
                 },
@@ -125,6 +118,11 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
                     label: {
                         visible: true,
                         formatMethod: (text, datum) => {
+                            const label = datum?.label;
+                            if (label) {
+                                return label;
+                            }
+
                             return datum?.id ? categoryNameMap[datum.id] : '';
                         },
                     },

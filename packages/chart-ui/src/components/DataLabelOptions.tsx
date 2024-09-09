@@ -97,8 +97,10 @@ export const DataLabelOptions = (props: IDataLabelOptionsProps) => {
                             <Select
                                 mode="multiple"
                                 className="chart-edit-panel-select"
+                                // @ts-ignore select supports multiple mode but the type definition is not correct
                                 value={contentTypes}
                                 options={contentTypeOptions}
+                                // @ts-ignore select supports multiple mode but the type definition is not correct
                                 onChange={handleContentTypeChange}
                             >
                             </Select>

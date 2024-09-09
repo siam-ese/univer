@@ -25,15 +25,22 @@ export interface IChartSnapshot {
 export type ChartDataSourceValue = Nullable<CellValue>;
 export type ChartDataSource = Array<Array<ChartDataSourceValue>>;
 
-export interface IChartDataContext {
+export interface IChartDataTransformConfig {
     defaultDirection?: DataDirection;
-    direction?: DataDirection;
+    direction: DataDirection;
     aggregate?: boolean; // effect on both of data and render
+    topN?: number;
+}
+
+export interface IChartDataContext {
+    // defaultDirection?: DataDirection;
+    // direction?: DataDirection;
+    // aggregate?: boolean; // effect on both of data and render
+    headers?: string[];
+    // firstRowAsHeader?: boolean;
     categoryIndex?: number;
     categoryType?: CategoryType;
     categoryResourceIndexes?: number[];
-    headers?: string[];
-    firstRowAsHeader?: boolean;
     seriesIndexes?: number[];
     seriesResourceIndexes?: number[];
 }

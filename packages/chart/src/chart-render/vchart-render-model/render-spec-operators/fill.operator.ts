@@ -37,34 +37,27 @@ const gradientFillConfig = {
 };
 
 export const fillOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
-    // const gradientFill = style.common?.gradientFill;
     const innerGradientFillConfig = style.common?.gradientFill ? gradientFillConfig : undefined;
     if (!style.common?.gradientFill) return;
 
     if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Column)) {
         Tools.set(spec, 'bar.style.fill', innerGradientFillConfig);
-        // Tools.set(spec, 'bar.style.fillOpacity', gradientFill ? undefined : 1);
     }
 
     if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Area)) {
         Tools.set(spec, 'line.style.fill', innerGradientFillConfig);
-        // Tools.set(spec, 'line.style.fillOpacity', gradientFill ? undefined : 1);
     }
 
     spec.series?.forEach((series) => {
         switch (series.type) {
-            case 'bar':
-            case 'line': {
-                Tools.set(series, `${series.type}.style.fill`, innerGradientFillConfig);
-                // Tools.set(series, `${series.type}.style.fillOpacity`, gradientFill ? undefined : 1);
-                // series
-                //     .break;
+            case 'bar': {
+                Tools.set(series, 'bar.style.fill', innerGradientFillConfig);
+                break;
+            }
+            case 'area': {
+                Tools.set(series, 'line.style.fill', innerGradientFillConfig);
                 break;
             }
         }
     });
-
-    // instance.setBorderColor(style.common?.borderColor);
-
-    // return spec;
 };

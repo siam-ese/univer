@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-export enum SpecField {
-    xField = '__xField__',
-    yField = '__yField__',
-    valueField = '__valueField__',
-    seriesIndex = '__seriesIndex__',
-    seriesField = '__seriesField__',
-    seriesFieldLabel = '__seriesFieldLabel__',
-    categoryField = '__categoryField__',
-    categoryFieldLabel = '__categoryFieldLabel__',
-    seriesId = '__seriesId__',
-}
+import { Tools } from '@univerjs/core';
+import type { SeriesItemHandler } from './series-style-operator';
+
+export const linePointStyleHandler: SeriesItemHandler = (series) => {
+    // const stackType = style.common?.stackType;
+    if (['line', 'area'].includes(series.type)) {
+        Tools.set(series, 'point.style.visible', false);
+        Tools.set(series, 'point.state.dimension_hover.visible', true);
+    }
+};

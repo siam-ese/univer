@@ -16,6 +16,9 @@
 
 import type { Disposable, Nullable } from '@univerjs/core';
 
+export interface IChartThemeOptions {
+    colors: string[];
+}
 export interface IChartInstance<Spec = Record<string, any>> extends Disposable {
     container: HTMLElement | string;
 
@@ -23,7 +26,7 @@ export interface IChartInstance<Spec = Record<string, any>> extends Disposable {
 
     render(spec: Spec): void;
 
-    setTheme(): void;
+    setTheme(name: string, options: IChartThemeOptions): void;
 
     exportImg(): Promise<string>;
 

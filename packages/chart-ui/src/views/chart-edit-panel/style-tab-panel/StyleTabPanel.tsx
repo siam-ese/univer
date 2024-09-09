@@ -16,8 +16,7 @@
 
 import type { IGridLineStyle, LegendPosition } from '@univerjs/chart';
 import { chartBitsUtils, ChartTypeBits, defaultChartStyle } from '@univerjs/chart';
-import { Button, Checkbox, Input, InputNumber, Select } from '@univerjs/design';
-import { FontSizeIncreaseSingle, FontSizeReduceSingle } from '@univerjs/icons';
+import { Checkbox, Input, InputNumber, Select } from '@univerjs/design';
 import clsx from 'clsx';
 import type { CollapseProps } from 'rc-collapse';
 import Collapse from 'rc-collapse';
@@ -111,10 +110,7 @@ export const StyleTabPanel = () => {
                             <ColorPickerControl color={borderColor} onChange={setBorderColor} />
                         </div>
                     </div>
-                    <div className={styles.styleTabPanelRow}>
-                        {/* <div className={styles.styleTabPanelRowHalf}>
-                            <div className={styles.styleTabPanelLabel}>字体颜色</div>
-                        </div> */}
+                    {/* <div className={styles.styleTabPanelRow}>
                         <div className={styles.styleTabPanelRowHalf}>
                             <div className={styles.styleTabPanelLabel}>字体大小</div>
                             <div className={styles.styleTabPanelFontSizeBar}>
@@ -140,7 +136,7 @@ export const StyleTabPanel = () => {
                                 </Button>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
                 </section>
             ),
         },
@@ -193,7 +189,7 @@ export const StyleTabPanel = () => {
                             <h5>Title Format</h5>
                             <FontFormatBar
                                 {...legendStyle?.label}
-                                fontSize={legendStyle?.label?.fontSize ?? defaultChartStyle.textStyle.titleFontSize}
+                                fontSize={legendStyle?.label?.fontSize ?? defaultChartStyle.textStyle.fontSize}
                                 color={legendStyle?.label?.color ?? defaultChartStyle.textStyle.color}
                                 onChange={(name, value) => setLegendStyle({ label: { [name]: value } })}
                             />
@@ -213,11 +209,12 @@ export const StyleTabPanel = () => {
                                 <Checkbox className={styles.styleTabPanelRowHalf} checked={xAxisOptions?.labelVisible ?? defaultChartStyle.axis.labelVisible} onChange={(checked) => setXAxisOptions({ labelVisible: Boolean(checked) })}>Show Labels</Checkbox>
                                 <Checkbox className={styles.styleTabPanelRowHalf} checked={xAxisOptions?.reverse ?? defaultChartStyle.axis.reverse} onChange={(checked) => setXAxisOptions({ reverse: Boolean(checked) })}>Reverse axis order</Checkbox>
                             </div>
-                            <Checkbox checked={xAxisOptions?.lineVisible ?? defaultChartStyle.axis.lineVisible} onChange={(checked) => setXAxisOptions({ lineVisible: Boolean(checked) })}>Show axis line</Checkbox>
+                            <Checkbox className="chart-edit-panel-top-gap" checked={xAxisOptions?.lineVisible ?? defaultChartStyle.axis.lineVisible} onChange={(checked) => setXAxisOptions({ lineVisible: Boolean(checked) })}>Show axis line</Checkbox>
                         </div>
                         <FontFormatBar
+                            className="chart-edit-panel-top-gap"
                             {...xAxisOptions?.label}
-                            fontSize={xAxisOptions?.label?.fontSize ?? defaultChartStyle.textStyle.titleFontSize}
+                            fontSize={xAxisOptions?.label?.fontSize ?? defaultChartStyle.textStyle.fontSize}
                             color={xAxisOptions?.label?.color ?? defaultChartStyle.textStyle.color}
                             onChange={(name, value) => setXAxisOptions({ label: { [name]: value } })}
                         />
@@ -231,17 +228,17 @@ export const StyleTabPanel = () => {
                 <section>
                     <div>
                         <h5>Axis Options</h5>
-                        <div className="">
+                        <div>
                             <div className={styles.styleTabPanelRow}>
                                 <Checkbox className={styles.styleTabPanelRowHalf} checked={xAxisOptions?.labelVisible ?? defaultChartStyle.axis.labelVisible} onChange={(checked) => setXAxisOptions({ labelVisible: Boolean(checked) })}>Show Labels</Checkbox>
                                 <Checkbox className={styles.styleTabPanelRowHalf} checked={xAxisOptions?.reverse ?? defaultChartStyle.axis.reverse} onChange={(checked) => setXAxisOptions({ reverse: Boolean(checked) })}>Reverse axis order</Checkbox>
                             </div>
-                            <Checkbox checked={xAxisOptions?.lineVisible ?? defaultChartStyle.axis.lineVisible} onChange={(checked) => setXAxisOptions({ lineVisible: Boolean(checked) })}>Show axis line</Checkbox>
+                            <Checkbox className="chart-edit-panel-top-gap" checked={xAxisOptions?.lineVisible ?? defaultChartStyle.axis.lineVisible} onChange={(checked) => setXAxisOptions({ lineVisible: Boolean(checked) })}>Show axis line</Checkbox>
                         </div>
                         <FontFormatBar
-                            className=""
+                            className="chart-edit-panel-top-gap"
                             {...xAxisOptions?.label}
-                            fontSize={xAxisOptions?.label?.fontSize ?? defaultChartStyle.textStyle.titleFontSize}
+                            fontSize={xAxisOptions?.label?.fontSize ?? defaultChartStyle.textStyle.fontSize}
                             color={xAxisOptions?.label?.color ?? defaultChartStyle.textStyle.color}
                             onChange={(name, value) => setXAxisOptions({ label: { [name]: value } })}
                         />
@@ -260,7 +257,7 @@ export const StyleTabPanel = () => {
                             <Checkbox className={styles.styleTabPanelRowHalf} checked={yAxisOptions?.lineVisible ?? defaultChartStyle.axis.lineVisible} onChange={(checked) => setYAxisOptions({ lineVisible: Boolean(checked) })}>Show axis line</Checkbox>
                         </div>
                         <FontFormatBar
-                            className=""
+                            className="chart-edit-panel-top-gap"
                             {...yAxisOptions?.label}
                             fontSize={yAxisOptions?.label?.fontSize ?? defaultChartStyle.textStyle.titleFontSize}
                             color={yAxisOptions?.label?.color ?? defaultChartStyle.textStyle.color}
@@ -298,12 +295,12 @@ export const StyleTabPanel = () => {
             label: '网格与刻度标记',
             children: (
                 <section>
-                    <div className="">
+                    <div className="chart-edit-panel-top-gap">
                         <h5>Select one</h5>
                         <Select className="chart-edit-panel-select" options={axisListOptions} value={currentAxisId} onChange={setCurrentAxisId}></Select>
                     </div>
                     <GridLineAndTickOptions
-                        className=""
+                        className="chart-edit-panel-top-gap"
                         onChange={(name, value) => setGridLineStyle({ [name === 'gridLine' ? 'visible' : name]: value })}
                         color={gridLineStyle?.color}
                         gridLine={gridLineStyle?.visible ?? defaultChartStyle.axis.gridLineVisible}

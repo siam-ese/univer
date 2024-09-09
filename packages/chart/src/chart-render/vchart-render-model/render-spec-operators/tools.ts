@@ -20,10 +20,10 @@ import type { VChartSpec } from '../vchart-render-engine';
 
 type PartialLabelStyle = Partial<Pick<ILabelStyle, 'color' | 'fontSize' | 'italic' | 'bold' | 'underline' | 'strikethrough'>>;
 export function applyLabelStyle(spec: VChartSpec, path: string, labelStyle: PartialLabelStyle): void {
-    Tools.set(spec, `${path}.fill`, labelStyle.color);
-    Tools.set(spec, `${path}.fontSize`, labelStyle.fontSize);
-    Tools.set(spec, `${path}.fontStyle`, labelStyle.italic ? 'italic' : 'normal');
-    Tools.set(spec, `${path}.fontWeight`, labelStyle.bold ? 'bold' : 'normal');
-    Tools.set(spec, `${path}.underline`, Boolean(labelStyle.underline));
-    Tools.set(spec, `${path}.lineThrough`, Boolean(labelStyle.strikethrough));
+    Tools.set(spec, path ? `${path}.fill` : 'fill', labelStyle.color);
+    Tools.set(spec, path ? `${path}.fontSize` : 'fontSize', labelStyle.fontSize);
+    Tools.set(spec, path ? `${path}.fontStyle` : 'fontStyle', labelStyle.italic ? 'italic' : 'normal');
+    Tools.set(spec, path ? `${path}.fontWeight` : 'fontWeight', labelStyle.bold ? 'bold' : 'normal');
+    Tools.set(spec, path ? `${path}.underline` : 'underline', Boolean(labelStyle.underline));
+    Tools.set(spec, path ? `${path}.lineThrough` : 'lineThrough', Boolean(labelStyle.strikethrough));
 }

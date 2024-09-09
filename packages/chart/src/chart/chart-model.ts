@@ -17,15 +17,16 @@
 import { Disposable, generateRandomId, Tools } from '@univerjs/core';
 import type { Observable, Subscription } from 'rxjs';
 import { BehaviorSubject, combineLatest, combineLatestWith, debounceTime, distinctUntilChanged, filter, map, tap } from 'rxjs';
-import { aggregateOperator, buildChartData, dataDirectionToColumn, findCategoryOperator, findHeaderOperator, findSeriesOperator } from './chart-data-operators';
+import { aggregateOperator, buildChartData, dataDirectionToColumn, findCategoryOperator, findHeaderOperator, findSeriesOperator, topNOperator } from './chart-data-operators';
 import { ChartTypeBits, DataDirection } from './constants';
 import type { ChartStyle } from './style.types';
-import type { ChartDataSource, IChartConfig, IChartDataContext } from './types';
+import type { ChartDataSource, IChartConfig, IChartDataContext, IChartDataTransformConfig } from './types';
 
 export interface IChartModelInit {
     chartType?: ChartTypeBits;
     dataSource$: Observable<ChartDataSource>;
-    direction?: DataDirection;
+    dataTransformConfig?: IChartDataTransformConfig;
+    // direction?: DataDirection;
     chartStyle?: ChartStyle;
     // toChartConfig: (chartType: ChartTypeBits, chartData: IChartData) => Nullable<IChartConfig>;
 }
@@ -34,6 +35,11 @@ export class ChartModel extends Disposable {
     private _dataSource: ChartDataSource;
     private _dataSource$: Observable<ChartDataSource>;
     get dataSource() { return this._dataSource; }
+
+    /** chart data source config */
+    private _dataTransformConfig$: BehaviorSubject<IChartDataTransformConfig>;
+    dataTransformConfig$: Observable<IChartDataTransformConfig>;
+    get dataTransformConfig() { return this._dataTransformConfig$.getValue(); }
 
     /** chart type */
     private _chartType$ = new BehaviorSubject<ChartTypeBits>(ChartTypeBits.Line);
@@ -47,7 +53,7 @@ export class ChartModel extends Disposable {
     dataContext$ = this._dataContext$.asObservable();
     get dataContext() { return this._dataContext$.getValue(); }
 
-    /** chart  config */
+    /** chart config, the output of chat model */
     private _config$ = new BehaviorSubject<IChartConfig | null>(null);
     config$ = this._config$.asObservable();
 
@@ -57,26 +63,34 @@ export class ChartModel extends Disposable {
     get style() { return this._style$.getValue (); }
 
     private _configSubscription: Subscription;
-    // private _subscriptions: Subscription[] = [];
 
     constructor(public readonly id: string, private _options: IChartModelInit) {
         super();
 
-        const { chartType, dataSource$, direction, chartStyle } = _options;
+        const { chartType, dataSource$, chartStyle, dataTransformConfig } = _options;
         this.id = id || generateRandomId();
 
         if (chartType) {
             this.setChartType(chartType);
         }
-        if (direction) {
-            this.assignDataContext({
-                defaultDirection: direction,
-                direction,
-            });
-        }
+        // if (direction) {
+        //     this.assignDataContext({
+        //         defaultDirection: direction,
+        //         direction,
+        //     });
+        // }
         if (chartStyle) {
             this.setStyle(chartStyle);
         }
+
+        const direction = dataTransformConfig?.direction || DataDirection.Row;
+        const transformConfig: IChartDataTransformConfig = {
+            ...dataTransformConfig,
+            direction,
+            defaultDirection: dataTransformConfig?.defaultDirection || direction,
+        };
+        this._dataTransformConfig$ = new BehaviorSubject(transformConfig);
+        this.dataTransformConfig$ = this._dataTransformConfig$.asObservable();
 
         this.setDataSource(dataSource$);
     }
@@ -89,56 +103,59 @@ export class ChartModel extends Disposable {
     private _init() {
         this._configSubscription?.unsubscribe();
 
-        const direction$ = this.dataContext$.pipe(
+        // Flag to recognize the new series and category of data source
+        let initiated = false;
+        const direction$ = this.dataTransformConfig$.pipe(
             map((config) => config.direction),
-            distinctUntilChanged()
+            distinctUntilChanged(),
+            tap(() => [
+                initiated = false,
+            ])
         );
 
-        let initiated = false;
         const dataSource$ = this._dataSource$.pipe(
             combineLatestWith(direction$),
-            map(([dataSource, direction]) => {
+            map(([_dataSource, direction]) => {
+                const dataSource = _dataSource.slice();
                 this._dataSource = direction === DataDirection.Column ? dataDirectionToColumn(dataSource) : dataSource;
 
                 return this._dataSource;
             }),
             tap((dataSource) => {
-                if (initiated) {
-                    return;
+                if (!initiated) {
+                    this._initWithDataSource(dataSource);
                 }
-
                 initiated = true;
-                const dataContext = this._buildConfig(dataSource, this.dataContext);
-                // build series and category when data source change
-                this._dataContext$.next(dataContext);
-                // init style
-                this._initStyle(dataSource, dataContext);
             })
         );
 
-        const chartDataWithConfig$ = dataSource$.pipe(
-            combineLatestWith(this.dataContext$),
-            map(([dataSource, dataContext]) => {
-                const context = { dataSource, dataContext };
-                const postOperators = [
-                    aggregateOperator,
-                ];
-                postOperators.forEach((operator) => operator(context));
+        const combinedDataSource$ = dataSource$.pipe(
+            combineLatestWith(this.dataTransformConfig$, this.dataContext$),
+            map(([dataSource, dataTransformConfig, dataContext]) => {
+                const ctx = { dataSource, dataTransformConfig, dataContext };
 
-                return [context.dataSource, context.dataContext] as const;
+                const operators = [
+                    dataTransformConfig.aggregate && aggregateOperator,
+                    dataTransformConfig.topN && topNOperator,
+                ].filter((operator) => !!operator);
+
+                operators.forEach((operator) => operator(ctx));
+
+                return ctx;
             })
         );
 
         this._configSubscription = combineLatest([
             this.chartType$.pipe(distinctUntilChanged()),
-            chartDataWithConfig$,
+            combinedDataSource$,
         ]).pipe(
             debounceTime(100),
             filter(([chartType]) => Boolean(chartType))
         )
-            .subscribe(([_chartType, [dataSource, dataContext]]) => {
+            .subscribe(([chartType, { dataSource, dataContext }]) => {
+                // console.log(dataContext, dataSource, 'dataContext');
                 // const { toChartConfig } = this._options;
-                const chartType = _chartType!;
+                // const chartType = _chartType;
 
                 const chartData = buildChartData(dataSource, dataContext);
                 // const chartConfig = toChartConfig(chartType, chartData);
@@ -155,7 +172,7 @@ export class ChartModel extends Disposable {
         this.disposeWithMe(this._configSubscription);
     }
 
-    private _buildConfig(dataSource: ChartDataSource, dataContext: IChartDataContext) {
+    private _buildContext(dataSource: ChartDataSource, dataContext: IChartDataContext) {
         const operators = [
             findHeaderOperator,
             findCategoryOperator,
@@ -165,23 +182,27 @@ export class ChartModel extends Disposable {
         const ctx = {
             dataSource,
             dataContext,
+            dataTransformConfig: this.dataTransformConfig,
         };
+
         operators.forEach((operator) => operator(ctx));
 
         return ctx.dataContext;
     }
 
-    private _initStyle(dataSource: ChartDataSource, dataContext: IChartDataContext) {
-        const { style } = this;
-            // Init style by data config
-        if (style.common?.title?.content === undefined) {
-            const headers = dataContext.headers;
-            const category = dataContext.categoryIndex !== undefined ? dataSource[dataContext.categoryIndex] : [];
+    private _initWithDataSource(dataSource: ChartDataSource) {
+        const dataContext = this._buildContext(dataSource, this.dataContext);
+        // build series and category when data source change
+        this._dataContext$.next(dataContext);
 
+        const { style } = this;
+        // console.log(dataContext.headers, 'dataContext.headers');
+          // init title
+        if (style.common?.title?.content === undefined) {
             this.applyStyle({
                 common: {
                     title: {
-                        content: headers?.join(',') ?? category.join(','),
+                        content: dataContext.headers?.join(','),
                     },
                 },
             });
@@ -196,19 +217,29 @@ export class ChartModel extends Disposable {
         this._style$.next(Tools.deepMerge(this.style, newStyle));
     }
 
-    assignDataContext(context: Partial<IChartDataContext>) {
-        const dataContext = Object.assign({}, this._dataContext$.getValue(), context);
-        this._dataContext$.next(dataContext);
-    }
-
     setStyle(style: ChartStyle | ((style: ChartStyle) => ChartStyle)) {
         const newStyle = typeof style === 'function' ? style(this.style) : style;
         this._style$.next(newStyle);
     }
 
+    assignDataContext(context: Partial<IChartDataContext>) {
+        const dataContext = Object.assign({}, this._dataContext$.getValue(), context);
+        this._dataContext$.next(dataContext);
+    }
+
     setDataContext(context: IChartDataContext | ((context: IChartDataContext) => IChartDataContext)) {
         const newContext = typeof context === 'function' ? context(this.dataContext) : context;
         this._dataContext$.next(newContext);
+    }
+
+    assignDataTransformConfig(config: Partial<IChartDataTransformConfig>) {
+        const newConfig = Object.assign({}, this._dataTransformConfig$.getValue(), config);
+        this._dataTransformConfig$.next(newConfig);
+    }
+
+    setDataTransformConfig(config: IChartDataTransformConfig | ((config: IChartDataTransformConfig) => IChartDataTransformConfig)) {
+        const newConfig = typeof config === 'function' ? config(this._dataTransformConfig$.getValue()) : config;
+        this._dataTransformConfig$.next(newConfig);
     }
 
     setChartType(type: ChartTypeBits) {

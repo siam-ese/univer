@@ -24,6 +24,13 @@ import { createLabelMap } from './tools';
 
 const { combination } = defaultChartStyle;
 
+interface IDataItem {
+    [SpecField.seriesId]: string;
+    id: string;
+    chartType: string;
+    values: Array<Record<string, any>>;
+}
+
 export const combinationChartConverter: IChartRenderSpecConverter<ICommonChartSpec> = {
     canConvert(config) {
         if (config.type === ChartTypeBits.Radar
@@ -42,27 +49,35 @@ export const combinationChartConverter: IChartRenderSpecConverter<ICommonChartSp
         const leftSeriesId = new Set<string>();
         const rightSeriesId = new Set<string>();
 
-        const chartData: Array<{
-            id: string;
-            chartType: string;
-            values: Array<Record<string, any>>;
-        }> = [];
+        const chartData: Array<IDataItem> = [];
 
         const seriesStyleMap = style.common?.seriesStyleMap;
 
-        const randomSeriesGroupIdMap = new Map<string, string>();
+        // const randomSeriesGroupIdMap = new Map<string, string>();
 
-        function ensureGroupId(key: string) {
-            if (!randomSeriesGroupIdMap.has(key)) {
-                randomSeriesGroupIdMap.set(key, `${generateRandomId()}&${key}`);
-            }
-            return randomSeriesGroupIdMap.get(key)!;
-        }
+        // function ensureGroupId(key: string) {
+        //     if (!randomSeriesGroupIdMap.has(key)) {
+        //         randomSeriesGroupIdMap.set(key, `${generateRandomId()}&${key}`);
+        //     }
+        //     return randomSeriesGroupIdMap.get(key)!;
+        // }
+
+        // function ensureChartDataItem(id: string, seriesId: string) {
+        //     let item = chartData.find((item) => item.id === id);
+        //     if (!item) {
+        //         item = {
+        //             id,
+        //             [SpecField.seriesId]: seriesId,
+        //             chartType: '',
+        //             values: [],
+        //         };
+        //         chartData.push(item);
+        //     }
+        //     return item;
+        // }
 
         series.forEach((ser, seriesIndex) => {
             const seriesId = String(ser.index);
-
-            const seriesStyle = seriesStyleMap?.[seriesId];
 
             const seriesChartTypeBit = config.type !== ChartTypeBits.Combination
                 ? config.type
@@ -70,23 +85,34 @@ export const combinationChartConverter: IChartRenderSpecConverter<ICommonChartSp
 
             const seriesChartType = chartBitsUtils.chartBitToString(seriesChartTypeBit);
 
-            const groupId = ensureGroupId(`${seriesChartType}&${seriesStyle?.rightYAxis ? 'right' : 'left'}`);
+            const seriesStyle = seriesStyleMap?.[seriesId];
+
+            const uniqueId = generateRandomId();
 
             if (seriesStyle?.rightYAxis) {
-                rightSeriesId.add(groupId);
+                rightSeriesId.add(uniqueId);
             } else {
-                leftSeriesId.add(groupId);
+                leftSeriesId.add(uniqueId);
             }
 
-            let item = chartData.find((item) => item.id === groupId);
-            if (!item) {
-                item = {
-                    id: groupId,
-                    chartType: seriesChartType,
-                    values: [],
-                };
-                chartData.push(item);
-            }
+            const item: IDataItem = {
+                id: uniqueId,
+                [SpecField.seriesId]: seriesId,
+                chartType: seriesChartType,
+                values: [],
+            };
+            // let item = chartData.find((item) => item.id === uniqueId);
+            // if (!item) {
+            //     item = {
+            //         id: uniqueId,
+            //         [SpecField.seriesId]: seriesId,
+            //         chartType: seriesChartType,
+            //         values: [],
+            //     };
+            chartData.push(item);
+            // }
+            // const item = ensureChartDataItem(uniqueId);
+            // item[SpecField.seriesIds].add(seriesId);
 
             const values = ser.items.map((item, valueIndex) => {
                 const xField = category?.keys[valueIndex] || valueIndex;
@@ -134,26 +160,29 @@ export const combinationChartConverter: IChartRenderSpecConverter<ICommonChartSp
             },
         ];
 
+        const chartSeries = chartData.map((item, index) => {
+            return {
+                type: item.chartType as 'line' | 'bar' | 'area',
+                id: item.id,
+                dataIndex: index,
+                xField: item.chartType === 'bar' ? [SpecField.xField, SpecField.seriesField] : SpecField.xField,
+                yField: SpecField.yField,
+                seriesField: SpecField.seriesField,
+                [SpecField.seriesId]: item[SpecField.seriesId],
+            };
+        });
+
         return {
             type: 'common',
             data: chartData,
-            series: chartData.map((item, index) => {
-                return {
-                    type: item.chartType as 'line' | 'bar' | 'area',
-                    id: item.id,
-                    dataIndex: index,
-                    xField: item.chartType === 'bar' ? [SpecField.xField, SpecField.seriesField] : SpecField.xField,
-                    yField: SpecField.yField,
-                    seriesField: SpecField.seriesField,
-                };
-            }),
+            series: chartSeries,
             axes: axes.filter((axis) => {
                 const seriesId = axis.seriesId;
                 return Array.isArray(seriesId) ? seriesId.length > 0 : true;
             }) as ICommonChartSpec['axes'],
             tooltip: {
                 dimension: {
-                    visible: hasCategory,
+                    visible: true,
                     title: {
                         value: (datum) => {
                             return datum?.[SpecField.categoryFieldLabel];
@@ -166,15 +195,30 @@ export const combinationChartConverter: IChartRenderSpecConverter<ICommonChartSp
                     },
                 },
                 mark: {
-                    visible: hasCategory,
+                    visible: true,
                     title: {
                         value: (datum) => {
                             return datum?.[SpecField.categoryFieldLabel];
                         },
+                        visible: hasCategory,
                     },
                     content: {
                         key: (datum) => datum?.[SpecField.seriesFieldLabel],
                         value: (datum) => datum?.[SpecField.yField],
+                    },
+                },
+            },
+            crosshair: {
+                xField: {
+                    visible: chartSeries.some((series) => ['line', 'area'].includes(series.type)),
+                    line: {
+                        type: 'line',
+                        visible: true,
+                        style: {
+                            lineWidth: 1,
+                            stroke: '#333',
+                            lineDash: [0],
+                        },
                     },
                 },
             },

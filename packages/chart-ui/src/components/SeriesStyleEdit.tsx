@@ -16,14 +16,14 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 
-import type { ChartBorderDashType, DeepPartial, ISeriesStyle, LinePointShape } from '@univerjs/chart';
+import type { ChartBorderDashType, DeepPartial, ISeriesLabelStyle, ISeriesStyle, LinePointShape } from '@univerjs/chart';
 import { ChartCartesianAxisPosition, ChartTypeBits, defaultChartStyle } from '@univerjs/chart';
 import { Select } from '@univerjs/design';
 
 import type { Nullable } from '@univerjs/core';
 import type { SheetsChartUIService } from '../services/sheets-chart-ui.service';
 import { useChartConfigState } from '../hooks';
-import { axisPositionOptions, borderDashTypeOptions, borderWidthOptions, getAllSeriesOption, lineOpacityOptions, linePointShapeOptions, linePointSizeOptions, seriesChartTypeOptions } from './options';
+import { axisPositionOptions, borderDashTypeOptions, borderWidthOptions, dataLabelPositionOptions, getAllSeriesOption, lineOpacityOptions, linePointShapeOptions, linePointSizeOptions, seriesChartTypeOptions } from './options';
 import { ColorPickerControl } from './color-picker-control';
 import { DataLabelOptions } from './DataLabelOptions';
 
@@ -31,6 +31,11 @@ export interface ISeriesStyleEditProps {
     chartType: Nullable<ChartTypeBits>;
     service: SheetsChartUIService;
 }
+
+const fallbackLabelStyle: Partial<ISeriesLabelStyle> = {
+    fontSize: defaultChartStyle.textStyle.fontSize,
+    position: defaultChartStyle.textStyle.position,
+};
 
 export const SeriesStyleEdit = (props: ISeriesStyleEditProps) => {
     const [currentSeriesId, setCurrentSeriesId] = useState<string>(defaultChartStyle.allSeriesId);
@@ -156,7 +161,13 @@ export const SeriesStyleEdit = (props: ISeriesStyleEditProps) => {
                 </div>
             </div>
             <div className="chart-edit-panel-top-gap">
-                <DataLabelOptions labelStyle={labelStyle} onVisibleChange={(visible) => setSeriesStyle({ label: { visible } })} />
+                <DataLabelOptions
+                    fallbackLabelStyle={fallbackLabelStyle}
+                    labelStyle={labelStyle}
+                    positionOptions={dataLabelPositionOptions}
+                    onLabelStyleChange={(name, value) => setSeriesStyle({ label: { [name]: value } })}
+                    onVisibleChange={(visible) => setSeriesStyle({ label: { visible } })}
+                />
             </div>
         </section>
     );

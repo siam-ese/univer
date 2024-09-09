@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-export enum SpecField {
-    xField = '__xField__',
-    yField = '__yField__',
-    valueField = '__valueField__',
-    seriesIndex = '__seriesIndex__',
-    seriesField = '__seriesField__',
-    seriesFieldLabel = '__seriesFieldLabel__',
-    categoryField = '__categoryField__',
-    categoryFieldLabel = '__categoryFieldLabel__',
-    seriesId = '__seriesId__',
-}
+import { themeColors } from '../../../chart/constants/default-chart-style';
+import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+
+export const chartThemeOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
+    instance.setTheme('default', {
+        colors: style.runtime?.themeColors ?? themeColors,
+    });
+
+    return spec;
+};

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { StackType } from '@univerjs/chart';
+import type { InvalidValueType, StackType } from '@univerjs/chart';
 import { chartBitsUtils, ChartTypeBits, DataDirection, defaultChartStyle, SHEETS_CHART_PLUGIN_NAME } from '@univerjs/chart';
 import type { IUnitRange, Workbook } from '@univerjs/core';
 import { createInternalEditorID, IUniverInstanceService, UniverInstanceType, useDependency } from '@univerjs/core';
@@ -25,7 +25,7 @@ import { RangeSelector } from '@univerjs/ui';
 import clsx from 'clsx';
 import React from 'react';
 import { useChartConfigState, useSheetsChartUIService } from '../../../hooks';
-import { areaLineTypeOptions, chartTypeOptions, stackTypeOptions } from '../../../components/options';
+import { areaLineTypeOptions, chartTypeOptions, invalidValueOptions, stackTypeOptions } from '../../../components/options';
 import { ButtonSwitch } from '../../../components/button-switch';
 import { RadarChartOptionsEdit } from '../../../components/RadarChartOptionsEdit';
 import styles from './index.module.less';
@@ -61,6 +61,7 @@ export const DataTabPanel = () => {
 
     const [defaultDirection] = useChartConfigState('defaultDirection', sheetsChartUIService);
     const [direction, setDirection] = useChartConfigState('direction', sheetsChartUIService);
+    const [invalidValueType, setInvalidValueType] = useChartConfigState('invalidValueType', sheetsChartUIService);
 
     const removeSeries = (index: number) => {
         if (seriesValues) {
@@ -80,6 +81,9 @@ export const DataTabPanel = () => {
         }))
     );
 
+    const showMoreSettings = chartType && [ChartTypeBits.Area, ChartTypeBits.Line].some((type) => chartBitsUtils.baseOn(chartType, type));
+    const showGradientFill = chartType && [ChartTypeBits.Line, ChartTypeBits.Radar].every((type) => type !== chartType);
+
     return (
         <div>
             <div>
@@ -92,7 +96,9 @@ export const DataTabPanel = () => {
             )}
             <div>
                 <h5>Themes</h5>
-                <Checkbox checked={gradientFill} onChange={(v) => setGradientFill(Boolean(v))}>Gradient fill</Checkbox>
+                {showGradientFill && (
+                    <Checkbox checked={gradientFill} onChange={(v) => setGradientFill(Boolean(v))}>Gradient fill</Checkbox>
+                )}
             </div>
             <div>
                 <h5>Stack</h5>
@@ -118,7 +124,7 @@ export const DataTabPanel = () => {
 
                 </h5>
                 <Select className="chart-edit-panel-select " value={typeof categoryIndex === 'number' ? String(categoryIndex) : ''} options={categoryOptions || []} onChange={(v) => setCategoryIndex(Number(v))}></Select>
-                <div className="">
+                <div className="chart-edit-panel-top-gap">
                     <Checkbox
                         checked={aggregate}
                         onChange={(v) => {
@@ -134,7 +140,7 @@ export const DataTabPanel = () => {
                 <h5>
                     Series
                 </h5>
-                <div className="">
+                <div className="chart-edit-panel-top-gap">
                     {seriesValues?.map((value, index) => {
                         return (
                             <div key={index} className={clsx(styles.dataTabPanelSeriesSelect, '')}>
@@ -173,19 +179,18 @@ export const DataTabPanel = () => {
                     </Dropdown>
                 </div>
 
-                <div className="">
+                <div className="chart-edit-panel-top-gap">
                     <Checkbox
-                        checked={defaultDirection !== direction}
+                        checked={direction !== defaultDirection}
                         onChange={() => {
                             setDirection(direction === DataDirection.Row ? DataDirection.Column : DataDirection.Row);
                         }}
                     >
-                        {' '}
                         Switch to Row/Column
                     </Checkbox>
                 </div>
 
-                <div className="">
+                <div className="chart-edit-panel-top-gap">
                     <Checkbox
                         checked={String(categoryIndex) === asCategory?.value}
                         onChange={(v) => {
@@ -196,14 +201,18 @@ export const DataTabPanel = () => {
                         Use
                         {' '}
                         {direction || ''}
-                        {' '}
                         {asCategory?.label}
                         {' '}
                         as labels
                     </Checkbox>
                 </div>
             </div>
-
+            {showMoreSettings && (
+                <div>
+                    <h5>More settings</h5>
+                    <Select className="chart-edit-panel-select " value={invalidValueType ?? defaultChartStyle.invalidValueType} options={invalidValueOptions} onChange={(v) => setInvalidValueType(v as InvalidValueType)}></Select>
+                </div>
+            )}
         </div>
     );
 };

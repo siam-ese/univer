@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CategoryType, DataDirection } from '../constants';
+import { CategoryType } from '../constants';
 import type { ChartDataSourceValue } from '../types';
 import type { IChartDataPipelineOperator } from './build-chart-data';
 
@@ -113,21 +113,13 @@ export function sumArray(ary: ChartDataSourceValue[]) {
     return ary.reduce((acc: number, item) => acc + toNumber(item), 0);
 }
 
-export const dataDirectionOperator: IChartDataPipelineOperator = (ctx) => {
-    const { dataContext } = ctx;
-    const direction = dataContext.direction || dataContext.defaultDirection;
-    if (direction === DataDirection.Column) {
-        ctx.dataSource = dataDirectionToColumn(ctx.dataSource);
-    }
-};
-
 export const findHeaderOperator: IChartDataPipelineOperator = ({ dataContext, dataSource }) => {
     const header: ChartDataSourceValue[] = dataSource.map((line) => line[0]);
 
     const counts = countTypesFromArray(header);
     if (counts.strings >= counts.numbers) {
         dataContext.headers = header.map(toString);
-        dataSource.forEach((items) => items.shift());
+        dataSource.forEach((items, index) => dataSource[index] = items.slice(1));
     } else {
         dataContext.headers = undefined;
     }
@@ -138,9 +130,7 @@ export const findCategoryOperator: IChartDataPipelineOperator = ({ dataContext, 
 
     dataContext.categoryResourceIndexes = categoryIndexes;
 
-    if (isNil(dataContext.categoryIndex)) {
-        dataContext.categoryIndex = categoryIndexes[0];
-    }
+    dataContext.categoryIndex = categoryIndexes[0];
 
     dataContext.categoryType = isNil(dataContext.categoryIndex)
         ? undefined
@@ -149,35 +139,89 @@ export const findCategoryOperator: IChartDataPipelineOperator = ({ dataContext, 
 
 export const findSeriesOperator: IChartDataPipelineOperator = ({ dataContext, dataSource }) => {
     const seriesResourceIndexesSet = new Set<number>();
+
     dataSource.forEach((_, i) => {
         if (!dataContext.categoryResourceIndexes?.includes(i)) {
             seriesResourceIndexesSet.add(i);
         }
     });
-    dataContext.seriesIndexes = dataContext.seriesIndexes
-        ? dataContext.seriesIndexes.filter((i) => seriesResourceIndexesSet.has(i))
-        : Array.from(seriesResourceIndexesSet);
+
+    dataContext.seriesIndexes = Array.from(seriesResourceIndexesSet);
     dataContext.seriesResourceIndexes = Array.from(seriesResourceIndexesSet);
 };
 
 export const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
-    const { dataSource, dataContext } = ctx;
-    if (!dataContext.aggregate) {
+    const { dataSource, dataContext, dataTransformConfig } = ctx;
+    const { categoryIndex } = dataContext;
+    const { aggregate } = dataTransformConfig;
+    if (!aggregate) {
         return;
     }
 
-    const categoryData = !isNil(dataContext.categoryIndex) ? dataSource[dataContext.categoryIndex] : undefined;
+    const categoryData = !isNil(categoryIndex) ? dataSource[categoryIndex] : undefined;
     if (!categoryData) {
         return;
     }
 
     const getCategoryTextByIndex = (idx: number) => toString(categoryData[idx]);
+    // rewrite dataSource
     ctx.dataSource = ctx.dataSource.map((items, itemsIndex) => {
         const groups = groupBy(items, (_, i) => getCategoryTextByIndex(i));
-        if (itemsIndex === dataContext.categoryIndex) {
+        if (itemsIndex === categoryIndex) {
             return groups.map((group) => group.name);
         } else {
             return groups.map((group) => sumArray(group.values));
         }
+    });
+};
+
+export const topNOperator: IChartDataPipelineOperator = (ctx) => {
+    const { dataSource, dataContext, dataTransformConfig } = ctx;
+    const { categoryIndex } = dataContext;
+    const { topN } = dataTransformConfig;
+    if (!topN || topN <= 0) {
+        return;
+    }
+
+    const categoryData = !isNil(categoryIndex) && dataSource[categoryIndex];
+    if (!categoryData || categoryData.length < topN) {
+        return;
+    }
+
+    const topNList = categoryData.map((_, index) => ({
+        index,
+        value: 0,
+    }));
+
+    ctx.dataSource.forEach((items) => {
+        items.forEach((value, valueIndex) => {
+            const topNItem = topNList[valueIndex];
+            if (topNItem) {
+                topNItem.value += toNumber(value);
+            }
+        });
+    });
+
+    topNList.sort((a, b) => b.value - a.value);
+
+    const topNOrderMap = new Map<number, number>();
+    topNList.slice(0, topN).forEach((item, order: number) => {
+        topNOrderMap.set(item.index, order);
+    });
+
+    ctx.dataSource = ctx.dataSource.map((items) => {
+        const newItems: ChartDataSourceValue[] = [];
+        let otherValue = 0;
+        items.forEach((value, index) => {
+            const order = topNOrderMap.get(index);
+            if (order !== undefined) {
+                newItems[order] = value;
+            } else {
+                otherValue += toNumber(value);
+            }
+        });
+
+        newItems.push(otherValue);
+        return newItems;
     });
 };

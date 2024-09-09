@@ -16,9 +16,11 @@
 
 import type { ChartTypeBits } from './constants';
 
-export type DeepPartial<T, P extends keyof T = keyof T> = T extends object ? {
-    [key in P]+?: DeepPartial<T[key]>;
-} : T;
+export type DeepPartial<T> = T extends Record<string, any>
+    ? T extends any[]
+        ? T
+        : { [key in keyof T]+?: DeepPartial<T[key]>; }
+    : T;
 
 export enum SeriesLabelPosition {
     Auto = 'auto',
@@ -174,9 +176,20 @@ export enum AreaLineStyle {
     Smooth = 'smooth',
     Step = 'step',
 }
+
+export enum InvalidValueType {
+    Zero = 'zero',
+    Break = 'break',
+    Link = 'link',
+}
 export interface IChartStyle {
+    runtime: {
+        themeColors: string[];
+    };
     common: {
+        theme: string;
         stackType: StackType;
+        invalidValueType: InvalidValueType;
         gradientFill: boolean;
         backgroundColor: string;
         titleFontSize: number;

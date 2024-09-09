@@ -82,9 +82,10 @@ export class SheetsChartService extends Disposable {
         const rowsGreaterThanColumns = endRow - startRow >= endColumn - startColumn;
 
         return {
-            direction: rowsGreaterThanColumns ? DataDirection.Column : DataDirection.Row,
+            // direction: rowsGreaterThanColumns ? DataDirection.Column : DataDirection.Row,
+            direction: DataDirection.Row,
             // chartType: rowsGreaterThanColumns ? ChartTypeBits.Line : ChartTypeBits.Bar,
-            chartType: ChartTypeBits.Column,
+            chartType: ChartTypeBits.Radar,
         };
     }
 
@@ -121,7 +122,9 @@ export class SheetsChartService extends Disposable {
         const chartModel = this._sheetsChartConfigService.createChartModel(chartModelId, {
             dataSource$: dataSource.dataSource$,
             chartType: chartSuggestion.chartType,
-            direction: chartSuggestion.direction,
+            dataTransformConfig: {
+                direction: chartSuggestion.direction,
+            },
         });
 
         dataSource.dataSourceEmitter$.subscribe((dataSource$) => {

@@ -18,10 +18,14 @@ import type { IRadarChartSpec } from '@visactor/vchart';
 import { Tools } from '@univerjs/core';
 import { ChartTypeBits } from '../../../chart/constants';
 import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+import type { ILabelStyle } from '../../../chart/style.types';
 import { RadarShape } from '../../../chart/style.types';
+import { SpecField } from '../converters/constants';
+import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
+import { applyLabelStyle } from './tools';
 
 export const radarStyleOperator: VChartRenderSpecOperator = (_spec, style, config) => {
-    if (config.type !== ChartTypeBits.Radar) return _spec;
+    if (config.type !== ChartTypeBits.Radar) return;
     const spec = _spec as IRadarChartSpec;
     const radiusAxis = spec.axes?.find((axis) => axis.orient === 'radius');
 
@@ -30,5 +34,20 @@ export const radarStyleOperator: VChartRenderSpecOperator = (_spec, style, confi
     }
     Tools.set(spec, 'area.visible', style.radar?.fill);
 
-    return spec;
+    const seriesStyleMap = style.common?.seriesStyleMap;
+    const allSeriesStyle = style.common?.allSeriesStyle;
+
+    const seriesLabelStyleCache = new Map<string, Partial<ILabelStyle>>();
+
+    Tools.set(spec, 'label.dataFilter', (labelItem: any[]) => {
+        return labelItem.map((item) => {
+            const seriesId = item.data[SpecField.seriesField];
+            if (!seriesLabelStyleCache.has(seriesId)) {
+                seriesLabelStyleCache.set(seriesId, Object.assign({ fontSize: defaultChartStyle.textStyle.fontSize }, allSeriesStyle?.label, seriesStyleMap?.[seriesId]?.label));
+            }
+            const seriesStyle = seriesLabelStyleCache.get(seriesId)!;
+
+            return applyLabelStyle(item, '', seriesStyle);
+        });
+    });
 };

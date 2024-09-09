@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import type { ICommandService, IDisposable, IRange, IUniverInstanceService } from '@univerjs/core';
-import { Disposable, Rectangle } from '@univerjs/core';
+import type { CellValue, ICommandService, IDisposable, IRange, IUniverInstanceService, Nullable } from '@univerjs/core';
+import { Disposable, ObjectMatrix, Rectangle } from '@univerjs/core';
 import type { ISetRangeValuesCommandParams } from '@univerjs/sheets';
 import { SetRangeValuesCommand } from '@univerjs/sheets';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, Subject } from 'rxjs';
 import type { ChartDataSource } from './types';
 
 export interface ISheetChartDataSourceOption {
@@ -41,11 +41,17 @@ export class SheetChartDataSource extends Disposable {
     private _range$: BehaviorSubject<IRange>;
     range$: Observable<IRange>;
 
+    private _usedRange$: BehaviorSubject<IRange>;
+    usedRange$: Observable<IRange>;
+
+    private _showHiddenValues$ = new BehaviorSubject<boolean>(false);
+    showHiddenValues$ = this._showHiddenValues$.asObservable();
+
     get range() {
         return this._range$.getValue();
     }
 
-    private _disposableList: IDisposable[] = [];
+    private _unwatchRangeDisposer: IDisposable | null = null;
 
     constructor(
         private _option: ISheetChartDataSourceOption,
@@ -54,13 +60,33 @@ export class SheetChartDataSource extends Disposable {
     ) {
         super();
         const { range } = _option;
+
         this._range$ = new BehaviorSubject<IRange>(range);
         this.range$ = this._range$.asObservable();
-        this._watchRange(range);
 
-        setTimeout(() => {
-            this._emitRangeValues(range);
-        });
+        this._usedRange$ = new BehaviorSubject<IRange>(range);
+        this.usedRange$ = this._usedRange$.asObservable();
+
+        this._init();
+    }
+
+    private _init() {
+        this.disposeWithMe(
+            this._usedRange$.pipe().subscribe((range) => {
+                this._watchRange(range);
+
+                setTimeout(() => {
+                    this._emitRangeValues(range);
+                });
+            })
+        );
+        this.disposeWithMe(
+            this._showHiddenValues$.pipe(
+                distinctUntilChanged()
+            ).subscribe(() => {
+                this._emitRangeValues(this._usedRange$.getValue());
+            })
+        );
     }
 
     private _getRangeValues(range: IRange) {
@@ -72,7 +98,13 @@ export class SheetChartDataSource extends Disposable {
             const workSheet = workbook?.getSheetBySheetId(subUnitId);
             if (!workSheet) return;
 
-            return workSheet.getRange(r).getValues().map((cells) => cells.map((cell) => cell?.v));
+            const matrix = new ObjectMatrix<Nullable<CellValue>>();
+            workSheet.getRange(r).forEach((row, col) => {
+                if (workSheet.getColVisible(col) && workSheet.getRowVisible(row)) {
+                    matrix.setValue(row, col, workSheet.getCell(row, col)?.v);
+                }
+            });
+            return matrix.toArray().filter(Boolean);
         };
         return getCellValuesFromRange(range);
     }
@@ -85,10 +117,9 @@ export class SheetChartDataSource extends Disposable {
     }
 
     private _watchRange(range: IRange) {
-        this._disposableList.forEach((disposable) => disposable.dispose());
-
         const { unitId, subUnitId } = this._option;
-        this._disposableList[0] = this._commandService.onCommandExecuted((command) => {
+        this._unwatchRangeDisposer?.dispose();
+        this._unwatchRangeDisposer = this._commandService.onCommandExecuted((command) => {
             if (command.id === SetRangeValuesCommand.id) {
                 const { subUnitId: commandSubUnitId, unitId: commandUnitId, range: commandRange } = command.params as ISetRangeValuesCommandParams;
                 if (commandSubUnitId === subUnitId
@@ -104,15 +135,20 @@ export class SheetChartDataSource extends Disposable {
     setRange(range: IRange) {
         this._dataSourceEmitter$.next(this._dataSource$.asObservable());
         this._range$.next(range);
-        this._emitRangeValues(range);
-        this._watchRange(range);
+    }
+
+    setUsedRange(range: IRange) {
+        this._usedRange$.next(range);
+    }
+
+    setShowHiddenValues(flag: boolean) {
+        this._showHiddenValues$.next(flag);
     }
 
     override dispose() {
         super.dispose();
         this._dataSource$.complete();
         this._range$.complete();
-        this._disposableList.forEach((disposable) => disposable.dispose());
-        this._disposableList = [];
+        this._unwatchRangeDisposer?.dispose();
     }
 }

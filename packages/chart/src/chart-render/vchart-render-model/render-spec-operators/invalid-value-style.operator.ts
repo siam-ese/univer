@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-import { Tools } from '@univerjs/core';
 import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
-import { applyLabelStyle } from './tools';
 
-const { textStyle } = defaultChartStyle;
-export const titleStyleOperator: VChartRenderSpecOperator = (spec, style) => {
-    const commonStyle = style.common;
-    const titleStyle = commonStyle?.title;
+export const invalidValueStyleOperator: VChartRenderSpecOperator = (_spec, style, config, instance) => {
+    // if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Pie)) {
+    //     hoverMarkStylizers.pie(_spec as IPieChartSpec);
+    // }
 
-    const titleContent = titleStyle?.content;
-
-    Tools.set(spec, 'title.visible', Boolean(titleContent));
-    Tools.set(spec, 'title.text', titleContent);
-    Tools.set(spec, 'title.align', titleStyle?.align ?? textStyle.align);
-    applyLabelStyle(spec, 'title.textStyle', {
-        ...titleStyle,
-        color: titleStyle?.color ?? textStyle.color,
+    // if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Column)) {
+    //     hoverMarkStylizers.bar(_spec as IBarChartSpec);
+    // }
+    const invalidValueType = style.common?.invalidValueType;
+    _spec.series?.forEach((series) => {
+        switch (series.type) {
+            case 'area':
+            case 'line': {
+                series.invalidType = invalidValueType ?? defaultChartStyle.invalidValueType;
+                break;
+            }
+        }
     });
-
-    return spec;
 };

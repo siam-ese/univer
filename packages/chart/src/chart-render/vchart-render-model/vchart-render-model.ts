@@ -20,7 +20,6 @@ import type { IChartInstance } from '../chart-instance';
 import type { IChartRenderModel, IChartRenderModelStylizeInit } from '../chart-render-model';
 import type { IChartRenderSpecConverter, RenderSpecOperator } from '../types';
 import type { ChartStyle } from '../../chart/style.types';
-import { cartesianChartConverter } from './converters/cartesian-chart-converter';
 import { pieChartConverter } from './converters/pie-chart-converter';
 import { radarChartConverter } from './converters/radar-chart-converter';
 import { combinationChartConverter } from './converters/combination-chart-converter';
@@ -30,15 +29,17 @@ import {
     chartAxesOperator,
     chartBorderOperator,
     chartBoxStyleOperator,
+    chartThemeOperator,
     combinationStyleOperator,
-    dataLabelOperator,
+    // dataLabelOperator,
     fillOperator,
     fontSizeOperator,
     hoverMarkStyleOperator,
+    invalidValueStyleOperator,
     legendStyleOperator,
     pieStyleOperator,
     seriesStyleOperator,
-    stackOperator,
+    // stackOperator,
     titleStyleOperator,
 } from './render-spec-operators';
 import type { VChartSpec } from './vchart-render-engine';
@@ -59,7 +60,6 @@ export class VChartRenderModel extends Disposable implements IChartRenderModel {
     private _addSpecConverters() {
         const { _specConverters } = this;
 
-        _specConverters.add(cartesianChartConverter);
         _specConverters.add(pieChartConverter);
         _specConverters.add(radarChartConverter);
         _specConverters.add(combinationChartConverter);
@@ -68,13 +68,13 @@ export class VChartRenderModel extends Disposable implements IChartRenderModel {
     private _addSpecOperators() {
         const { _specOperators } = this;
 
-        _specOperators.add(stackOperator);
+        // _specOperators.add(stackOperator);
         _specOperators.add(chartBoxStyleOperator);
         _specOperators.add(fontSizeOperator);
         _specOperators.add(chartBorderOperator);
         _specOperators.add(titleStyleOperator);
         _specOperators.add(seriesStyleOperator);
-        _specOperators.add(dataLabelOperator);
+        // _specOperators.add(dataLabelOperator);
         _specOperators.add(legendStyleOperator);
         _specOperators.add(chartAxesOperator);
         _specOperators.add(fillOperator);
@@ -84,6 +84,8 @@ export class VChartRenderModel extends Disposable implements IChartRenderModel {
         _specOperators.add(combinationStyleOperator);
         _specOperators.add(barStyleOperator);
         _specOperators.add(hoverMarkStyleOperator);
+        _specOperators.add(invalidValueStyleOperator);
+        _specOperators.add(chartThemeOperator);
     }
 
     createChartInstance(): IChartInstance<VChartSpec> {
@@ -104,7 +106,7 @@ export class VChartRenderModel extends Disposable implements IChartRenderModel {
         for (const operator of _specOperators) {
             operator(spec, chartStyle, chartConfig, chartInstance);
         }
-        // console.log('final spec', spec);
+        // console.log('Final chart spec', spec);
         return spec;
     }
 }

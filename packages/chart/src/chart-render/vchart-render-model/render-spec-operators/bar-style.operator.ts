@@ -19,9 +19,9 @@ import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 import { chartBitsUtils, ChartTypeBits } from '../../../chart/constants';
 
 export const barStyleOperator: VChartRenderSpecOperator = (_spec, style, config, instance) => {
-    if (!chartBitsUtils.baseOn(config.type, ChartTypeBits.Column)) return _spec;
+    if (!chartBitsUtils.baseOn(config.type, ChartTypeBits.Column)) return;
     const spec = _spec as IBarChartSpec;
-
+    // horizontal bar should switch xField and yField
     if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Bar)) {
         const oldXField = spec.xField;
         const oldYField = spec.yField;
@@ -38,6 +38,4 @@ export const barStyleOperator: VChartRenderSpecOperator = (_spec, style, config,
             bandAxis.orient = 'left';
         }
     }
-
-    return spec;
 };

@@ -23,7 +23,7 @@ import { chartBitsUtils, ChartTypeBits } from '../../../chart/constants';
 import { SpecField } from '../converters/constants';
 
 export const areaStyleOperator: VChartRenderSpecOperator = (_spec, style, config, instance) => {
-    if (!chartBitsUtils.baseOn(config.type, ChartTypeBits.Area)) return _spec;
+    if (!chartBitsUtils.baseOn(config.type, ChartTypeBits.Area)) return;
     const spec = _spec as IAreaChartSpec;
     // @ts-ignore
     const bottomAxis = spec.axes?.find((axis) => axis.orient === 'bottom' && axis.type === 'band');
@@ -39,6 +39,9 @@ export const areaStyleOperator: VChartRenderSpecOperator = (_spec, style, config
         [AreaLineStyle.Step]: 'step',
     }[lineStyle];
     Tools.set(spec, 'line.style.curveType', curveType);
-
-    return spec;
+    _spec.series?.forEach((series) => {
+        if (series.type === 'area') {
+            Tools.set(series, 'line.style.curveType', curveType);
+        }
+    });
 };

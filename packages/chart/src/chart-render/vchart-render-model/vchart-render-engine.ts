@@ -19,7 +19,7 @@ import type { ISpec } from '@visactor/vchart';
 import type { Nullable } from '@univerjs/core';
 import { Disposable } from '@univerjs/core';
 import type { RenderSpecOperator } from '../types';
-import type { IChartInstance } from '../chart-instance';
+import type { IChartInstance, IChartThemeOptions } from '../chart-instance';
 
 export type VChartSpec = ISpec;
 export const VChartRenderEngineName = 'VChart';
@@ -69,11 +69,23 @@ export class VChartRenderEngine extends Disposable implements IChartInstance<VCh
         }
     }
 
-    setTheme(): void {
+    setTheme(name: string, options: IChartThemeOptions): void {
+        if (VChart.ThemeManager.themeExist(name)) {
+            VChart.ThemeManager.removeTheme(name);
+        }
+
+        VChart.ThemeManager.registerTheme(name, {
+            colorScheme: {
+                default: options.colors,
+            },
+        });
+
+        VChart.ThemeManager.setCurrentTheme(name);
     }
 
     exportImg() {
-        return Promise.resolve('');
+        const instance = this._ensureChartInstance();
+        return instance.exportImg() as unknown as Promise<string>;
     }
 
     onDispose(dispose: () => void): void {

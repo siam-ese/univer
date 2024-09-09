@@ -38,6 +38,7 @@ const hoverMarkStylizers = {
                 stroke: '#4e83fd',
             },
         });
+        Tools.set(spec, 'bar.style.cursor', 'pointer');
     },
 };
 
@@ -54,15 +55,8 @@ export const hoverMarkStyleOperator: VChartRenderSpecOperator = (_spec, style, c
         switch (series.type) {
             case 'bar': {
                 hoverMarkStylizers.bar((series as IBarSeriesSpec));
-                // series
-                //     .break;
                 break;
             }
         }
     });
-    // if (!chartBitsUtils.baseOn(config.type, ChartTypeBits.Area)) {
-
-    // }
-
-    // return spec;
 };

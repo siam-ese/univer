@@ -16,7 +16,7 @@
 
 import type { IRange, Nullable } from '@univerjs/core';
 import { Disposable, Inject, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
-import type { AreaLineStyle, ChartModel, ChartTypeBits, DataDirection, DeepPartial, IAllSeriesStyle, IChartDataContext, ILabelStyle, ILegendStyle, IPieLabelStyle, ISeriesStyle, IXAxisOptions, IYAxisOptions, RadarShape } from '@univerjs/chart';
+import type { AreaLineStyle, ChartModel, ChartTypeBits, DataDirection, DeepPartial, IAllSeriesStyle, IChartDataContext, ILabelStyle, ILegendStyle, InvalidValueType, IPieLabelStyle, ISeriesStyle, IXAxisOptions, IYAxisOptions, RadarShape } from '@univerjs/chart';
 import { CategoryType, ChartAttributeBits, chartBitsUtils, SheetsChartConfigService, SheetsChartService, StackType } from '@univerjs/chart';
 import { combineLatestWith, distinctUntilChanged, map, type Observable } from 'rxjs';
 
@@ -204,13 +204,13 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     }));
     service.registerViewState('aggregate', (chartModel) => ({
         set(value) {
-            chartModel.assignDataContext({
+            chartModel.assignDataTransformConfig({
                 aggregate: value,
             });
         },
         get() {
-            return chartModel.dataContext$.pipe(
-                map((dataContext) => dataContext.aggregate || false),
+            return chartModel.dataTransformConfig$.pipe(
+                map((config) => config.aggregate || false),
                 distinctUntilChanged()
             );
         },
@@ -219,28 +219,29 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     service.registerViewState('direction', (chartModel) => ({
         set(value) {
             if (value) {
-                const id = chartModel.id;
-                const dataSource = service.getDataSource(id);
-                if (dataSource) {
+                // const id = chartModel.id;
+                // const dataSource = service.getDataSource(id);
+                chartModel.assignDataTransformConfig({
+                    direction: value,
+                    // categoryIndex: undefined,
+                    // categoryType: undefined,
+                    // seriesIndexes: undefined,
+                });
+                // if (dataSource) {
                     // Trigger update data source
-                    chartModel.assignDataContext({
-                        direction: value,
-                        categoryIndex: undefined,
-                        categoryType: undefined,
-                        seriesIndexes: undefined,
-                    });
-                    dataSource.setRange(dataSource.range);
-                }
+
+                    // dataSource.setRange(dataSource.range);
+                // }
             }
         },
         get() {
-            return chartModel.dataContext$.pipe(
-                map((dataContext) => dataContext.direction),
+            return chartModel.dataTransformConfig$.pipe(
+                map((config) => config.direction),
                 distinctUntilChanged()
             );
         },
     }));
-    service.registerViewState('defaultDirection', (chartModel) => chartModel.dataContext$.pipe(map((dataContext) => dataContext.defaultDirection)));
+    service.registerViewState('defaultDirection', (chartModel) => chartModel.dataTransformConfig$.pipe(map((config) => config.defaultDirection)));
 
     service.registerViewState('gradientFill', (chartModel) => ({
         set(v) {
@@ -272,7 +273,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
                 };
                 if (seriesIncludes(categoryIndex)) {
                     // the category index is in series indexes, remove it
-                    newDataConfig.seriesIndexes = newDataConfig.seriesIndexes?.filter((index) => index !== categoryIndex);
+                    newDataConfig.seriesIndexes = dataContext.seriesIndexes?.filter((index) => index !== categoryIndex);
                 }
 
                 chartModel.assignDataContext(newDataConfig);
@@ -561,14 +562,25 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             return chartModel.style$.pipe(map((style) => style.radar?.fill), distinctUntilChanged());
         },
     }));
+    service.registerViewState('invalidValueType', (chartModel) => ({
+        set(value) {
+            chartModel.applyStyle({
+                common: {
+                    invalidValueType: value,
+                },
+            });
+        },
+        get() {
+            return chartModel.style$.pipe(map((style) => style.common?.invalidValueType), distinctUntilChanged());
+        },
+    }));
 };
 
 export interface IChartOptionType {
     label: string;
     value: string;
 }
-// type ExtractValuable<T> = T extends null | undefined ? never : T;
-// export type SelectOption = ExtractValuable<ISelectProps['options']>;
+
 export interface IChartConfigStateMap {
     headers: IChartConfigState<IChartDataContext['headers']>;
     defaultDirection: IChartConfigState<Nullable<DataDirection>>;
@@ -602,6 +614,7 @@ export interface IChartConfigStateMap {
     doughnutHole: IChartConfigState<Nullable<number>, number>;
     radarShape: IChartConfigState<Nullable<RadarShape>, RadarShape>;
     radarFill: IChartConfigState<Nullable<boolean>, boolean>;
+    invalidValueType: IChartConfigState<Nullable<InvalidValueType>, InvalidValueType>;
 }
 
 export type ChartConfigStateKey = keyof IChartConfigStateMap;
@@ -626,6 +639,10 @@ export class SheetsChartUIService extends Disposable {
     ) {
         super();
         registryChartConfigState(this);
+    }
+
+    get activeChartModel() {
+        return this._sheetsChartConfigService.activeChartModel;
     }
 
     getDataSource(id: string) {

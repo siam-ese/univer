@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { AreaLineStyle, ChartBorderDashType, ChartTypeBits, defaultChartStyle, LabelContentType, LegendPosition, LinePointShape, PieLabelPosition, RadarShape, SeriesLabelPosition, StackType } from '@univerjs/chart';
+import { AreaLineStyle, ChartBorderDashType, ChartTypeBits, defaultChartStyle, InvalidValueType, LabelContentType, LegendPosition, LinePointShape, PieLabelPosition, RadarShape, SeriesLabelPosition, StackType } from '@univerjs/chart';
 import type { IChartOptionType } from '../services/sheets-chart-ui.service';
 
 export type OptionType = IChartOptionType;
@@ -321,6 +321,21 @@ export const radarShapeOptions = [
     {
         label: 'Circle',
         value: RadarShape.Circle,
+    },
+];
+
+export const invalidValueOptions = [
+    {
+        label: 'Gap',
+        value: InvalidValueType.Break,
+    },
+    {
+        label: 'Zero',
+        value: InvalidValueType.Zero,
+    },
+    {
+        label: 'Connect',
+        value: InvalidValueType.Link,
     },
 ];
 
