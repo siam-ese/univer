@@ -26,7 +26,7 @@ export function createLabelMap(config: IChartConfig) {
     series.forEach((ser) => {
         seriesNameMap[ser.index] = ser.name;
         ser.items.forEach((_item, valueIndex) => {
-            const xField = category?.keys[valueIndex] || valueIndex;
+            const xField = category?.keys[valueIndex] || String(valueIndex);
             const xFieldLabel = category?.items[valueIndex].label || '';
             categoryNameMap[xField] = xFieldLabel;
         });

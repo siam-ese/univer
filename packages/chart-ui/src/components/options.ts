@@ -339,3 +339,10 @@ export const invalidValueOptions = [
     },
 ];
 
+export const labelContentTypeList = [
+    LabelContentType.CategoryName,
+    LabelContentType.SeriesName,
+    LabelContentType.Value,
+    LabelContentType.Percentage,
+];
+

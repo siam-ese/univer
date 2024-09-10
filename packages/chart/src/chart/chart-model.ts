@@ -16,50 +16,50 @@
 
 import { Disposable, generateRandomId, Tools } from '@univerjs/core';
 import type { Observable, Subscription } from 'rxjs';
-import { BehaviorSubject, combineLatest, combineLatestWith, debounceTime, distinctUntilChanged, filter, map, tap } from 'rxjs';
-import { aggregateOperator, buildChartData, dataDirectionToColumn, findCategoryOperator, findHeaderOperator, findSeriesOperator, topNOperator } from './chart-data-operators';
-import { ChartTypeBits, DataDirection } from './constants';
+import { BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, filter, map } from 'rxjs';
+import { aggregateOperator, buildChartData, topNOperator } from './chart-data-operators';
+import { ChartTypeBits } from './constants';
+import { pieDataContextTransformer } from './data-context-transformers/pie-data-context-transformer';
 import type { ChartStyle } from './style.types';
-import type { ChartDataSource, IChartConfig, IChartDataContext, IChartDataTransformConfig } from './types';
+import type { IChartConfig, IChartContext, IChartDataAggregation, IChartDataSource, IChartSnapshot } from './types';
 
 export interface IChartModelInit {
     chartType?: ChartTypeBits;
-    dataSource$: Observable<ChartDataSource>;
-    dataTransformConfig?: IChartDataTransformConfig;
-    // direction?: DataDirection;
-    chartStyle?: ChartStyle;
-    // toChartConfig: (chartType: ChartTypeBits, chartData: IChartData) => Nullable<IChartConfig>;
+    dataSource: IChartDataSource;
+    dataAggregation?: IChartDataAggregation;
+    context?: Pick<IChartContext, 'categoryIndex' | 'seriesIndexes' | 'transform'>;
+    style?: ChartStyle;
 }
 
+const DEBOUNCE_TIME = 100;
+
 export class ChartModel extends Disposable {
-    private _dataSource: ChartDataSource;
-    private _dataSource$: Observable<ChartDataSource>;
-    get dataSource() { return this._dataSource; }
+    private _dataSource: IChartDataSource;
 
     /** chart data source config */
-    private _dataTransformConfig$: BehaviorSubject<IChartDataTransformConfig>;
-    dataTransformConfig$: Observable<IChartDataTransformConfig>;
-    get dataTransformConfig() { return this._dataTransformConfig$.getValue(); }
+    private _dataAggregation$: BehaviorSubject<IChartDataAggregation>;
+    readonly dataAggregation$: Observable<IChartDataAggregation>;
+    get dataAggregation() { return this._dataAggregation$.getValue(); }
 
     /** chart type */
     private _chartType$ = new BehaviorSubject<ChartTypeBits>(ChartTypeBits.Line);
-    chartType$ = this._chartType$.asObservable();
+    readonly chartType$ = this._chartType$.asObservable();
     get chartType() {
         return this._chartType$.getValue();
     }
 
     /** chart data config */
-    private _dataContext$ = new BehaviorSubject<IChartDataContext>({});
-    dataContext$ = this._dataContext$.asObservable();
-    get dataContext() { return this._dataContext$.getValue(); }
+    private _context$ = new BehaviorSubject<IChartContext>({});
+    readonly context$ = this._context$.asObservable();
+    get context() { return this._context$.getValue(); }
 
     /** chart config, the output of chat model */
     private _config$ = new BehaviorSubject<IChartConfig | null>(null);
-    config$ = this._config$.asObservable();
+    readonly config$ = this._config$.asObservable();
 
     /** chart style config */
     private _style$ = new BehaviorSubject<ChartStyle>({});
-    style$ = this._style$.asObservable();
+    readonly style$ = this._style$.asObservable();
     get style() { return this._style$.getValue (); }
 
     private _configSubscription: Subscription;
@@ -67,81 +67,66 @@ export class ChartModel extends Disposable {
     constructor(public readonly id: string, private _options: IChartModelInit) {
         super();
 
-        const { chartType, dataSource$, chartStyle, dataTransformConfig } = _options;
+        const { chartType, dataSource, style, dataAggregation, context } = _options;
         this.id = id || generateRandomId();
 
         if (chartType) {
             this.setChartType(chartType);
         }
-        // if (direction) {
-        //     this.assignDataContext({
-        //         defaultDirection: direction,
-        //         direction,
-        //     });
-        // }
-        if (chartStyle) {
-            this.setStyle(chartStyle);
+        if (context) {
+            this.assignChartContext(context);
+        }
+        if (style) {
+            this.applyStyle(style);
         }
 
-        const direction = dataTransformConfig?.direction || DataDirection.Row;
-        const transformConfig: IChartDataTransformConfig = {
-            ...dataTransformConfig,
-            direction,
-            defaultDirection: dataTransformConfig?.defaultDirection || direction,
-        };
-        this._dataTransformConfig$ = new BehaviorSubject(transformConfig);
-        this.dataTransformConfig$ = this._dataTransformConfig$.asObservable();
+        this._dataAggregation$ = new BehaviorSubject(dataAggregation || {});
+        this.dataAggregation$ = this._dataAggregation$.asObservable();
 
-        this.setDataSource(dataSource$);
-    }
-
-    setDataSource(dataSource$: Observable<ChartDataSource>) {
-        this._dataSource$ = dataSource$;
+        this._dataSource = dataSource;
         this._init();
     }
 
     private _init() {
         this._configSubscription?.unsubscribe();
-
         // Flag to recognize the new series and category of data source
-        let initiated = false;
-        const direction$ = this.dataTransformConfig$.pipe(
-            map((config) => config.direction),
-            distinctUntilChanged(),
-            tap(() => [
-                initiated = false,
-            ])
-        );
 
-        const dataSource$ = this._dataSource$.pipe(
-            combineLatestWith(direction$),
-            map(([_dataSource, direction]) => {
-                const dataSource = _dataSource.slice();
-                this._dataSource = direction === DataDirection.Column ? dataDirectionToColumn(dataSource) : dataSource;
-
-                return this._dataSource;
-            }),
-            tap((dataSource) => {
-                if (!initiated) {
-                    this._initWithDataSource(dataSource);
+        const { data$ } = this._dataSource;
+        // Transform data source with orient and prevent process of build chart config continue if no data
+        const dataSource$ = data$.pipe(
+            filter((dataSource) => {
+                const noData = dataSource.length <= 0 && dataSource.every((row) => row.length <= 0);
+                if (noData) {
+                    // handle no data
+                    this._config$.next({
+                        type: this.chartType,
+                        category: undefined,
+                        series: [],
+                    });
                 }
-                initiated = true;
+
+                return !noData;
             })
         );
 
-        const combinedDataSource$ = dataSource$.pipe(
-            combineLatestWith(this.dataTransformConfig$, this.dataContext$),
-            map(([dataSource, dataTransformConfig, dataContext]) => {
-                const ctx = { dataSource, dataTransformConfig, dataContext };
-
+        const combinedDataSource$ = combineLatest([
+            dataSource$,
+            this.context$,
+            this.dataAggregation$,
+        ]).pipe(
+            debounceTime(DEBOUNCE_TIME),
+            map(([dataSource, context, dataAggregation]) => {
                 const operators = [
-                    dataTransformConfig.aggregate && aggregateOperator,
-                    dataTransformConfig.topN && topNOperator,
+                    dataAggregation.aggregate && aggregateOperator,
+                    dataAggregation.topN && topNOperator,
                 ].filter((operator) => !!operator);
 
-                operators.forEach((operator) => operator(ctx));
+                const newDataSource = operators.reduce((data, operator) => {
+                    const newData = operator(data, context, dataAggregation);
+                    return newData ?? data;
+                }, dataSource);
 
-                return ctx;
+                return [newDataSource, context, dataAggregation] as const;
             })
         );
 
@@ -149,101 +134,66 @@ export class ChartModel extends Disposable {
             this.chartType$.pipe(distinctUntilChanged()),
             combinedDataSource$,
         ]).pipe(
-            debounceTime(100),
-            filter(([chartType]) => Boolean(chartType))
+            filter(([chartType]) => Boolean(chartType)),
+            debounceTime(DEBOUNCE_TIME)
         )
-            .subscribe(([chartType, { dataSource, dataContext }]) => {
-                // console.log(dataContext, dataSource, 'dataContext');
-                // const { toChartConfig } = this._options;
-                // const chartType = _chartType;
-
-                const chartData = buildChartData(dataSource, dataContext);
-                // const chartConfig = toChartConfig(chartType, chartData);
-
-                // if (chartConfig) {
+            .subscribe(([chartType, [dataSource, context]]) => {
+                const chartData = buildChartData(dataSource, context);
                 this._config$.next({
                     type: chartType,
                     category: chartData.category,
                     series: chartData.series,
                 });
-                // }
             });
 
         this.disposeWithMe(this._configSubscription);
-    }
-
-    private _buildContext(dataSource: ChartDataSource, dataContext: IChartDataContext) {
-        const operators = [
-            findHeaderOperator,
-            findCategoryOperator,
-            findSeriesOperator,
-        ];
-
-        const ctx = {
-            dataSource,
-            dataContext,
-            dataTransformConfig: this.dataTransformConfig,
-        };
-
-        operators.forEach((operator) => operator(ctx));
-
-        return ctx.dataContext;
-    }
-
-    private _initWithDataSource(dataSource: ChartDataSource) {
-        const dataContext = this._buildContext(dataSource, this.dataContext);
-        // build series and category when data source change
-        this._dataContext$.next(dataContext);
-
-        const { style } = this;
-        // console.log(dataContext.headers, 'dataContext.headers');
-          // init title
-        if (style.common?.title?.content === undefined) {
-            this.applyStyle({
-                common: {
-                    title: {
-                        content: dataContext.headers?.join(','),
-                    },
-                },
-            });
-        }
-    }
-
-    getDataByIndex(index: number) {
-        return this._dataSource[index];
     }
 
     applyStyle(newStyle: ChartStyle) {
         this._style$.next(Tools.deepMerge(this.style, newStyle));
     }
 
-    setStyle(style: ChartStyle | ((style: ChartStyle) => ChartStyle)) {
-        const newStyle = typeof style === 'function' ? style(this.style) : style;
-        this._style$.next(newStyle);
+    assignChartContext(context: Partial<IChartContext>) {
+        const newContext = Object.assign({}, this._context$.getValue(), context);
+        this._context$.next(newContext);
     }
 
-    assignDataContext(context: Partial<IChartDataContext>) {
-        const dataContext = Object.assign({}, this._dataContext$.getValue(), context);
-        this._dataContext$.next(dataContext);
-    }
-
-    setDataContext(context: IChartDataContext | ((context: IChartDataContext) => IChartDataContext)) {
-        const newContext = typeof context === 'function' ? context(this.dataContext) : context;
-        this._dataContext$.next(newContext);
-    }
-
-    assignDataTransformConfig(config: Partial<IChartDataTransformConfig>) {
-        const newConfig = Object.assign({}, this._dataTransformConfig$.getValue(), config);
-        this._dataTransformConfig$.next(newConfig);
-    }
-
-    setDataTransformConfig(config: IChartDataTransformConfig | ((config: IChartDataTransformConfig) => IChartDataTransformConfig)) {
-        const newConfig = typeof config === 'function' ? config(this._dataTransformConfig$.getValue()) : config;
-        this._dataTransformConfig$.next(newConfig);
+    assignDataAggregation(config: Partial<IChartDataAggregation>) {
+        const newConfig = Object.assign({}, this._dataAggregation$.getValue(), config);
+        this._dataAggregation$.next(newConfig);
     }
 
     setChartType(type: ChartTypeBits) {
+        const transformers = [
+            pieDataContextTransformer,
+        ];
+
+        const oldType = this.chartType;
+        const newType = type;
+        transformers.forEach((transformer) => transformer(oldType, newType, this));
+
         this._chartType$.next(type);
+    }
+
+    serialize() {
+        const { context, style, dataAggregation } = this;
+        const copyStyle = { ...style };
+
+        delete copyStyle.runtime;
+
+        const chartSnapshot: IChartSnapshot = {
+            id: this.id,
+            chartType: this.chartType,
+            context: {
+                categoryIndex: context.categoryIndex,
+                seriesIndexes: context.seriesIndexes,
+                transform: context.transform,
+            },
+            style: copyStyle,
+            dataAggregation,
+        };
+
+        return chartSnapshot;
     }
 
     onDispose(effect: () => void) {
@@ -254,7 +204,7 @@ export class ChartModel extends Disposable {
         super.dispose();
 
         this._chartType$.complete();
-        this._dataContext$.complete();
+        this._context$.complete();
         this._config$.complete();
         this._style$.complete();
     }

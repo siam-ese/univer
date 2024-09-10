@@ -20,6 +20,7 @@ import { type IAccessor, Inject, Injector } from '@univerjs/core';
 import { deriveStateFromActiveSheet$ } from '@univerjs/sheets-ui';
 import { Observable } from 'rxjs';
 import { InsertChartCommand, InsertSheetsChartMutation } from '../commands/sheets-chart.command';
+import { ChartUpdateConfigMutation } from '../commands/sheets-chart-update-config.mutation';
 
 export function ChartMenuItemFactory(accessor: IAccessor): IMenuButtonItem {
     // const commandService = accessor.get(ICommandService);
@@ -63,12 +64,13 @@ export class SheetsChartController extends Disposable {
         [
             InsertChartCommand,
             InsertSheetsChartMutation,
+            ChartUpdateConfigMutation,
             // SetSheetsFilterCriteriaMutation,
             // SetSheetsFilterRangeMutation,
             // ReCalcSheetsFilterMutation,
             // RemoveSheetsFilterMutation,
         ].forEach((command) => this.disposeWithMe(this._commandService.registerCommand(command)));
 
-        this._commandService.executeCommand(InsertChartCommand.id);
+        // this._commandService.executeCommand(InsertChartCommand.id);
     }
 }

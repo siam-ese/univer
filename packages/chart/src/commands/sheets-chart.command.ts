@@ -15,7 +15,7 @@
  */
 
 import type { ICommand, IMutation, IRange, Workbook } from '@univerjs/core';
-import { CommandType, ICommandService, IUniverInstanceService, RANGE_TYPE, UniverInstanceType } from '@univerjs/core';
+import { CommandType, ICommandService, IUniverInstanceService, UniverInstanceType } from '@univerjs/core';
 import { type ISheetCommandSharedParams, SheetsSelectionsService } from '@univerjs/sheets';
 
 import { SheetsChartService } from '../services/sheets-chart.service';
@@ -32,7 +32,7 @@ export const InsertSheetsChartMutation: IMutation<IInsertChartCommandParams> = {
 
         const sheetChartService = accessor.get(SheetsChartService);
 
-        sheetChartService.createChartModel(unitId, subUnitId, range);
+        sheetChartService.createChartModel(unitId, subUnitId, { range });
 
         return true;
     },
@@ -51,19 +51,6 @@ export const InsertChartCommand: ICommand = {
         const unitId = workbook?.getUnitId();
         const subUnitId = workbook?.getActiveSheet().getSheetId();
 
-        selectionManagerService.setSelections([
-            {
-                range: {
-                    startRow: 13,
-                    startColumn: 0,
-                    endRow: 22,
-                    endColumn: 4,
-                    rangeType: RANGE_TYPE.NORMAL,
-                },
-                style: null,
-                primary: null,
-            },
-        ]);
         const [currentSelection] = selectionManagerService.getCurrentSelections();
 
         const range = currentSelection.range;
@@ -79,3 +66,4 @@ export const InsertChartCommand: ICommand = {
         return commandService.executeCommand(InsertSheetsChartMutation.id, params);
     },
 };
+

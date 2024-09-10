@@ -48,13 +48,6 @@ export enum LabelContentType {
     Percentage = 1 << 4,
 }
 
-export const labelContentTypeList = [
-    LabelContentType.CategoryName,
-    LabelContentType.SeriesName,
-    LabelContentType.Value,
-    LabelContentType.Percentage,
-];
-
 export enum LabelAlign {
     Left = 'left',
     Right = 'right',
@@ -186,28 +179,28 @@ export interface IChartStyle {
     runtime: {
         themeColors: string[];
     };
-    common: {
-        theme: string;
-        stackType: StackType;
-        invalidValueType: InvalidValueType;
-        gradientFill: boolean;
-        backgroundColor: string;
-        titleFontSize: number;
-        fontSize: number;
-        fontColor: string;
-        borderColor: string;
-        title: Omit<ILabelStyle, 'visible'>;
-        subtitle: Omit<ILabelStyle, 'visible'>;
-        xAxisTitle: Omit<ILabelStyle, 'visible'>;
-        yAxisTitle: Omit<ILabelStyle, 'visible'>;
-        allSeriesStyle: IAllSeriesStyle;
-        legend: ILegendStyle;
-        xAxis: IXAxisOptions;
-        yAxis: IYAxisOptions;
-        seriesStyleMap: {
-            [id: string]: ISeriesStyle;
-        };
+    // common: {
+    theme: string;
+    stackType: StackType;
+    invalidValueType: InvalidValueType;
+    gradientFill: boolean;
+    backgroundColor: string;
+    titleFontSize: number;
+    fontSize: number;
+    fontColor: string;
+    borderColor: string;
+    title: Omit<ILabelStyle, 'visible'>;
+    subtitle: Omit<ILabelStyle, 'visible'>;
+    xAxisTitle: Omit<ILabelStyle, 'visible'>;
+    yAxisTitle: Omit<ILabelStyle, 'visible'>;
+    legend: ILegendStyle;
+    xAxis: IXAxisOptions;
+    yAxis: IYAxisOptions;
+    allSeriesStyle: IAllSeriesStyle;
+    seriesStyleMap: {
+        [id: string]: ISeriesStyle;
     };
+    // };
     pie: {
         doughnutHole: number;
         labelStyle: IPieLabelStyle;

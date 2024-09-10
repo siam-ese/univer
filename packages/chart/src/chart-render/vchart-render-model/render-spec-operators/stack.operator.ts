@@ -21,23 +21,26 @@ import { StackType } from '../../../chart/style.types';
 import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 import { SpecField } from '../converters/constants';
 
+// const stackAttributes = [ChartAttributeBits.PercentStack, ChartAttributeBits.Stack];
 export const stackOperator: VChartRenderSpecOperator = (spec, style, config) => {
-    const stackType = style.common?.stackType;
+    // const stackType = style.stackType;
 
     const barLikeSpec = spec as IBarChartSpec;
-
+    // const stacked = stackAttributes.some((attr) => chartBitsUtils.has(config.type, attr));
+    const stacked = Boolean(style.stackType);
+    const percentStacked = style.stackType === StackType.Percent;
     if ([
         ChartTypeBits.Column,
         ChartTypeBits.Area,
     ].some((type) => chartBitsUtils.baseOn(config.type, type))) {
-        barLikeSpec.percent = stackType === StackType.Percent;
-        barLikeSpec.stack = Boolean(stackType);
+        barLikeSpec.percent = percentStacked; // stackType === StackType.Percent;
+        barLikeSpec.stack = stacked; // stackType === StackType.Stack;
     }
 
     spec.series?.forEach((ser) => {
         if (ser.type === 'bar') {
-            const stacked = Boolean(stackType);
-            Tools.set(ser, 'percent', stackType === StackType.Percent);
+            // const stacked = Boolean(stackType);
+            Tools.set(ser, 'percent', percentStacked);
             Tools.set(ser, 'stack', stacked);
             if (stacked) {
                 Tools.set(ser, 'xField', SpecField.xField);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { SheetsChartConfigService } from '@univerjs/chart';
+import { ChartModelService } from '@univerjs/chart';
 import { Disposable, ICommandService, Inject, Injector, IUniverInstanceService, LifecycleStages, OnLifecycle, UniverInstanceType } from '@univerjs/core';
 import { ComponentManager, IMenuService, ISidebarService } from '@univerjs/ui';
 import { IDrawingManagerService } from '@univerjs/drawing';
@@ -32,7 +32,7 @@ export class SheetsChartUIController extends Disposable {
         @IDrawingManagerService private _drawingManagerService: IDrawingManagerService,
         @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService,
         @Inject(Injector) private readonly _injector: Injector,
-        @Inject(SheetsChartConfigService) private readonly _sheetsChartConfigService: SheetsChartConfigService,
+        @Inject(ChartModelService) private readonly _ChartModelService: ChartModelService,
         @Inject(ISidebarService) private _sidebarService: ISidebarService,
         @Inject(ComponentManager) private _componentManager: ComponentManager,
         @ICommandService private readonly _commandService: ICommandService,
@@ -65,7 +65,7 @@ export class SheetsChartUIController extends Disposable {
     }
 
     private _initPanel() {
-        const { _sheetsChartConfigService } = this;
+        const { _ChartModelService } = this;
         this._componentManager.register(CHART_EDIT_PANEL_KEY, ChartEditPanel);
         this.disposeWithMe(this._drawingManagerService.focus$.subscribe((params) => {
             const drawing = params[0];
@@ -73,13 +73,13 @@ export class SheetsChartUIController extends Disposable {
                 this.hidePanel();
                 return;
             }
-            const chartModel = _sheetsChartConfigService.getChartModel(drawing.drawingId);
+            const chartModel = _ChartModelService.getChartModel(drawing.drawingId);
             if (!chartModel) {
                 return;
             }
 
             if (drawing.drawingId === chartModel.id) {
-                _sheetsChartConfigService.setActiveChartModel(chartModel);
+                _ChartModelService.setActiveChartModel(chartModel);
                 this.openPanel();
             }
         }));

@@ -27,7 +27,7 @@ const seriesItemHandlers: SeriesItemHandler[] = [
     stackHandler,
 ];
 export const seriesStyleOperator: VChartRenderSpecOperator = (spec, style, config) => {
-    const seriesStyleMap = style.common?.seriesStyleMap;
+    const seriesStyleMap = style.seriesStyleMap;
     spec.series?.forEach((series) => {
         const seriesId = (series as any)[SpecField.seriesId];
         const seriesStyle = seriesId ? seriesStyleMap?.[seriesId] : undefined;

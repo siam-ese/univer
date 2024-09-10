@@ -51,7 +51,7 @@ export const combinationChartConverter: IChartRenderSpecConverter<ICommonChartSp
 
         const chartData: Array<IDataItem> = [];
 
-        const seriesStyleMap = style.common?.seriesStyleMap;
+        const seriesStyleMap = style.seriesStyleMap;
 
         // const randomSeriesGroupIdMap = new Map<string, string>();
 

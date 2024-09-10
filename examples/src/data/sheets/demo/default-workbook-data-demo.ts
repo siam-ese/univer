@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { ChartTypeBits } from '@univerjs/chart';
 import type { IDataValidationRule, IDocumentData, IWorkbookData } from '@univerjs/core';
 import { DataValidationErrorStyle, DataValidationOperator, DataValidationType, LocaleType } from '@univerjs/core';
 
@@ -24669,6 +24670,108 @@ export const DEFAULT_WORKBOOK_DATA_DEMO: IWorkbookData = {
             name: 'SHEET_HYPER_LINK_PLUGIN',
             data: JSON.stringify({
                 'sheet-0011': hyperLink,
+            }),
+        },
+        {
+            name: 'SHEET_CHART_PLUGIN',
+            data: JSON.stringify({
+                'sheet-0010': [
+                    //     {
+                    //     id: 'chart-0011',
+                    //     chartType: ChartTypeBits.Area,
+                    //     transformConfig: {
+                    //         direction: DataOrientation.Column,
+                    //     },
+                    //     range: {
+                    //         startRow: 13,
+                    //         endRow: 22,
+                    //         startColumn: 0,
+                    //         endColumn: 4,
+                    //     },
+                    //     categoryIndex: 0,
+                    //     seriesIndexes: [1, 2],
+                    // },
+                    // {
+                    //     id: 'chart-0014',
+                    //     chartType: ChartTypeBits.AreaPercentStacked,
+                    //     range: {
+                    //         startRow: 13,
+                    //         endRow: 22,
+                    //         startColumn: 0,
+                    //         endColumn: 4,
+                    //     },
+                    //     categoryIndex: 0,
+                    //     seriesIndexes: [1, 3],
+                    // },
+                    // {
+                    //     id: 'chart-0015',
+                    //     chartType: ChartTypeBits.Radar,
+                    //     transformConfig: {
+                    //         direction: DataOrientation.Column,
+                    //     },
+                    //     range: {
+                    //         startRow: 13,
+                    //         endRow: 22,
+                    //         startColumn: 0,
+                    //         endColumn: 4,
+                    //     },
+                    //     categoryIndex: 0,
+                    //     seriesIndexes: [1, 2, 3, 4],
+                    // },
+                    {
+                        id: 'chart-0017',
+                        chartType: ChartTypeBits.Radar,
+                        range: {
+                            startRow: 13,
+                            endRow: 22,
+                            startColumn: 0,
+                            endColumn: 4,
+                        },
+                        context: {
+                            categoryIndex: 0,
+                            seriesIndexes: [2, 3, 4],
+                        },
+                    },
+                    // {
+                    //     id: 'chart-0016',
+                    //     chartType: ChartTypeBits.Pie,
+                    //     range: {
+                    //         startRow: 13,
+                    //         endRow: 22,
+                    //         startColumn: 0,
+                    //         endColumn: 4,
+                    //     },
+                    //     categoryIndex: 0,
+                    //     seriesIndexes: [2, 3],
+                    // },
+                    // {
+                    //     id: 'chart-0012',
+                    //     chartType: ChartTypeBits.Combination,
+                    //     transformConfig: {
+                    //         direction: DataOrientation.Column,
+                    //     },
+                    //     range: {
+                    //         startRow: 13,
+                    //         endRow: 22,
+                    //         startColumn: 0,
+                    //         endColumn: 4,
+                    //     },
+                    //     categoryIndex: 0,
+                    //     seriesIndexes: [1, 2, 3, 4],
+                    // },
+                    // {
+                    //     id: 'chart-0013',
+                    //     chartType: ChartTypeBits.Combination,
+                    //     range: {
+                    //         startRow: 13,
+                    //         endRow: 22,
+                    //         startColumn: 0,
+                    //         endColumn: 4,
+                    //     },
+                    //     categoryIndex: 0,
+                    //     seriesIndexes: [1, 2],
+                    // }
+                ],
             }),
         },
         {

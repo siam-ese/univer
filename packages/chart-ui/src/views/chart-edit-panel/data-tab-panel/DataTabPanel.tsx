@@ -15,7 +15,7 @@
  */
 
 import type { InvalidValueType, StackType } from '@univerjs/chart';
-import { chartBitsUtils, ChartTypeBits, DataDirection, defaultChartStyle, SHEETS_CHART_PLUGIN_NAME } from '@univerjs/chart';
+import { chartBitsUtils, ChartTypeBits, DataOrientation, defaultChartStyle, SHEETS_CHART_PLUGIN_NAME } from '@univerjs/chart';
 import type { IUnitRange, Workbook } from '@univerjs/core';
 import { createInternalEditorID, IUniverInstanceService, UniverInstanceType, useDependency } from '@univerjs/core';
 import { Button, Checkbox, Dropdown, Menu, MenuItem, Select } from '@univerjs/design';
@@ -59,7 +59,7 @@ export const DataTabPanel = () => {
     const [aggregate, setAggregate] = useChartConfigState('aggregate', sheetsChartUIService);
     const [gradientFill, setGradientFill] = useChartConfigState('gradientFill', sheetsChartUIService);
 
-    const [defaultDirection] = useChartConfigState('defaultDirection', sheetsChartUIService);
+    // const [defaultDirection] = useChartConfigState('defaultDirection', sheetsChartUIService);
     const [direction, setDirection] = useChartConfigState('direction', sheetsChartUIService);
     const [invalidValueType, setInvalidValueType] = useChartConfigState('invalidValueType', sheetsChartUIService);
 
@@ -84,6 +84,7 @@ export const DataTabPanel = () => {
     const showMoreSettings = chartType && [ChartTypeBits.Area, ChartTypeBits.Line].some((type) => chartBitsUtils.baseOn(chartType, type));
     const showGradientFill = chartType && [ChartTypeBits.Line, ChartTypeBits.Radar].every((type) => type !== chartType);
 
+    const firstSeries = seriesOptions?.find((option) => option.value === String(seriesValues?.[0]));
     return (
         <div>
             <div>
@@ -180,28 +181,35 @@ export const DataTabPanel = () => {
                 </div>
 
                 <div className="chart-edit-panel-top-gap">
-                    <Checkbox
-                        checked={direction !== defaultDirection}
-                        onChange={() => {
-                            setDirection(direction === DataDirection.Row ? DataDirection.Column : DataDirection.Row);
+                    <Button
+                        type="primary"
+                        size="small"
+                        onClick={() => {
+                            setDirection(direction === DataOrientation.Row ? DataOrientation.Column : DataOrientation.Row);
                         }}
                     >
                         Switch to Row/Column
-                    </Checkbox>
+                    </Button>
+                    {/* <Checkbox
+                        checked={direction !== defaultDirection}
+                        onChange={}
+                    >
+                        Switch to Row/Column
+                    </Checkbox> */}
                 </div>
 
                 <div className="chart-edit-panel-top-gap">
                     <Checkbox
-                        checked={String(categoryIndex) === asCategory?.value}
+                        checked={asCategory}
                         onChange={(v) => {
                             // console.log(v, 'onchange');
-                            setAsCategory(v ? asCategory : undefined);
+                            setAsCategory(!!v);
                         }}
                     >
                         Use
                         {' '}
                         {direction || ''}
-                        {asCategory?.label}
+                        {firstSeries?.label}
                         {' '}
                         as labels
                     </Checkbox>

@@ -17,8 +17,9 @@
 import { Checkbox, Select } from '@univerjs/design';
 import React, { useCallback, useMemo } from 'react';
 import type { IPieLabelStyle, ISeriesLabelStyle } from '@univerjs/chart';
-import { chartBitsUtils, LabelContentType, labelContentTypeList } from '@univerjs/chart';
+import { chartBitsUtils, LabelContentType } from '@univerjs/chart';
 import type { OptionType } from './options';
+import { labelContentTypeList } from './options';
 import type { IFontFormatBarProps, PropertyChangeFunction } from './font-format-bar';
 import { FontFormatBar } from './font-format-bar';
 

@@ -20,7 +20,7 @@ import { SpecField } from '../../converters/constants';
 import type { SeriesItemHandler } from './series-style-operator';
 
 export const stackHandler: SeriesItemHandler = (series, seriesStyle, style) => {
-    const stackType = style.common?.stackType;
+    const stackType = style.stackType;
     if (['bar', 'area'].includes(series.type)) {
         const stacked = Boolean(stackType);
         Tools.set(series, 'percent', stackType === StackType.Percent);

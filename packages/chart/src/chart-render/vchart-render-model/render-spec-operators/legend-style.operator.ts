@@ -19,7 +19,7 @@ import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 import { LegendPosition } from '../../../chart/style.types';
 
 export const legendStyleOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
-    const legendStyle = style.common?.legend;
+    const legendStyle = style.legend;
     if (!Array.isArray(spec.legends)) {
         spec.legends = [];
     }

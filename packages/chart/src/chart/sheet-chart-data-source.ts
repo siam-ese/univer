@@ -14,35 +14,46 @@
  * limitations under the License.
  */
 
-import type { CellValue, ICommandService, IDisposable, IRange, IUniverInstanceService, Nullable } from '@univerjs/core';
-import { Disposable, ObjectMatrix, Rectangle } from '@univerjs/core';
+import type { CellValue, IDisposable, Injector, IRange, Nullable } from '@univerjs/core';
+import { Disposable, ICommandService, IUniverInstanceService, ObjectMatrix, Rectangle } from '@univerjs/core';
 import type { ISetRangeValuesCommandParams } from '@univerjs/sheets';
 import { SetRangeValuesCommand } from '@univerjs/sheets';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, Subject } from 'rxjs';
-import type { ChartDataSource } from './types';
+import { BehaviorSubject, combineLatest, distinctUntilChanged, map, Subject, tap } from 'rxjs';
+import type { ChartDataSourceValues, IChartDataSource } from './types';
+import { DataOrientation } from './constants';
+import { toColumnOrient } from './chart-data-operators';
 
 export interface ISheetChartDataSourceOption {
     unitId: string;
     subUnitId: string;
     range: IRange;
+    orient: DataOrientation;
 }
 
-export class SheetChartDataSource extends Disposable {
-    private _dataSource$ = new Subject<ChartDataSource>();
-
-    private _dataSourceEmitter$ = new BehaviorSubject<Observable<ChartDataSource>>(this._dataSource$.asObservable());
-    dataSourceEmitter$ = this._dataSourceEmitter$.asObservable();
-
-    get dataSource$() {
-        return this._dataSourceEmitter$.getValue();
+export class SheetChartDataSource extends Disposable implements IChartDataSource {
+    private _data$ = new Subject<ChartDataSourceValues>();
+    private _combinedData$: Observable<ChartDataSourceValues>; ;
+    get data$() {
+        return this._combinedData$;
     }
 
-    private _range$: BehaviorSubject<IRange>;
-    range$: Observable<IRange>;
+    private _data: ChartDataSourceValues = [];
+    get data() {
+        return this._data;
+    }
 
-    private _usedRange$: BehaviorSubject<IRange>;
-    usedRange$: Observable<IRange>;
+    private _rebuild$ = new Subject<void>();
+    readonly rebuild$ = this._rebuild$.asObservable();
+
+    private _orient$: BehaviorSubject<DataOrientation>;
+    orient$: Observable<DataOrientation>;
+
+    private _range$: BehaviorSubject<IRange>;
+    readonly range$: Observable<IRange>;
+
+    // private _usedRange$: BehaviorSubject<IRange>;
+    // usedRange$: Observable<IRange>;
 
     private _showHiddenValues$ = new BehaviorSubject<boolean>(false);
     showHiddenValues$ = this._showHiddenValues$.asObservable();
@@ -55,24 +66,36 @@ export class SheetChartDataSource extends Disposable {
 
     constructor(
         private _option: ISheetChartDataSourceOption,
-        private _univerInstanceService: IUniverInstanceService,
-        private _commandService: ICommandService
+        private readonly _injector: Injector
     ) {
         super();
-        const { range } = _option;
+        const { range, orient } = _option;
 
         this._range$ = new BehaviorSubject<IRange>(range);
         this.range$ = this._range$.asObservable();
 
-        this._usedRange$ = new BehaviorSubject<IRange>(range);
-        this.usedRange$ = this._usedRange$.asObservable();
+        this._orient$ = new BehaviorSubject(orient);
+        this.orient$ = this._orient$.asObservable();
 
+        // this._usedRange$ = new BehaviorSubject<IRange>(range);
+        // this.usedRange$ = this._usedRange$.asObservable();
+
+        // setTimeout(() => {
         this._init();
+        // });
+    }
+
+    private _asyncRebuild() {
+        setTimeout(() => {
+            this._rebuild$.next();
+        });
     }
 
     private _init() {
         this.disposeWithMe(
-            this._usedRange$.pipe().subscribe((range) => {
+            this.range$.pipe(
+                tap(() => this._asyncRebuild())
+            ).subscribe((range) => {
                 this._watchRange(range);
 
                 setTimeout(() => {
@@ -84,15 +107,33 @@ export class SheetChartDataSource extends Disposable {
             this._showHiddenValues$.pipe(
                 distinctUntilChanged()
             ).subscribe(() => {
-                this._emitRangeValues(this._usedRange$.getValue());
+                this._emitRangeValues(this._range$.getValue());
             })
         );
+
+        this._combinedData$ = combineLatest([
+            this._data$.asObservable(),
+            this.orient$.pipe(
+                distinctUntilChanged(),
+                tap(() => this._asyncRebuild())
+            ),
+        ]).pipe(
+            map(([data, orient]) => orient === DataOrientation.Column ? toColumnOrient(data) : data),
+            tap((data) => {
+                this._data = data;
+            })
+        );
+    }
+
+    setOrient(orient: DataOrientation): void {
+        this._orient$.next(orient);
     }
 
     private _getRangeValues(range: IRange) {
         const getCellValuesFromRange = (r: IRange) => {
             const { unitId, subUnitId } = this._option;
-            const workbook = this._univerInstanceService.getUniverSheetInstance(unitId);
+            const univerInstanceService = this._injector.get(IUniverInstanceService);
+            const workbook = univerInstanceService.getUniverSheetInstance(unitId);
             if (!workbook) return;
 
             const workSheet = workbook?.getSheetBySheetId(subUnitId);
@@ -112,14 +153,15 @@ export class SheetChartDataSource extends Disposable {
     private _emitRangeValues(range: IRange) {
         const rangeValues = this._getRangeValues(range);
         if (rangeValues) {
-            this._dataSource$.next(rangeValues);
+            this._data$.next(rangeValues);
         }
     }
 
     private _watchRange(range: IRange) {
         const { unitId, subUnitId } = this._option;
         this._unwatchRangeDisposer?.dispose();
-        this._unwatchRangeDisposer = this._commandService.onCommandExecuted((command) => {
+        const commandService = this._injector.get(ICommandService);
+        this._unwatchRangeDisposer = commandService.onCommandExecuted((command) => {
             if (command.id === SetRangeValuesCommand.id) {
                 const { subUnitId: commandSubUnitId, unitId: commandUnitId, range: commandRange } = command.params as ISetRangeValuesCommandParams;
                 if (commandSubUnitId === subUnitId
@@ -133,13 +175,14 @@ export class SheetChartDataSource extends Disposable {
     }
 
     setRange(range: IRange) {
-        this._dataSourceEmitter$.next(this._dataSource$.asObservable());
+        // this._rebuild$.next();
+        // this._dataSourceEmitter$.next(this._dataSource$.asObservable());
         this._range$.next(range);
     }
 
-    setUsedRange(range: IRange) {
-        this._usedRange$.next(range);
-    }
+    // setUsedRange(range: IRange) {
+    //     this._usedRange$.next(range);
+    // }
 
     setShowHiddenValues(flag: boolean) {
         this._showHiddenValues$.next(flag);
@@ -147,7 +190,9 @@ export class SheetChartDataSource extends Disposable {
 
     override dispose() {
         super.dispose();
-        this._dataSource$.complete();
+        this._data$.complete();
+        this._rebuild$.complete();
+        this._orient$.complete();
         this._range$.complete();
         this._unwatchRangeDisposer?.dispose();
     }

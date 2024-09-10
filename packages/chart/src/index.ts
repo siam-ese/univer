@@ -18,14 +18,16 @@
 export type { IChartRenderModel } from './chart-render/chart-render-model';
 export { VChartRenderEngine } from './chart-render/vchart-render-model/vchart-render-engine';
 export { ChartModel } from './chart/chart-model';
-export { chartBitsUtils, ChartAttributeBits, ChartTypeBits, DataDirection, CategoryType } from './chart/constants';
-export type { IChartDataContext } from './chart/types';
+export { chartBitsUtils, ChartAttributeBits, ChartTypeBits, DataOrientation, CategoryType } from './chart/constants';
+export type { IChartContext } from './chart/types';
 export * from './chart/style.types';
 export { SheetsChartController } from './controllers/sheets-chart.controller';
 export { UniverSheetsChartPlugin, SHEETS_CHART_PLUGIN_NAME, type IUniverSheetsChartPluginConfig } from './plugins/univer-sheets-chart-plugin';
-export { SheetsChartConfigService } from './services/sheets-chart-config.service';
-export { SheetsChartRenderService } from './services/sheets-chart-render.service';
+export { ChartModelService } from './services/chart-config.service';
+export { ChartRenderService } from './services/chart-render.service';
 export { SheetsChartService } from './services/sheets-chart.service';
 export { isNil } from './chart/chart-data-operators';
 export { defaultChartStyle } from './chart/constants/default-chart-style';
+export * from './commands/sheets-chart.command';
+export * from './commands/sheets-chart-update-config.mutation';
 

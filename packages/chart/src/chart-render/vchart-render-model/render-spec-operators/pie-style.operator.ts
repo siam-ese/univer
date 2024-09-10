@@ -31,7 +31,7 @@ export const pieStyleOperator: VChartRenderSpecOperator = (_spec, style, config)
     const doughnutHold = style.pie?.doughnutHole ?? defaultChartStyle.pie.doughnutHole;
     spec.innerRadius = isDoughnut ? defaultChartStyle.pie.radius * doughnutHold : 0;
 
-    Tools.set(spec, 'pie.style.stroke', style.common?.borderColor ?? defaultChartStyle.pie.borderColor);
+    Tools.set(spec, 'pie.style.stroke', style.borderColor ?? defaultChartStyle.pie.borderColor);
 
     Tools.set(spec, 'label.position', style.pie?.labelStyle?.position ?? defaultChartStyle.pie.labelPosition);
     Tools.set(spec, 'label.rotate', false);

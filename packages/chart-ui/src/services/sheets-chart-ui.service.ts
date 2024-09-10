@@ -15,9 +15,9 @@
  */
 
 import type { IRange, Nullable } from '@univerjs/core';
-import { Disposable, Inject, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
-import type { AreaLineStyle, ChartModel, ChartTypeBits, DataDirection, DeepPartial, IAllSeriesStyle, IChartDataContext, ILabelStyle, ILegendStyle, InvalidValueType, IPieLabelStyle, ISeriesStyle, IXAxisOptions, IYAxisOptions, RadarShape } from '@univerjs/chart';
-import { CategoryType, ChartAttributeBits, chartBitsUtils, SheetsChartConfigService, SheetsChartService, StackType } from '@univerjs/chart';
+import { Disposable, ICommandService, Inject, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
+import type { AreaLineStyle, ChartModel, ChartTypeBits, DataOrientation, DeepPartial, IAllSeriesStyle, IChartContext, IChartUpdateConfigMutationParams, ILabelStyle, ILegendStyle, InvalidValueType, IPieLabelStyle, ISeriesStyle, IXAxisOptions, IYAxisOptions, RadarShape } from '@univerjs/chart';
+import { CategoryType, ChartAttributeBits, chartBitsUtils, ChartModelService, ChartUpdateConfigMutation, SheetsChartService, StackType } from '@univerjs/chart';
 import { combineLatestWith, distinctUntilChanged, map, type Observable } from 'rxjs';
 
 function formatAxisOptionLabel(column: number, dataRange: IRange) {
@@ -26,25 +26,18 @@ function formatAxisOptionLabel(column: number, dataRange: IRange) {
 
 // eslint-disable-next-line max-lines-per-function
 export function registryChartConfigState(service: SheetsChartUIService) {
-    service.registerViewState('headers', (chartModel) => chartModel.dataContext$.pipe(map((config) => config.headers)));
+    service.registerViewState('headers', (chartModel) => chartModel.context$.pipe(map((config) => config.headers)));
     service.registerViewState('chartType', (chartModel) => ({
         set(type) {
-            if (chartBitsUtils.has(type, ChartAttributeBits.Stack)) {
-                chartModel.applyStyle({
-                    common: {
-                        stackType: StackType.Stacked,
-                    },
-                });
-            }
-            if (chartBitsUtils.has(type, ChartAttributeBits.PercentStack)) {
-                chartModel.applyStyle({
-                    common: {
-                        stackType: StackType.Percent,
-                    },
-                });
-            }
-
-            chartModel.setChartType(type);
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                chartType: type,
+                style: {
+                    stackType: chartBitsUtils.has(type, ChartAttributeBits.PercentStack)
+                        ? StackType.Percent
+                        : chartBitsUtils.has(type, ChartAttributeBits.Stack) ? StackType.Stacked : undefined,
+                },
+            });
         },
         get() {
             return chartModel.chartType$;
@@ -52,15 +45,16 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     }));
     service.registerViewState('stackType', (chartModel) => ({
         set(v) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     stackType: v || undefined,
                 },
             });
         },
         get() {
             return chartModel.style$.pipe(
-                map((style) => style.common?.stackType),
+                map((style) => style.stackType),
                 distinctUntilChanged()
             );
         },
@@ -71,13 +65,13 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             if (v) {
                 const dataSource = service.getDataSource(chartModel.id);
                 if (dataSource) {
-                    // Trigger update data source
-                    dataSource.setRange(v);
-
-                    chartModel.assignDataContext({
-                        categoryIndex: undefined,
-                        categoryType: undefined,
-                        seriesIndexes: undefined,
+                    service.executeChartUpdateConfig({
+                        chartModelId: chartModel.id,
+                        range: v,
+                        context: {
+                            categoryIndex: undefined,
+                            seriesIndexes: undefined,
+                        },
                     });
                 }
             }
@@ -92,13 +86,16 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             if (typeof v !== 'number') {
                 return;
             }
-            chartModel.assignDataContext({
-                categoryIndex: v,
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                context: {
+                    categoryIndex: v,
+                },
             });
         },
         get() {
-            return chartModel.dataContext$.pipe(
-                map((dataContext) => dataContext.categoryIndex),
+            return chartModel.context$.pipe(
+                map((chartContext) => chartContext.categoryIndex),
                 distinctUntilChanged()
             );
         },
@@ -107,12 +104,12 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     service.registerViewState('categoryList', (chartModel) => {
         const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
         if (!dataSourceRange$) {
-            return chartModel.dataContext$.pipe(map(() => []));
+            return chartModel.context$.pipe(map(() => []));
         }
-        return chartModel.dataContext$.pipe(
+        return chartModel.context$.pipe(
             combineLatestWith(dataSourceRange$),
-            map(([dataContext, dataRange]) => {
-                const { categoryResourceIndexes, seriesResourceIndexes, headers } = dataContext;
+            map(([chartContext, dataRange]) => {
+                const { categoryResourceIndexes, seriesResourceIndexes, headers } = chartContext;
                 const indexes = categoryResourceIndexes?.concat(seriesResourceIndexes || [])
                     .sort((a, b) => (a || 0) - (b || 0));
 
@@ -136,80 +133,82 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     });
     service.registerViewState('seriesValues', (chartModel) => ({
         set(values) {
-            chartModel.assignDataContext({
-                seriesIndexes: values,
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                context: {
+                    seriesIndexes: values,
+                },
             });
         },
         get() {
-            return chartModel.dataContext$.pipe(map((dataContext) => {
-                const { seriesIndexes = [] } = dataContext;
+            return chartModel.context$.pipe(map((chartContext) => {
+                const { seriesIndexes = [] } = chartContext;
 
                 return seriesIndexes;
             }));
         },
     }));
-    service.registerViewState('seriesList', (chartModel) => ({
-        get() {
-            const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
-            if (!dataSourceRange$) {
-                return chartModel.dataContext$.pipe(map(() => []));
-            }
+    service.registerViewState('seriesList', (chartModel) => {
+        const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
+        if (!dataSourceRange$) {
+            return chartModel.context$.pipe(map(() => []));
+        }
 
-            return chartModel.dataContext$.pipe(
-                combineLatestWith(dataSourceRange$),
-                map(([dataContext, dataRange]) => {
-                    const { seriesIndexes = [], headers } = dataContext;
+        return chartModel.context$.pipe(
+            combineLatestWith(dataSourceRange$),
+            map(([chartContext, dataRange]) => {
+                const { seriesIndexes = [], headers } = chartContext;
 
-                    const options = seriesIndexes.map((idx) => {
-                        const header = headers?.[idx];
-                        const label = header ?? formatAxisOptionLabel(dataRange.startColumn + idx, dataRange);
+                const options = seriesIndexes.map((idx) => {
+                    const header = headers?.[idx];
+                    const label = header ?? formatAxisOptionLabel(dataRange.startColumn + idx, dataRange);
 
-                        return {
-                            label,
-                            value: String(idx),
-                        };
-                    });
+                    return {
+                        label,
+                        value: String(idx),
+                    };
+                });
 
-                    return options;
-                })
-            );
-        },
-    }));
-    service.registerViewState('seriesResourceList', (chartModel) => ({
-        get() {
-            const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
-            if (!dataSourceRange$) {
-                return chartModel.dataContext$.pipe(map(() => []));
-            }
+                return options;
+            })
+        );
+    });
+    service.registerViewState('seriesResourceList', (chartModel) => {
+        const dataSourceRange$ = service.getDataSource(chartModel.id)?.range$;
+        if (!dataSourceRange$) {
+            return chartModel.context$.pipe(map(() => []));
+        }
 
-            return chartModel.dataContext$.pipe(
-                combineLatestWith(dataSourceRange$),
-                map(([dataContext, dataRange]) => {
-                    const { seriesResourceIndexes = [], headers } = dataContext;
+        return chartModel.context$.pipe(
+            combineLatestWith(dataSourceRange$),
+            map(([chartContext, dataRange]) => {
+                const { seriesResourceIndexes = [], headers } = chartContext;
 
-                    const options = seriesResourceIndexes.map((idx) => {
-                        const header = headers?.[idx];
-                        const label = header ?? formatAxisOptionLabel(dataRange.startColumn + idx, dataRange);
+                const options = seriesResourceIndexes.map((idx) => {
+                    const header = headers?.[idx];
+                    const label = header ?? formatAxisOptionLabel(dataRange.startColumn + idx, dataRange);
 
-                        return {
-                            label,
-                            value: String(idx),
-                        };
-                    });
+                    return {
+                        label,
+                        value: String(idx),
+                    };
+                });
 
-                    return options;
-                })
-            );
-        },
-    }));
+                return options;
+            })
+        );
+    });
     service.registerViewState('aggregate', (chartModel) => ({
         set(value) {
-            chartModel.assignDataTransformConfig({
-                aggregate: value,
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                dataAggregation: {
+                    aggregate: value,
+                },
             });
         },
         get() {
-            return chartModel.dataTransformConfig$.pipe(
+            return chartModel.dataAggregation$.pipe(
                 map((config) => config.aggregate || false),
                 distinctUntilChanged()
             );
@@ -219,244 +218,241 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     service.registerViewState('direction', (chartModel) => ({
         set(value) {
             if (value) {
-                // const id = chartModel.id;
-                // const dataSource = service.getDataSource(id);
-                chartModel.assignDataTransformConfig({
-                    direction: value,
-                    // categoryIndex: undefined,
-                    // categoryType: undefined,
-                    // seriesIndexes: undefined,
+                service.executeChartUpdateConfig({
+                    chartModelId: chartModel.id,
+                    orient: value,
+                    context: {
+                        categoryIndex: undefined,
+                        seriesIndexes: undefined,
+                    },
                 });
-                // if (dataSource) {
-                    // Trigger update data source
-
-                    // dataSource.setRange(dataSource.range);
-                // }
             }
         },
         get() {
-            return chartModel.dataTransformConfig$.pipe(
-                map((config) => config.direction),
-                distinctUntilChanged()
-            );
+            return service.getDataSource(chartModel.id)?.orient$;
         },
     }));
-    service.registerViewState('defaultDirection', (chartModel) => chartModel.dataTransformConfig$.pipe(map((config) => config.defaultDirection)));
+    // service.registerViewState('defaultDirection', (chartModel) => chartModel.chartDataAggregation$.pipe(map((config) => config.defaultDirection)));
 
     service.registerViewState('gradientFill', (chartModel) => ({
         set(v) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     gradientFill: v,
                 },
             });
         },
         get() {
             return chartModel.style$.pipe(
-                map((style) => Boolean(style.common?.gradientFill)),
+                map((style) => Boolean(style.gradientFill)),
                 distinctUntilChanged()
             );
         },
     }));
 
     service.registerViewState('asCategory', (chartModel) => ({
-        set(option) {
-            const { dataContext } = chartModel;
-            const seriesIncludes = (idx: number) => dataContext.seriesResourceIndexes?.indexOf(idx) !== -1;
+        set(checked) {
+            const { context: chartContext } = chartModel;
+            const seriesIncludes = (idx: number) => chartContext.seriesResourceIndexes?.indexOf(idx) !== -1;
 
-            if (option) { // checked
-                const categoryIndex = Number(option.value);
+            if (checked) { // checked
+                const categoryIndex = chartContext.seriesIndexes?.[0];
+                if (categoryIndex === undefined) {
+                    return;
+                }
 
-                const newDataConfig: Partial<IChartDataContext> = {
+                const newDataConfig: Partial<IChartContext> = {
                     categoryIndex,
                     categoryType: CategoryType.Text,
                 };
                 if (seriesIncludes(categoryIndex)) {
                     // the category index is in series indexes, remove it
-                    newDataConfig.seriesIndexes = dataContext.seriesIndexes?.filter((index) => index !== categoryIndex);
+                    newDataConfig.seriesIndexes = chartContext.seriesIndexes?.filter((index) => index !== categoryIndex);
                 }
 
-                chartModel.assignDataContext(newDataConfig);
-            } else if (typeof dataContext.categoryIndex === 'number') { // unchecked
-                const newDataConfig: Partial<IChartDataContext> = {
+                service.executeChartUpdateConfig({
+                    chartModelId: chartModel.id,
+                    context: newDataConfig,
+                });
+            } else {
+                if (chartContext.categoryIndex === undefined) {
+                    return;
+                }
+
+                const newDataConfig: Partial<IChartContext> = {
                     categoryIndex: undefined,
                     categoryType: undefined,
                 };
-                if (seriesIncludes(dataContext.categoryIndex)) {
-                    newDataConfig.seriesIndexes = [dataContext.categoryIndex].concat(dataContext.seriesIndexes || []);
+
+                if (seriesIncludes(chartContext.categoryIndex)) {
+                    newDataConfig.seriesIndexes = [chartContext.categoryIndex].concat(chartContext.seriesIndexes || []);
                 }
-                chartModel.assignDataContext(newDataConfig);
+
+                service.executeChartUpdateConfig({
+                    chartModelId: chartModel.id,
+                    context: newDataConfig,
+                });
             }
         },
         get() {
-            return chartModel.dataContext$.pipe(map((dataContext) => {
-                const dataSource = service.getDataSource(chartModel.id);
-                if (dataSource) {
-                    const categoryIndex = dataContext.categoryIndex
-                        ?? dataContext.categoryResourceIndexes?.[0]
-                        ?? dataContext.seriesResourceIndexes?.[0];
-                    const columnValue = dataSource.range.startColumn + categoryIndex!;
-
-                    return {
-                        label: String(columnValue),
-                        value: String(categoryIndex),
-                    };
+            return chartModel.context$.pipe(map((chartContext) => {
+                if (chartContext.categoryIndex === undefined) {
+                    return false;
                 }
+                return Boolean(chartContext.seriesResourceIndexes?.includes(chartContext.categoryIndex));
             }));
         },
     }));
 
     service.registerViewState('backgroundColor', (chartModel) => ({
         set(color) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     backgroundColor: color ?? undefined,
                 },
             });
         },
         get() {
             return chartModel.style$.pipe(
-                map((style) => style.common?.backgroundColor),
+                map((style) => style?.backgroundColor),
                 distinctUntilChanged()
             );
         },
     }));
     service.registerViewState('borderColor', (chartModel) => ({
         set(color) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     borderColor: color ?? undefined,
                 },
             });
         },
         get() {
             return chartModel.style$.pipe(
-                map((style) => style.common?.borderColor),
+                map((style) => style.borderColor),
                 distinctUntilChanged()
             );
         },
     }));
     service.registerViewState('fontSize', (chartModel) => ({
         set(fontSize) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     fontSize,
                 },
             });
         },
         get() {
             return chartModel.style$.pipe(
-                map((style) => style.common?.fontSize),
+                map((style) => style.fontSize),
                 distinctUntilChanged()
             );
         },
     }));
     service.registerViewState('titleFontSize', (chartModel) => ({
         set(fontSize) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     titleFontSize: fontSize,
                 },
             });
         },
         get() {
             return chartModel.style$.pipe(
-                map((style) => style.common?.titleFontSize),
+                map((style) => style.titleFontSize),
                 distinctUntilChanged()
             );
         },
     }));
     service.registerViewState('titleStyle', (chartModel) => ({
         set(style) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     title: style,
                 },
             });
         },
         get() {
             return chartModel.style$.pipe(
-                map((style) => style.common?.title),
+                map((style) => style.title),
                 distinctUntilChanged()
             );
         },
     }));
     service.registerViewState('subtitleStyle', (chartModel) => ({
         set(style) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     subtitle: style,
                 },
             });
         },
         get() {
             return chartModel.style$.pipe(
-                map((style) => style.common?.subtitle),
+                map((style) => style.subtitle),
                 distinctUntilChanged()
             );
         },
     }));
     service.registerViewState('xAxisTitleStyle', (chartModel) => ({
         set(style) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     xAxisTitle: style,
                 },
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.xAxisTitle), distinctUntilChanged());
+            return chartModel.style$.pipe(map((style) => style.xAxisTitle));
         },
     }));
     service.registerViewState('yAxisTitleStyle', (chartModel) => ({
         set(style) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     yAxisTitle: style,
                 },
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.yAxisTitle), distinctUntilChanged());
-        },
-    }));
-
-    service.registerViewState('yAxisTitleStyle', (chartModel) => ({
-        set(style) {
-            chartModel.applyStyle({
-                common: {
-                    yAxisTitle: style,
-                },
-            });
-        },
-        get() {
-            return chartModel.style$.pipe(map((style) => style.common?.yAxisTitle), distinctUntilChanged());
+            return chartModel.style$.pipe(map((style) => style.yAxisTitle));
         },
     }));
 
     service.registerViewState('allSeriesStyle', (chartModel) => ({
         set(style) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     allSeriesStyle: style,
                 },
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.allSeriesStyle));
+            return chartModel.style$.pipe(map((style) => style.allSeriesStyle));
         },
     }));
     service.registerViewState('seriesStyleMap', (chartModel) => {
         return chartModel.style$.pipe(
-            map((style) => style.common?.seriesStyleMap),
+            map((style) => style.seriesStyleMap),
             map((seriesStyleMap) => {
                 return {
                     get(id) {
                         return seriesStyleMap?.[id];
                     },
                     set(id, style) {
-                        chartModel.applyStyle({
-                            common: {
+                        service.executeChartUpdateConfig({
+                            chartModelId: chartModel.id,
+                            style: {
                                 seriesStyleMap: {
                                     [id]: style,
                                 },
@@ -468,45 +464,51 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     });
     service.registerViewState('legendStyle', (chartModel) => ({
         set(legend) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     legend,
                 },
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.legend));
+            return chartModel.style$.pipe(map((style) => style.legend));
         },
     }));
     service.registerViewState('xAxisOptions', (chartModel) => ({
         set(options) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     xAxis: options,
                 },
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.xAxis));
+            return chartModel.style$.pipe(map((style) => style.xAxis));
         },
     }));
     service.registerViewState('yAxisOptions', (chartModel) => ({
         set(options) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     yAxis: options,
                 },
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.yAxis));
+            return chartModel.style$.pipe(map((style) => style.yAxis));
         },
     }));
     service.registerViewState('areaLineStyle', (chartModel) => ({
         set(lineStyle) {
-            chartModel.applyStyle({
-                area: {
-                    lineStyle: lineStyle ?? undefined,
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
+                    area: {
+                        lineStyle: lineStyle ?? undefined,
+                    },
                 },
             });
         },
@@ -516,9 +518,12 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     }));
     service.registerViewState('pieLabelStyle', (chartModel) => ({
         set(labelStyle) {
-            chartModel.applyStyle({
-                pie: {
-                    labelStyle: labelStyle ?? undefined,
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
+                    pie: {
+                        labelStyle: labelStyle ?? undefined,
+                    },
                 },
             });
         },
@@ -528,9 +533,12 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     }));
     service.registerViewState('doughnutHole', (chartModel) => ({
         set(value) {
-            chartModel.applyStyle({
-                pie: {
-                    doughnutHole: value,
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
+                    pie: {
+                        doughnutHole: value,
+                    },
                 },
             });
         },
@@ -540,9 +548,12 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     }));
     service.registerViewState('radarShape', (chartModel) => ({
         set(value) {
-            chartModel.applyStyle({
-                radar: {
-                    shape: value,
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
+                    radar: {
+                        shape: value,
+                    },
                 },
             });
         },
@@ -552,9 +563,12 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     }));
     service.registerViewState('radarFill', (chartModel) => ({
         set(value) {
-            chartModel.applyStyle({
-                radar: {
-                    fill: value,
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
+                    radar: {
+                        fill: value,
+                    },
                 },
             });
         },
@@ -564,14 +578,15 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     }));
     service.registerViewState('invalidValueType', (chartModel) => ({
         set(value) {
-            chartModel.applyStyle({
-                common: {
+            service.executeChartUpdateConfig({
+                chartModelId: chartModel.id,
+                style: {
                     invalidValueType: value,
                 },
             });
         },
         get() {
-            return chartModel.style$.pipe(map((style) => style.common?.invalidValueType), distinctUntilChanged());
+            return chartModel.style$.pipe(map((style) => style.invalidValueType), distinctUntilChanged());
         },
     }));
 };
@@ -582,9 +597,9 @@ export interface IChartOptionType {
 }
 
 export interface IChartConfigStateMap {
-    headers: IChartConfigState<IChartDataContext['headers']>;
-    defaultDirection: IChartConfigState<Nullable<DataDirection>>;
-    direction: IChartConfigState<Nullable<DataDirection>>;
+    headers: IChartConfigState<IChartContext['headers']>;
+    // defaultDirection: IChartConfigState<Nullable<DataOrientation>>;
+    direction: IChartConfigState<Nullable<DataOrientation>>;
     aggregate: IChartConfigState<boolean>;
     gradientFill: IChartConfigState<boolean>;
     stackType: IChartConfigState<Nullable<StackType>>;
@@ -595,7 +610,7 @@ export interface IChartConfigStateMap {
     seriesValues: IChartConfigState<number[]>;
     seriesList: IChartConfigState<IChartOptionType[]>;
     seriesResourceList: IChartConfigState<IChartOptionType[]>;
-    asCategory: IChartConfigState<Nullable<IChartOptionType>>;
+    asCategory: IChartConfigState<boolean>;
     backgroundColor: IChartConfigState<Nullable<string>>;
     borderColor: IChartConfigState<Nullable<string>>;
     fontSize: IChartConfigState<number | undefined, number>;
@@ -633,8 +648,9 @@ export class SheetsChartUIService extends Disposable {
     private _viewState = new Map<ChartConfigStateKey, (chartModel: ChartModel) => IChartConfigStateMap[ChartConfigStateKey]>();
 
     constructor(
-        @Inject(SheetsChartConfigService) private readonly _sheetsChartConfigService: SheetsChartConfigService,
-        @Inject(SheetsChartService) private readonly _sheetsChartService: SheetsChartService
+        @Inject(ChartModelService) private readonly _chartModelService: ChartModelService,
+        @Inject(SheetsChartService) private readonly _sheetsChartService: SheetsChartService,
+        @ICommandService private readonly _commandService: ICommandService
 
     ) {
         super();
@@ -642,7 +658,7 @@ export class SheetsChartUIService extends Disposable {
     }
 
     get activeChartModel() {
-        return this._sheetsChartConfigService.activeChartModel;
+        return this._chartModelService.activeChartModel;
     }
 
     getDataSource(id: string) {
@@ -654,7 +670,7 @@ export class SheetsChartUIService extends Disposable {
     }
 
     getViewState<V extends ChartConfigStateValue = ChartConfigStateValue>(id: ChartConfigStateKey): IChartConfigState<V> | undefined {
-        const { activeChartModel } = this._sheetsChartConfigService;
+        const { activeChartModel } = this._chartModelService;
         if (!activeChartModel) {
             return;
         }
@@ -662,6 +678,10 @@ export class SheetsChartUIService extends Disposable {
         if (viewState) {
             return viewState(activeChartModel);
         }
+    }
+
+    executeChartUpdateConfig(params: IChartUpdateConfigMutationParams) {
+        this._commandService.executeCommand(ChartUpdateConfigMutation.id, params);
     }
 
     removeViewState(id: ChartConfigStateKey) {

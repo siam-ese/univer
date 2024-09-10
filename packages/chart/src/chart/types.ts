@@ -15,34 +15,47 @@
  */
 
 import type { CellValue, Nullable } from '@univerjs/core';
-import type { CategoryType, ChartTypeBits, DataDirection } from './constants';
+import type { Observable } from 'rxjs';
+import type { CategoryType, ChartTypeBits, DataOrientation } from './constants';
+import type { ChartStyle } from './style.types';
 
-/** Snapshot */
+/** Chart resource snapshot */
 export interface IChartSnapshot {
     id: string;
+    chartType: ChartTypeBits;
+    orient?: DataOrientation;
+    context?: Pick<IChartContext, 'categoryIndex' | 'seriesIndexes' | 'transform'>;
+    style?: Omit<ChartStyle, 'runtime'>;
+    dataAggregation?: IChartDataAggregation;
 }
 
 export type ChartDataSourceValue = Nullable<CellValue>;
-export type ChartDataSource = Array<Array<ChartDataSourceValue>>;
+export type ChartDataSourceValues = Array<Array<ChartDataSourceValue>>;
 
-export interface IChartDataTransformConfig {
-    defaultDirection?: DataDirection;
-    direction: DataDirection;
-    aggregate?: boolean; // effect on both of data and render
+export interface IChartDataSource {
+    data$: Observable<ChartDataSourceValues>;
+    data: ChartDataSourceValues;
+    orient$: Observable<DataOrientation>;
+    rebuild$: Observable<void>;
+    setOrient(orient: DataOrientation): void;
+}
+
+export interface IChartDataAggregation {
+    aggregate?: boolean;
     topN?: number;
 }
 
-export interface IChartDataContext {
-    // defaultDirection?: DataDirection;
-    // direction?: DataDirection;
-    // aggregate?: boolean; // effect on both of data and render
+export interface IChartContext {
     headers?: string[];
-    // firstRowAsHeader?: boolean;
-    categoryIndex?: number;
     categoryType?: CategoryType;
+    categoryIndex?: number;
     categoryResourceIndexes?: number[];
     seriesIndexes?: number[];
     seriesResourceIndexes?: number[];
+    transform?: {
+        categoryIndex?: number;
+        seriesIndexes?: number[];
+    };
 }
 
 interface IChartDataItem {
@@ -65,18 +78,12 @@ interface IChartDataSeries {
 
 export interface IChartData {
     category?: IChartDataCategory;
+    headers?: string[];
     series: IChartDataSeries[];
 };
 
-// export interface IChartConfigSeries extends IChartDataSeries {
-//     chartType: ChartTypeBits;
-//     rightYAxis?: boolean;
-// }
-
-export interface IChartConfig {
+export interface IChartConfig extends IChartData {
     type: ChartTypeBits;
-    category: IChartData['category'];
-    series: IChartData['series'];
 }
 
 export interface IChartConfigConverter {

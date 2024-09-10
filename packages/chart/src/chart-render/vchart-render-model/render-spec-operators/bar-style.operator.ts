@@ -25,7 +25,7 @@ export const barStyleOperator: VChartRenderSpecOperator = (_spec, style, config,
     if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Bar)) {
         const oldXField = spec.xField;
         const oldYField = spec.yField;
-        spec.direction = 'horizontal';
+        spec.orient = 'horizontal';
         spec.xField = oldYField;
         spec.yField = oldXField;
         const bandAxis = spec.axes?.find((axis) => axis.type === 'band') as ICartesianBandAxisSpec;

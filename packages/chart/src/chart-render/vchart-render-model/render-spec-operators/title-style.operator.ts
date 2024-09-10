@@ -20,11 +20,10 @@ import { defaultChartStyle } from '../../../chart/constants/default-chart-style'
 import { applyLabelStyle } from './tools';
 
 const { textStyle } = defaultChartStyle;
-export const titleStyleOperator: VChartRenderSpecOperator = (spec, style) => {
-    const commonStyle = style.common;
-    const titleStyle = commonStyle?.title;
+export const titleStyleOperator: VChartRenderSpecOperator = (spec, style, config) => {
+    const titleStyle = style?.title;
 
-    const titleContent = titleStyle?.content;
+    const titleContent = titleStyle?.content ?? config.headers?.join(',');
 
     Tools.set(spec, 'title.visible', Boolean(titleContent));
     Tools.set(spec, 'title.text', titleContent);

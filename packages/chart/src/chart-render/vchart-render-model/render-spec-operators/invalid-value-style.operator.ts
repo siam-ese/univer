@@ -25,7 +25,7 @@ export const invalidValueStyleOperator: VChartRenderSpecOperator = (_spec, style
     // if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Column)) {
     //     hoverMarkStylizers.bar(_spec as IBarChartSpec);
     // }
-    const invalidValueType = style.common?.invalidValueType;
+    const invalidValueType = style.invalidValueType;
     _spec.series?.forEach((series) => {
         switch (series.type) {
             case 'area':

@@ -77,7 +77,7 @@ export const chartBitsUtils = {
     },
 };
 
-export enum DataDirection {
+export enum DataOrientation {
     Row = 'Row',
     Column = 'Column',
 }

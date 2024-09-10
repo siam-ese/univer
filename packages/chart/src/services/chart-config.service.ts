@@ -15,20 +15,21 @@
  */
 
 import type { Nullable } from '@univerjs/core';
-import { Disposable, Inject, LifecycleStages, OnLifecycle } from '@univerjs/core';
+import { Disposable, ICommandService, Inject, LifecycleStages, LocaleService, OnLifecycle } from '@univerjs/core';
 import { BehaviorSubject, combineLatestWith, debounceTime } from 'rxjs';
+import { findCategoryOperator, findHeaderOperator, findSeriesOperator } from '../chart/chart-data-operators';
 import type { IChartModelInit } from '../chart/chart-model';
 import { ChartModel } from '../chart/chart-model';
-import type { ChartTypeBits } from '../chart/constants';
-import type { IChartConfig, IChartConfigConverter, IChartData } from '../chart/types';
-import { combinationConfigConverter, generalConfigConverter } from '../chart/converters';
-import { SheetsChartRenderService } from './sheets-chart-render.service';
+import type { IChartConfig, IChartConfigConverter } from '../chart/types';
+import type { IChartUpdateConfigMutationParams } from '../commands/sheets-chart-update-config.mutation';
+import { ChartUpdateConfigMutation } from '../commands/sheets-chart-update-config.mutation';
 import { IChartHostProvider } from './chart-host-provider';
+import { ChartRenderService } from './chart-render.service';
 
 export const SHEET_CHART_PLUGIN = 'SHEET_CHART_PLUGIN';
 
-@OnLifecycle(LifecycleStages.Rendered, SheetsChartConfigService)
-export class SheetsChartConfigService extends Disposable {
+@OnLifecycle(LifecycleStages.Rendered, ChartModelService)
+export class ChartModelService extends Disposable {
     private readonly _activeChartModel$ = new BehaviorSubject<Nullable<ChartModel>>(null);
     readonly activeChartModel$ = this._activeChartModel$.asObservable();
     get activeChartModel(): Nullable<ChartModel> { return this._activeChartModel$.getValue(); }
@@ -37,8 +38,10 @@ export class SheetsChartConfigService extends Disposable {
     private _converters = new Set<IChartConfigConverter>();
 
     constructor(
-        @Inject(SheetsChartRenderService) private _chartRenderService: SheetsChartRenderService,
-        @IChartHostProvider private _chartHostProvider: IChartHostProvider
+        @Inject(ChartRenderService) private _chartRenderService: ChartRenderService,
+        @IChartHostProvider private _chartHostProvider: IChartHostProvider,
+        @Inject(LocaleService) private _localeService: LocaleService,
+        @ICommandService private _commandService: ICommandService
     ) {
         super();
 
@@ -47,37 +50,19 @@ export class SheetsChartConfigService extends Disposable {
                 this.removeChartModel(id);
             })
         );
-
-        this._initConverters();
     }
 
     setActiveChartModel(chartModel: ChartModel) {
         this._activeChartModel$.next(chartModel);
     }
 
-    private _initConverters() {
-        const { _converters } = this;
-
-        _converters.add(generalConfigConverter);
-        _converters.add(combinationConfigConverter);
-    }
-
-    toChartConfig(chartType: ChartTypeBits, chartData: IChartData) {
-        const converter = Array.from(this._converters).find((converter) => converter.canConvert(chartType));
-
-        return converter ? converter.convert(chartType, chartData) : null;
-    }
-
     getChartModel(id: string) {
         return this._models.get(id);
     }
 
-    createChartModel(id: string, option: Omit<IChartModelInit, 'toChartConfig'>) {
-        // const chartModel = new ChartModel(id, {
-        //     ...option,
-        //     toChartConfig: this.toChartConfig.bind(this),
-        // });
-        const chartModel = new ChartModel(id, option);
+    createChartModel(id: string, options: IChartModelInit) {
+        const { dataSource } = options;
+        const chartModel = new ChartModel(id, options);
 
         this._models.set(chartModel.id, chartModel);
 
@@ -89,17 +74,58 @@ export class SheetsChartConfigService extends Disposable {
         this.disposeWithMe(
             chartModel.config$.pipe(
                 combineLatestWith(chartModel.style$),
-                debounceTime(200)
+                debounceTime(150)
             ).subscribe(([config, style]) => {
                 if (!config) {
                     return;
                 }
+
+                const { t } = this._localeService;
+                config.category?.items.forEach((item, index) => {
+                    if (!item.label) {
+                        item.label = `${t('chart.category')} ${index + 1}`;
+                    }
+                });
+                config.series.forEach((series, index) => {
+                    if (!series.name) {
+                        series.name = `${t('chart.series')} ${index + 1}`;
+                    }
+                });
+
                 if (latestConfig !== config) {
                     latestConfig = config;
                     this._chartRenderService.render(chartModel.id, config, style);
                 } else {
                     this._chartRenderService.renderStyle(chartModel.id, style);
                 }
+            })
+        );
+
+        this.disposeWithMe(
+            dataSource.rebuild$.pipe(
+                debounceTime(100)
+            ).subscribe(() => {
+                const operators = [
+                    findHeaderOperator,
+                    findCategoryOperator,
+                    findSeriesOperator,
+                ];
+
+                const newContext = operators.reduce((ctx, operator) => {
+                    const newCtx = operator(dataSource.data, ctx);
+
+                    return {
+                        ...ctx,
+                        ...newCtx,
+                    };
+                }, chartModel.context);
+
+                const params: IChartUpdateConfigMutationParams = {
+                    chartModelId: chartModel.id,
+                    context: newContext,
+                };
+
+                this._commandService.executeCommand(ChartUpdateConfigMutation.id, params);
             })
         );
 

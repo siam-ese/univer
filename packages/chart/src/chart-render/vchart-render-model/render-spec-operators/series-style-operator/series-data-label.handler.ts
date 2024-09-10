@@ -69,7 +69,7 @@ const seriesStylizers = {
     },
 };
 export const seriesDataLabelHandler: SeriesItemHandler = (series, seriesStyle, style) => {
-    const mergedStyle: DeepPartial<ISeriesStyle> = Tools.deepMerge({}, style.common?.allSeriesStyle, seriesStyle);
+    const mergedStyle: DeepPartial<ISeriesStyle> = Tools.deepMerge({}, style.allSeriesStyle, seriesStyle);
 
     const label = mergedStyle.label;
     if (label?.visible) {

@@ -20,8 +20,8 @@ import { SheetsChartService } from '../services/sheets-chart.service';
 import { SheetsChartController } from '../controllers/sheets-chart.controller';
 // import type { IChartInjector } from '../chart-injectors/line-chart-injector';
 // import type { IChartInstanceConstructor } from '../chart-render/render-engine';
-import { SheetsChartRenderService } from '../services/sheets-chart-render.service';
-import { SheetsChartConfigService } from '../services/sheets-chart-config.service';
+import { ChartRenderService } from '../services/chart-render.service';
+import { ChartModelService } from '../services/chart-config.service';
 import { IChartHostProvider } from '../services/chart-host-provider';
 import { SheetsChartHostProvider } from '../services/sheets-chart-host-provider';
 
@@ -43,15 +43,15 @@ export class UniverSheetsChartPlugin extends Plugin {
     override onStarting(): void {
         const { _injector } = this;
         ([
-            [SheetsChartConfigService],
-            [SheetsChartRenderService],
+            [ChartModelService],
+            [ChartRenderService],
             [SheetsChartService],
             [SheetsChartController],
             [IChartHostProvider, { useClass: SheetsChartHostProvider }],
         ] as Dependency[]).forEach((d) => _injector.add(d));
 
         // const sheetsChartService = _injector.get(SheetsChartService);
-        // const sheetsRenderService = _injector.get(SheetsChartRenderService);
+        // const sheetsRenderService = _injector.get(ChartRenderService);
 
         // const { renderEngines } = this._config;
         // Register render engine

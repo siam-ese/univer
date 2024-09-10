@@ -22,7 +22,7 @@ import type { IChartConfig } from '../chart/types';
 import { VChartRenderModel } from '../chart-render/vchart-render-model';
 import { IChartHostProvider } from './chart-host-provider';
 
-export class SheetsChartRenderService extends Disposable {
+export class ChartRenderService extends Disposable {
     private _renderModelMap = new Map<string, IChartRenderModel>();
     private _chartInstanceMap = new Map<string, IChartInstance>();
     private _chartConfigMap = new Map<string, IChartConfig>();
@@ -39,6 +39,13 @@ export class SheetsChartRenderService extends Disposable {
     registerRenderModel(name: string, renderModel: IChartRenderModel) {
         this._renderModelMap.set(name, renderModel);
         this._currentModel = renderModel;
+    }
+
+    setRenderModel(name: string) {
+        const renderModel = this._renderModelMap.get(name);
+        if (renderModel) {
+            this._currentModel = renderModel;
+        }
     }
 
     getRenderModel(name: string) {

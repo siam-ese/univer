@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-import type { VChartRenderSpecOperator } from '../vchart-render-engine';
+import type zhCN from './zh-CN';
 
-export const dataLabelOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
-    // instance.setBorderColor(style.borderColor);
-
-    return spec;
+const locale: typeof zhCN = {
+    chart: {
+        category: '类别',
+        series: '系列',
+    },
 };
+
+export default locale;

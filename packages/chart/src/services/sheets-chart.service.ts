@@ -14,53 +14,50 @@
  * limitations under the License.
  */
 
-import type { IRange, Nullable } from '@univerjs/core';
-import { Disposable, generateRandomId, ICommandService, Inject, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle } from '@univerjs/core';
+import type { IRange } from '@univerjs/core';
+import { Disposable, generateRandomId, ICommandService, Inject, Injector, IResourceManagerService, IUniverInstanceService, LifecycleStages, OnLifecycle, UniverInstanceType } from '@univerjs/core';
 import { RefRangeService } from '@univerjs/sheets';
 import { SheetCanvasFloatDomManagerService } from '@univerjs/sheets-drawing-ui';
-import { BehaviorSubject } from 'rxjs';
-import type { ChartModel } from '../chart/chart-model';
-import { ChartTypeBits, DataDirection } from '../chart/constants';
+import { ChartTypeBits, DataOrientation } from '../chart/constants';
 import { SheetChartDataSource } from '../chart/sheet-chart-data-source';
 import type { IChartSnapshot } from '../chart/types';
-import { SheetsChartConfigService } from './sheets-chart-config.service';
-import { SheetsChartRenderService } from './sheets-chart-render.service';
+import { ChartModelService } from './chart-config.service';
+import { ChartRenderService } from './chart-render.service';
 
 export const SHEET_CHART_PLUGIN = 'SHEET_CHART_PLUGIN';
 
+export interface ISheetChartSnapshot extends IChartSnapshot {
+    range: IRange;
+}
+
+type OptionalProperties<T, K extends keyof T> = Omit<T, K> & {
+    [P in K]+?: T[P];
+};
+
+export type ISheetChartModelOptions = OptionalProperties<ISheetChartSnapshot, 'id' | 'chartType'>;
+
 export interface ISheetsChartResource {
-    [key: string]: IChartSnapshot;
+    [sheetId: string]: ISheetChartSnapshot[];
 }
 
 @OnLifecycle(LifecycleStages.Rendered, SheetsChartService)
 export class SheetsChartService extends Disposable {
     private _chartModelIdMap = new Map<string, Map<string, Set<string>>>();
-    private readonly _activeChartModel$ = new BehaviorSubject<Nullable<ChartModel>>(null);
-    readonly activeChartModel$ = this._activeChartModel$.asObservable();
-
-    get activeChartModel(): Nullable<ChartModel> { return this._activeChartModel$.getValue(); }
-
     private _dataSourceMap = new Map<string, SheetChartDataSource>();
 
     constructor(
+        @Inject(Injector) private readonly _injector: Injector,
         @Inject(SheetCanvasFloatDomManagerService) private readonly _sheetCanvasFloatDomManagerService: SheetCanvasFloatDomManagerService,
         @IResourceManagerService private readonly _resourcesManagerService: IResourceManagerService,
         @Inject(RefRangeService) private readonly _refRangeService: RefRangeService,
         @IUniverInstanceService private readonly _univerInstanceService: IUniverInstanceService,
-        @Inject(SheetsChartConfigService) private readonly _sheetsChartConfigService: SheetsChartConfigService,
-        @Inject(SheetsChartRenderService) private readonly _sheetsChartRenderService: SheetsChartRenderService,
+        @Inject(ChartModelService) private readonly _chartModelService: ChartModelService,
+        @Inject(ChartRenderService) private readonly _chartRenderService: ChartRenderService,
         @ICommandService private readonly _commandService: ICommandService
     ) {
         super();
 
-        this._initCharts();
-    }
-
-    private _initCharts() {
-    }
-
-    setActiveChartModel(chartModel: ChartModel) {
-        this._activeChartModel$.next(chartModel);
+        this._initSnapshot();
     }
 
     getUnitChartModels(unitId: string, subUnitId: string) {
@@ -73,8 +70,8 @@ export class SheetsChartService extends Disposable {
             return [];
         }
 
-        const { _sheetsChartConfigService } = this;
-        return Array.from(subUnitMap).map((id) => _sheetsChartConfigService.getChartModel(id));
+        const { _chartModelService } = this;
+        return Array.from(subUnitMap).map((id) => _chartModelService.getChartModel(id));
     }
 
     getChartSuggestion(range: IRange) {
@@ -82,8 +79,8 @@ export class SheetsChartService extends Disposable {
         const rowsGreaterThanColumns = endRow - startRow >= endColumn - startColumn;
 
         return {
-            // direction: rowsGreaterThanColumns ? DataDirection.Column : DataDirection.Row,
-            direction: DataDirection.Row,
+            // direction: rowsGreaterThanColumns ? DataOrientation.Column : DataOrientation.Row,
+            orient: DataOrientation.Row,
             // chartType: rowsGreaterThanColumns ? ChartTypeBits.Line : ChartTypeBits.Bar,
             chartType: ChartTypeBits.Radar,
         };
@@ -109,26 +106,28 @@ export class SheetsChartService extends Disposable {
         return this._dataSourceMap.get(id);
     }
 
-    createChartModel(unitId: string, subUnitId: string, range: IRange) {
+    createChartModel(unitId: string, subUnitId: string, options: ISheetChartModelOptions) {
+        const { range, orient: _orient, context, dataAggregation, id, style } = options;
+
+        const chartModelId = id ?? generateRandomId();
+        // Init suggest chart type and data direction to chart model
+        const chartSuggestion = this.getChartSuggestion(range);
+        const chartType = options.chartType ?? chartSuggestion.chartType;
+        const orient = _orient ?? chartSuggestion.orient;
+
         const dataSource = new SheetChartDataSource({
             unitId,
             subUnitId,
             range,
-        }, this._univerInstanceService, this._commandService);
+            orient,
+        }, this._injector);
 
-        const chartModelId = generateRandomId();
-        // Init suggest chart type and data direction to chart model
-        const chartSuggestion = this.getChartSuggestion(range);
-        const chartModel = this._sheetsChartConfigService.createChartModel(chartModelId, {
-            dataSource$: dataSource.dataSource$,
-            chartType: chartSuggestion.chartType,
-            dataTransformConfig: {
-                direction: chartSuggestion.direction,
-            },
-        });
-
-        dataSource.dataSourceEmitter$.subscribe((dataSource$) => {
-            chartModel.setDataSource(dataSource$);
+        const chartModel = this._chartModelService.createChartModel(chartModelId, {
+            dataSource,
+            chartType: chartType ?? chartSuggestion.chartType,
+            dataAggregation,
+            style,
+            context,
         });
 
         const collection = this.ensureChartModelCollection(unitId, subUnitId);
@@ -147,55 +146,78 @@ export class SheetsChartService extends Disposable {
     }
 
     getChartModel(id: string) {
-        return this._sheetsChartConfigService.getChartModel(id);
+        return this._chartModelService.getChartModel(id);
     }
 
-    private _serializeAutoFiltersForUnit(unitId: string): string {
-        // const allFilterModels = this._filterModels.get(unitId);
-        // if (!allFilterModels) {
-        //     return '{}';
-        // }
+    private _serializeChartForUnit(unitId: string): string {
+        const subUnitMap = this._chartModelIdMap.get(unitId);
+        if (!subUnitMap) {
+            return '{}';
+        }
 
-        // const json: ISheetsFilterResource = {};
-        // allFilterModels.forEach((model, worksheetId) => {
-        //     json[worksheetId] = model.serialize();
-        // });
-        return '{}';
-        // return JSON.stringify(json);
+        const json: ISheetsChartResource = {};
+        subUnitMap.forEach((chartModelIds, subUnit) => {
+            json[subUnit] = Array.from(chartModelIds).map((id) => {
+                const chartModel = this._chartModelService.getChartModel(id);
+                const dataSource = this.getChartDataSource(id);
+
+                if (!chartModel || !dataSource) {
+                    return null;
+                }
+
+                return {
+                    range: dataSource.range,
+                    ...chartModel.serialize(),
+                };
+            }).filter((v) => !!v);
+        });
+
+        return JSON.stringify(json);
     }
 
-    private _deserializeAutoFiltersForUnit(unitId: string, value: ISheetsChartResource) {
-        // const workbook = this._univerInstanceService.getUniverSheetInstance(unitId)!;
-        // Object.keys(json).forEach((worksheetId: WorksheetID) => {
-        //     const autoFilter = json[worksheetId]!;
-        //     const filterModel = FilterModel.deserialize(unitId, worksheetId, workbook.getSheetBySheetId(worksheetId)!, autoFilter);
-        //     this._cacheFilterModel(unitId, worksheetId, filterModel);
-        // });
+    private _deserializeChartForUnit(unitId: string, json: ISheetsChartResource) {
+        const workbook = this._univerInstanceService.getUniverSheetInstance(unitId);
+        if (!workbook) {
+            return;
+        }
+
+        Object.keys(json).forEach((worksheetId: string) => {
+            const snapshots = json[worksheetId];
+            if (!snapshots || snapshots.length <= 0) {
+                return;
+            }
+
+            snapshots.forEach((snapshot) => {
+                this.createChartModel(unitId, worksheetId, snapshot);
+            });
+        });
     }
 
     private _initSnapshot() {
         this._resourcesManagerService.registerPluginResource<ISheetsChartResource>({
             pluginName: SHEET_CHART_PLUGIN,
-            businesses: [2],
-            toJson: (id) => this._serializeAutoFiltersForUnit(id),
+            businesses: [UniverInstanceType.UNIVER_SHEET],
+            toJson: (id) => this._serializeChartForUnit(id),
             parseJson: (json) => JSON.parse(json),
             onLoad: (unitId, value) => {
-                this._deserializeAutoFiltersForUnit(unitId, value);
-                // this._loadedUnitId$.next(unitId);
-                // this._updateActiveFilterModel();
+                this._deserializeChartForUnit(unitId, value);
             },
             onUnLoad: (unitId: string) => {
-                // const allFilterModels = this._filterModels.get(unitId);
-                // if (allFilterModels) {
-                //     allFilterModels.forEach((model) => model.dispose());
-                //     this._filterModels.delete(unitId);
-                // }
+                this._chartModelIdMap.get(unitId)?.forEach((subUnitMap) => {
+                    Array.from(subUnitMap.values()).forEach((id) => {
+                        this._chartModelService.getChartModel(id)?.dispose();
+                        this._chartModelService.removeChartModel(id);
+                    });
+                });
             },
         });
     }
 
     override dispose() {
         super.dispose();
-        this._sheetsChartConfigService.dispose();
+        this._chartModelService.dispose();
+        this._chartModelIdMap.clear();
+        this._dataSourceMap.forEach((dataSource) => dataSource.dispose());
+        this._dataSourceMap.clear();
     }
 }

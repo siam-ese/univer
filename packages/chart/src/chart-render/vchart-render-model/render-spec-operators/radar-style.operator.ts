@@ -34,8 +34,8 @@ export const radarStyleOperator: VChartRenderSpecOperator = (_spec, style, confi
     }
     Tools.set(spec, 'area.visible', style.radar?.fill);
 
-    const seriesStyleMap = style.common?.seriesStyleMap;
-    const allSeriesStyle = style.common?.allSeriesStyle;
+    const seriesStyleMap = style.seriesStyleMap;
+    const allSeriesStyle = style.allSeriesStyle;
 
     const seriesLabelStyleCache = new Map<string, Partial<ILabelStyle>>();
 

@@ -15,8 +15,15 @@
  */
 
 import { CategoryType } from '../constants';
-import type { ChartDataSourceValue } from '../types';
-import type { IChartDataPipelineOperator } from './build-chart-data';
+import type { ChartDataSourceValue, ChartDataSourceValues, IChartContext, IChartDataAggregation } from '../types';
+
+export type IChartContextOperator = (dataSource: ChartDataSourceValues, context: IChartContext) => IChartContext;
+export type IChartDataAggregateOperator = (dataSource: ChartDataSourceValues, context: IChartContext, dataAggregation: IChartDataAggregation) => ChartDataSourceValues | void;
+// export interface IChartDataPipelineContext {
+//     context: IChartContext;
+//     dataSource: ChartDataSourceValues;
+//     dataAggregation: IChartDataAggregation;
+// }
 
 type Nil = null | undefined;
 
@@ -55,7 +62,7 @@ export function toNumber(value: ChartDataSourceValue) {
     return Number(value) || 0;
 }
 
-export function dataDirectionToColumn<T = any>(dataSource: T[][]): T[][] {
+export function toColumnOrient<T = any>(dataSource: T[][]): T[][] {
     const table: Array<Array<T>> = [];
 
     for (let c = 0; c < dataSource[0].length; c++) {
@@ -113,47 +120,60 @@ export function sumArray(ary: ChartDataSourceValue[]) {
     return ary.reduce((acc: number, item) => acc + toNumber(item), 0);
 }
 
-export const findHeaderOperator: IChartDataPipelineOperator = ({ dataContext, dataSource }) => {
+export const findHeaderOperator: IChartContextOperator = (dataSource: ChartDataSourceValues, context: IChartContext) => {
     const header: ChartDataSourceValue[] = dataSource.map((line) => line[0]);
 
+    const newCtx: IChartContext = {};
     const counts = countTypesFromArray(header);
     if (counts.strings >= counts.numbers) {
-        dataContext.headers = header.map(toString);
+        newCtx.headers = header.map(toString);
         dataSource.forEach((items, index) => dataSource[index] = items.slice(1));
     } else {
-        dataContext.headers = undefined;
+        newCtx.headers = undefined;
     }
+    return newCtx;
 };
 
-export const findCategoryOperator: IChartDataPipelineOperator = ({ dataContext, dataSource }) => {
+export const findCategoryOperator: IChartContextOperator = (dataSource: ChartDataSourceValues, context: IChartContext) => {
     const categoryIndexes = findCategoryIndexes(dataSource);
 
-    dataContext.categoryResourceIndexes = categoryIndexes;
+    const newCtx: IChartContext = {
+        categoryResourceIndexes: categoryIndexes,
+    };
 
-    dataContext.categoryIndex = categoryIndexes[0];
+    if (isNil(context.categoryIndex)) {
+        newCtx.categoryIndex = categoryIndexes[0];
+    }
 
-    dataContext.categoryType = isNil(dataContext.categoryIndex)
+    newCtx.categoryType = isNil(context.categoryIndex)
         ? undefined
-        : countTypesFromArray(dataSource[dataContext.categoryIndex]).strings > 0 ? CategoryType.Text : CategoryType.Linear;
+        : countTypesFromArray(dataSource[context.categoryIndex]).strings > 0 ? CategoryType.Text : CategoryType.Linear;
+
+    return newCtx;
 };
 
-export const findSeriesOperator: IChartDataPipelineOperator = ({ dataContext, dataSource }) => {
+export const findSeriesOperator: IChartContextOperator = (dataSource: ChartDataSourceValues, context: IChartContext) => {
     const seriesResourceIndexesSet = new Set<number>();
 
     dataSource.forEach((_, i) => {
-        if (!dataContext.categoryResourceIndexes?.includes(i)) {
+        if (!context.categoryResourceIndexes?.includes(i)) {
             seriesResourceIndexesSet.add(i);
         }
     });
 
-    dataContext.seriesIndexes = Array.from(seriesResourceIndexesSet);
-    dataContext.seriesResourceIndexes = Array.from(seriesResourceIndexesSet);
+    const newCtx: IChartContext = {
+        seriesResourceIndexes: Array.from(seriesResourceIndexesSet),
+    };
+    if (isNil(context.seriesIndexes)) {
+        newCtx.seriesIndexes = Array.from(seriesResourceIndexesSet);
+    }
+
+    return newCtx;
 };
 
-export const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
-    const { dataSource, dataContext, dataTransformConfig } = ctx;
-    const { categoryIndex } = dataContext;
-    const { aggregate } = dataTransformConfig;
+export const aggregateOperator: IChartDataAggregateOperator = (dataSource: ChartDataSourceValues, context: IChartContext, dataAggregation: IChartDataAggregation) => {
+    const { categoryIndex } = context;
+    const { aggregate } = dataAggregation;
     if (!aggregate) {
         return;
     }
@@ -164,8 +184,8 @@ export const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
     }
 
     const getCategoryTextByIndex = (idx: number) => toString(categoryData[idx]);
-    // rewrite dataSource
-    ctx.dataSource = ctx.dataSource.map((items, itemsIndex) => {
+
+    return dataSource.map((items, itemsIndex) => {
         const groups = groupBy(items, (_, i) => getCategoryTextByIndex(i));
         if (itemsIndex === categoryIndex) {
             return groups.map((group) => group.name);
@@ -175,10 +195,9 @@ export const aggregateOperator: IChartDataPipelineOperator = (ctx) => {
     });
 };
 
-export const topNOperator: IChartDataPipelineOperator = (ctx) => {
-    const { dataSource, dataContext, dataTransformConfig } = ctx;
-    const { categoryIndex } = dataContext;
-    const { topN } = dataTransformConfig;
+export const topNOperator: IChartDataAggregateOperator = (dataSource: ChartDataSourceValues, context: IChartContext, dataAggregation: IChartDataAggregation) => {
+    const { categoryIndex } = context;
+    const { topN } = dataAggregation;
     if (!topN || topN <= 0) {
         return;
     }
@@ -193,7 +212,7 @@ export const topNOperator: IChartDataPipelineOperator = (ctx) => {
         value: 0,
     }));
 
-    ctx.dataSource.forEach((items) => {
+    dataSource.forEach((items) => {
         items.forEach((value, valueIndex) => {
             const topNItem = topNList[valueIndex];
             if (topNItem) {
@@ -209,7 +228,7 @@ export const topNOperator: IChartDataPipelineOperator = (ctx) => {
         topNOrderMap.set(item.index, order);
     });
 
-    ctx.dataSource = ctx.dataSource.map((items) => {
+    return dataSource.map((items) => {
         const newItems: ChartDataSourceValue[] = [];
         let otherValue = 0;
         items.forEach((value, index) => {

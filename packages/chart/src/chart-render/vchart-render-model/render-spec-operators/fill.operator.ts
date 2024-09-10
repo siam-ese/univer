@@ -37,8 +37,8 @@ const gradientFillConfig = {
 };
 
 export const fillOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
-    const innerGradientFillConfig = style.common?.gradientFill ? gradientFillConfig : undefined;
-    if (!style.common?.gradientFill) return;
+    const innerGradientFillConfig = style.gradientFill ? gradientFillConfig : undefined;
+    if (!style.gradientFill) return;
 
     if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Column)) {
         Tools.set(spec, 'bar.style.fill', innerGradientFillConfig);

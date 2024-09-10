@@ -30,9 +30,10 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
         const { category, series } = config;
 
         const { categoryNameMap, seriesNameMap } = createLabelMap(config);
+        // console.log('category', category);
         const values = series.map((ser) => {
             return ser.items.map((item, valueIndex) => {
-                const categoryKey = category?.keys[valueIndex] ?? `Category ${String(valueIndex + 1)}`;
+                const categoryKey = category?.keys[valueIndex] ?? String(valueIndex);
 
                 return {
                     [SpecField.categoryField]: categoryKey,
@@ -43,6 +44,8 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
                 }; ;
             });
         }).flat();
+
+        // console.log('category', category);
         return {
             type: 'radar',
             data: {
@@ -64,6 +67,9 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
                 mark: {
                     title: {
                         value: (datum) => {
+                            if (!datum) {
+                                return '';
+                            }
                             return datum ? datum[SpecField.categoryFieldLabel] : '';
                         },
                         valueStyle: {
@@ -76,7 +82,7 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
                                 return '';
                             }
 
-                            return datum[SpecField.categoryFieldLabel] ?? datum[SpecField.seriesFieldLabel];
+                            return datum[SpecField.categoryFieldLabel] || datum[SpecField.seriesFieldLabel];
                         },
                         keyStyle: {
                             fontSize: defaultChartStyle.textStyle.fontSize,
@@ -90,6 +96,15 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
                     },
                 },
                 dimension: {
+                    title: {
+                        value: (datum) => {
+                            if (!datum) {
+                                return '';
+                            }
+
+                            return datum[SpecField.categoryFieldLabel];
+                        },
+                    },
                     content: {
                         key: (datum) => {
                             return datum ? datum[SpecField.seriesFieldLabel] : '';
@@ -118,11 +133,6 @@ export const radarChartConverter: IChartRenderSpecConverter<IRadarChartSpec> = {
                     label: {
                         visible: true,
                         formatMethod: (text, datum) => {
-                            const label = datum?.label;
-                            if (label) {
-                                return label;
-                            }
-
                             return datum?.id ? categoryNameMap[datum.id] : '';
                         },
                     },

@@ -25,7 +25,7 @@ export const combinationConfigConverter: IChartConfigConverter = {
         // return bit === ChartTypeBits.Combination;
     },
     convert: (chartType, chartData, snapshot) => {
-        // const seriesStyleMap = snapshot.common?.seriesStyleMap;
+        // const seriesStyleMap = snapshot.seriesStyleMap;
         // return {
         //     type: chartType,
         //     category: chartData.category,

@@ -17,7 +17,7 @@
 import type { VChartRenderSpecOperator } from '../vchart-render-engine';
 
 export const chartBorderOperator: VChartRenderSpecOperator = (spec, style, config, instance) => {
-    instance.setBorderColor(style.common?.borderColor);
+    instance.setBorderColor(style.borderColor);
 
     return spec;
 };

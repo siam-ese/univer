@@ -14,27 +14,21 @@
  * limitations under the License.
  */
 
-import type { ChartDataSource, IChartData, IChartDataContext, IChartDataTransformConfig } from '../types';
+import type { ChartDataSourceValues, IChartContext, IChartData } from '../types';
 import { toString } from './operators';
 
-export type IChartDataPipelineOperator = (ctx: IChartDataPipelineContext) => void;
-export interface IChartDataPipelineContext {
-    dataSource: ChartDataSource;
-    dataContext: IChartDataContext;
-    dataTransformConfig: IChartDataTransformConfig;
-}
+export function buildChartData(dataSource: ChartDataSourceValues, chartContext: IChartContext): IChartData {
+    const { headers } = chartContext;
 
-export function buildChartData(dataSource: ChartDataSource, dataContext: IChartDataContext): IChartData {
-    const { headers } = dataContext;
-
-    const seriesIndexes = dataContext.seriesIndexes || [];
+    const seriesIndexes = chartContext.seriesIndexes || [];
 
     const result: IChartData = {
+        headers,
         series: seriesIndexes.map((index) => {
             const values = dataSource[index];
             return {
                 index,
-                name: toString(headers?.[index]) || `系列 ${index}`,
+                name: toString(headers?.[index]),
                 items: values.map((value) => ({
                     value,
                     label: toString(value),
@@ -43,19 +37,19 @@ export function buildChartData(dataSource: ChartDataSource, dataContext: IChartD
         }),
     };
 
-    const categoryIndex = dataContext.categoryIndex;
+    const categoryIndex = chartContext.categoryIndex;
     if (categoryIndex !== undefined) {
         const categoryData = dataSource[categoryIndex];
 
         result.category = {
             index: categoryIndex,
             name: toString(headers?.[categoryIndex]),
-            type: dataContext.categoryType!,
+            type: chartContext.categoryType!,
             items: categoryData.map((value) => ({
                 value,
                 label: toString(value),
             })),
-            keys: categoryData.map((value, index) => `${index}_${value}`),
+            keys: categoryData.map((value, index) => String(index)),
         };
     }
 

@@ -17,16 +17,16 @@
 import { useObservable } from '@univerjs/ui';
 import { useCallback, useMemo } from 'react';
 import { useDependency } from '@univerjs/core';
-import { SheetsChartConfigService } from '@univerjs/chart';
+import { ChartModelService } from '@univerjs/chart';
 import { Observable } from 'rxjs';
 import type { ChartConfigStateKey, InferChartConfigStateValue } from './services/sheets-chart-ui.service';
 import { SheetsChartUIService } from './services/sheets-chart-ui.service';
 
 export function useSheetsChartUIService() {
     const sheetsChartUIService = useDependency(SheetsChartUIService);
-    const sheetsChartConfigService = useDependency(SheetsChartConfigService);
+    const chartModelService = useDependency(ChartModelService);
     // chart ui service should update with activeChartModel change
-    useObservable(sheetsChartConfigService.activeChartModel$);
+    useObservable(chartModelService.activeChartModel$);
 // console.log(activeChartModel, 'activeChartModel')
     return sheetsChartUIService;
 }
