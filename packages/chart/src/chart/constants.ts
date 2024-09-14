@@ -16,11 +16,12 @@
 
 export enum ChartAttributeBits {
     Stack = 1 << 30,
-    PercentStack = 1 << 29,
+    PercentStack = 1 << 29 | ChartAttributeBits.Stack,
     Horizontal = 1 << 28,
 }
 
 export enum ChartTypeBits {
+    None = 0,
     /** Line chart */
     Line = 1 << 1,
     /** Bar chart */
@@ -44,10 +45,10 @@ export enum ChartTypeBits {
     Scatter = 1 << 6,
     /** Combination chart */
     Combination = 1 << 7,
-
 }
 
 const chartTypeStrings = {
+    [ChartTypeBits.None]: '',
     [ChartTypeBits.Line]: 'line',
     [ChartTypeBits.Column]: 'bar',
     [ChartTypeBits.ColumnStacked]: 'bar',
@@ -56,9 +57,9 @@ const chartTypeStrings = {
     [ChartTypeBits.BarStacked]: 'bar',
     [ChartTypeBits.BarPercentStacked]: 'bar',
     [ChartTypeBits.Pie]: 'pie',
-    [ChartTypeBits.Area]: 'area',
-    [ChartTypeBits.AreaStacked]: 'area',
-    [ChartTypeBits.AreaPercentStacked]: 'area',
+    [ChartTypeBits.Area]: 'line',
+    [ChartTypeBits.AreaStacked]: 'line',
+    [ChartTypeBits.AreaPercentStacked]: 'line',
     [ChartTypeBits.Radar]: 'radar',
     [ChartTypeBits.Scatter]: 'scatter',
     [ChartTypeBits.Combination]: 'combination',

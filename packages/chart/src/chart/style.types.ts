@@ -15,6 +15,7 @@
  */
 
 import type { ChartTypeBits } from './constants';
+import type { IChartRuntimeContext } from './runtime-context.types';
 
 export type DeepPartial<T> = T extends Record<string, any>
     ? T extends any[]
@@ -26,7 +27,8 @@ export enum SeriesLabelPosition {
     Auto = 'auto',
     Top = 'top',
     Bottom = 'bottom',
-    Center = 'left',
+    Left = 'left',
+    Inside = 'inside',
     Outside = 'outside',
 }
 
@@ -86,7 +88,7 @@ export enum LinePointShape {
     Triangle = 'triangle',
     Diamond = 'diamond',
 }
-export interface ILinePointStyle {
+export interface IPointStyle {
     shape: LinePointShape;
     size: number;
     color: string;
@@ -109,18 +111,19 @@ export interface ISeriesStyle {
     fillOpacity: number;
     border: {
         opacity: number;
-        width: number;
         color: string;
+        // We use width and dash type in border style to control the line of line chart
+        width: number;
         dashType: ChartBorderDashType;
     };
     label: ISeriesLabelStyle;
-    linePoint: ILinePointStyle;
+    point: IPointStyle;
     dataPoints: {
         [index: number]: IDataPointStyle;
     };
 }
 
-export interface IAllSeriesStyle extends Pick<ISeriesStyle, 'chartType' | 'border' | 'label' | 'rightYAxis' | 'linePoint'> {
+export interface IAllSeriesStyle extends Pick<ISeriesStyle, 'border' | 'label' | 'rightYAxis' | 'point'> {
 
 }
 
@@ -147,22 +150,23 @@ export interface IGridLineStyle {
     width: number;
 }
 
-export interface IXAxisOptions {
-    labelVisible: boolean;
+export interface IAxisOptions {
     lineVisible: boolean;
-    reverse: boolean;
-    label: Omit<ILabelStyle, 'visible' | 'align' | 'content' >;
+    label: Omit<ILabelStyle, 'align' | 'content' >;
     gridLine: IGridLineStyle;
+    tick: {
+        visible: boolean;
+        lineWidth: number;
+        lineColor: string;
+        length: number;
+        position: PieLabelPosition;
+    };
+    reverse?: boolean;
+    min?: number;
+    max?: number;
 }
 
-export interface IYAxisOptions {
-    labelVisible: boolean;
-    lineVisible: boolean;
-    label: Omit<ILabelStyle, 'visible' | 'align' | 'content' >;
-    gridLine: IGridLineStyle;
-    min: number;
-    max: number;
-}
+export type RightYAxisOptions = Omit<IAxisOptions, 'reverse'>;
 
 export enum AreaLineStyle {
     Line = 'line',
@@ -175,11 +179,9 @@ export enum InvalidValueType {
     Break = 'break',
     Link = 'link',
 }
+
 export interface IChartStyle {
-    runtime: {
-        themeColors: string[];
-    };
-    // common: {
+    runtime: IChartRuntimeContext;
     theme: string;
     stackType: StackType;
     invalidValueType: InvalidValueType;
@@ -189,13 +191,17 @@ export interface IChartStyle {
     fontSize: number;
     fontColor: string;
     borderColor: string;
-    title: Omit<ILabelStyle, 'visible'>;
-    subtitle: Omit<ILabelStyle, 'visible'>;
-    xAxisTitle: Omit<ILabelStyle, 'visible'>;
-    yAxisTitle: Omit<ILabelStyle, 'visible'>;
+    titles: {
+        title: Omit<ILabelStyle, 'visible'>;
+        subtitle: Omit<ILabelStyle, 'visible'>;
+        xAxisTitle: Omit<ILabelStyle, 'visible'>;
+        yAxisTitle: Omit<ILabelStyle, 'visible'>;
+        rightYAxisTitle: Omit<ILabelStyle, 'visible'>;
+    };
     legend: ILegendStyle;
-    xAxis: IXAxisOptions;
-    yAxis: IYAxisOptions;
+    xAxis: IAxisOptions;
+    yAxis: IAxisOptions;
+    rightYAxis: RightYAxisOptions;
     allSeriesStyle: IAllSeriesStyle;
     seriesStyleMap: {
         [id: string]: ISeriesStyle;
@@ -204,6 +210,7 @@ export interface IChartStyle {
     pie: {
         doughnutHole: number;
         labelStyle: IPieLabelStyle;
+        borderColor: string;
     };
     area: {
         lineStyle: AreaLineStyle;

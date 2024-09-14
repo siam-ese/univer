@@ -68,9 +68,12 @@
         "rxjs": ">=7.0.0"
     },
     "dependencies": {
-        "@visactor/vchart": "^1.11.0"
+        "echarts": "5.5.1",
+        "tinycolor2": "1.6.0"
+
     },
     "devDependencies": {
+        "@types/tinycolor2": "1.4.6",
         "@univerjs/core": "workspace:*",
         "@univerjs/shared": "workspace:*",
         "@univerjs/sheets": "workspace:*",

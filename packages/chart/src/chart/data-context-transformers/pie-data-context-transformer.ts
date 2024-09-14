@@ -21,7 +21,7 @@ export const pieDataContextTransformer = (fromType: ChartTypeBits, toType: Chart
     if (fromType === toType) {
         return;
     }
-    const { chartContext } = model;
+    const { context: chartContext } = model;
     if (toType === ChartTypeBits.Pie) {
         const { seriesIndexes } = chartContext;
         if (!seriesIndexes) {

@@ -14,38 +14,142 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Checkbox, Select } from '@univerjs/design';
-import { tickThicknessOptions } from '../options';
-import panelStyles from '../../views/chart-edit-panel/index.module.less';
+import type { LocaleService, Nullable } from '@univerjs/core';
+import type { IGridLineStyle, IRuntimeAxis } from '@univerjs/chart';
+import { IRuntimeAxisPosition, IRuntimeAxisPriority, PieLabelPosition } from '@univerjs/chart';
+import { axisListOptions, defaultOption, pieDataLabelPositionOptions, tickLengthOptions, tickThicknessOptions, tickWidthOptions } from '../options';
 import { ColorPickerControl } from '../color-picker-control';
-import styles from './index.module.less';
+import type { SheetsChartUIService } from '../../services/sheets-chart-ui.service';
+import { useTranslatedOptions } from '../use-translated-options';
+import { useChartConfigState } from '../../hooks';
 
-export interface IGridLineAndTickOptions {
-    gridLine: boolean;
-    color: string;
-    width: number;
-}
-
-export interface IGridLineAndTickOptionsProps extends Partial<IGridLineAndTickOptions> {
+export interface IGridLineAndTickOptionsProps {
     className?: string;
-    onChange?: <K extends keyof IGridLineAndTickOptions = keyof IGridLineAndTickOptions> (key: K, value: IGridLineAndTickOptions[K]) => void;
+    service: SheetsChartUIService;
+    localeService: LocaleService;
+    runtimeAxes: Nullable<IRuntimeAxis[]>;
 }
 
 export const GridLineAndTickOptions = (props: IGridLineAndTickOptionsProps) => {
-    const { className, gridLine, color, width, onChange } = props;
+    const { runtimeAxes, localeService, service, className } = props;
+    const { t } = localeService;
+    const filteredAxisListOptions = useMemo(() => axisListOptions.filter((option) => {
+        const hasAxis = runtimeAxes?.some((axis) => axis.position === IRuntimeAxisPosition.Right);
+        if (option.value === 'rightYAxis') {
+            return hasAxis;
+        }
+        return true;
+    }), [runtimeAxes]);
+
+    const innerAxisListOptions = useTranslatedOptions(localeService, filteredAxisListOptions);
+
+    const secondaryAxis = useMemo(() => runtimeAxes?.find((axis) => axis.priority === IRuntimeAxisPriority.Secondary), [runtimeAxes]);
+    const [currentAxisId, setCurrentAxisId] = useState<string>(axisListOptions[0].value);
+    const [xAxisOptions, setXAxisOptions] = useChartConfigState('xAxisOptions', service);
+    const [yAxisOptions, setYAxisOptions] = useChartConfigState('yAxisOptions', service);
+    const [rightYAxisOptions, setRightYAxisOptions] = useChartConfigState('rightYAxisOptions', service);
+
+    const currentAxisOptions = {
+        xAxis: xAxisOptions,
+        yAxis: yAxisOptions,
+        rightYAxis: rightYAxisOptions,
+    }[currentAxisId];
+
+    const setAxisOptions = {
+        xAxis: setXAxisOptions,
+        yAxis: setYAxisOptions,
+        rightYAxis: setRightYAxisOptions,
+    }[currentAxisId];
+
+    const axisPosition = {
+        xAxis: 'bottom',
+        yAxis: 'left',
+        rightYAxis: 'right',
+    }[currentAxisId];
+
+    const tickStyle = currentAxisOptions?.tick;
+
+    const gridLineStyle = currentAxisOptions?.gridLine;
+    const setGridLineStyle = useCallback((gridLineStyle: Partial<IGridLineStyle>) => {
+        setAxisOptions?.({ gridLine: gridLineStyle });
+    }, [setAxisOptions]);
+
+    const { visible: _visible, color, width } = gridLineStyle ?? {};
+    const visible = _visible ?? secondaryAxis?.position === axisPosition;
+
+    const innerTickPositionOptions = useTranslatedOptions(localeService, pieDataLabelPositionOptions);
+
+    const innerTickLengthOptions = useMemo(() => {
+        defaultOption.label = t(defaultOption.label);
+
+        return [defaultOption, ...tickLengthOptions];
+    }, [t]);
+    const innerTickWidthOptions = useMemo(() => {
+        defaultOption.label = t(defaultOption.label);
+
+        return [defaultOption, ...tickWidthOptions];
+    }, [t]);
 
     return (
         <div className={className}>
-            <Checkbox checked={gridLine} onChange={(checked) => onChange?.('gridLine', Boolean(checked))}>Major gridlines</Checkbox>
-            <div className={panelStyles.styleTabPanelRow}>
-                <div className={panelStyles.styleTabPanelRowHalf}>
-                    <h5>GridLine color</h5>
-                    <ColorPickerControl color={color ?? ''} onChange={(c) => onChange?.('color', c)} />
+            <div className="chart-edit-panel-top-gap">
+                {/* <h5>Select one</h5> */}
+                <Select className="chart-edit-panel-select" options={innerAxisListOptions} value={currentAxisId} onChange={setCurrentAxisId}></Select>
+            </div>
+
+            <div className="chart-edit-panel-row chart-edit-panel-top-gap">
+                <div className="chart-edit-panel-row-half">
+                    <Checkbox checked={visible} onChange={(checked) => setGridLineStyle?.({ visible: Boolean(checked) })}>{t('chart.gridlines.majorGridlines')}</Checkbox>
                 </div>
-                <div className={styles.styleTabPanelRowHalf}>
-                    <h5>GridLine thickness</h5>
-                    <Select value={String(width ?? '')} onChange={(w) => onChange?.('width', Number(w))} options={tickThicknessOptions}></Select>
+                {visible && (
+                    <>
+                        <div className="chart-edit-panel-row-half">
+                            <h5>
+                                {t('chart.gridlines.text')}
+                                {' '}
+                                {t('chart.color')}
+                            </h5>
+                            <ColorPickerControl color={color ?? ''} onChange={(c) => setGridLineStyle?.({ color: c })} />
+                        </div>
+                        <div className="chart-edit-panel-row-half">
+                            <h5>
+                                {t('chart.withThickness', t('chart.gridlines.text'))}
+                            </h5>
+                            <Select value={String(width ?? '')} onChange={(w) => setGridLineStyle?.({ width: Number(w) })} options={tickThicknessOptions}></Select>
+                        </div>
+                    </>
+                )}
+
+            </div>
+
+            <div>
+                <div>
+                    <Checkbox checked={tickStyle?.visible} onChange={(checked) => setAxisOptions?.({ tick: { visible: Boolean(checked) } })}>{t('chart.ticks.majorTick')}</Checkbox>
+                </div>
+                <div>
+                    <div className="chart-edit-panel-row">
+
+                        <div className="chart-edit-panel-row-half">
+                            <h5>{t('chart.ticks.tickPosition')}</h5>
+                            <Select value={tickStyle?.position ?? PieLabelPosition.Outside} options={innerTickPositionOptions} onChange={(v) => setAxisOptions?.({ tick: { position: v as PieLabelPosition } })}></Select>
+
+                        </div>
+                        <div className="chart-edit-panel-row-half">
+                            <h5>{t('chart.ticks.tickLength')}</h5>
+                            <Select value={String(tickStyle?.length ?? defaultOption.value)} options={innerTickLengthOptions} onChange={(v) => setAxisOptions?.({ tick: { length: v === defaultOption.value ? undefined : Number(v) } })}></Select>
+                        </div>
+                    </div>
+                    <div className="chart-edit-panel-row">
+                        <div className="chart-edit-panel-row-half">
+                            <h5>{t('chart.withThickness', t('chart.line'))}</h5>
+                            <Select value={String(tickStyle?.lineWidth ?? defaultOption.value)} options={innerTickWidthOptions} onChange={(v) => setAxisOptions?.({ tick: { lineWidth: v === defaultOption.value ? undefined : Number(v) } })}></Select>
+                        </div>
+                        <div className="chart-edit-panel-row-half">
+                            <ColorPickerControl color={tickStyle?.lineColor ?? ''} onChange={(c) => setAxisOptions?.({ tick: { lineColor: c } })} />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

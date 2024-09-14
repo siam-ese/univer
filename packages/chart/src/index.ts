@@ -16,11 +16,12 @@
 
 // export { lineChartInjector } from './chart-injectors/line-chart-injector';
 export type { IChartRenderModel } from './chart-render/chart-render-model';
-export { VChartRenderEngine } from './chart-render/vchart-render-model/vchart-render-engine';
+export { EChartRenderEngine } from './chart-render/echart-render-model/echart-render-engine';
 export { ChartModel } from './chart/chart-model';
 export { chartBitsUtils, ChartAttributeBits, ChartTypeBits, DataOrientation, CategoryType } from './chart/constants';
 export type { IChartContext } from './chart/types';
 export * from './chart/style.types';
+export * from './chart/runtime-context.types';
 export { SheetsChartController } from './controllers/sheets-chart.controller';
 export { UniverSheetsChartPlugin, SHEETS_CHART_PLUGIN_NAME, type IUniverSheetsChartPluginConfig } from './plugins/univer-sheets-chart-plugin';
 export { ChartModelService } from './services/chart-config.service';

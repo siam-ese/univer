@@ -16,6 +16,7 @@
 
 import React, { useState } from 'react';
 import { ColorPicker, Dropdown } from '@univerjs/design';
+import type { LocaleService } from '@univerjs/core';
 import { useDependency } from '@univerjs/core';
 import { ComponentManager } from '@univerjs/ui';
 import { AlignTextBothSingle, MoreDownSingle } from '@univerjs/icons';
@@ -24,6 +25,7 @@ import { defaultChartStyle } from '@univerjs/chart';
 import type { OptionType } from '../options';
 import { fontSizeOptions, textAlignOptions } from '../options';
 import { DropdownMenu } from '../dropdown-menu';
+import { useTranslatedOptions } from '../use-translated-options';
 import styles from './index.module.less';
 
 export interface IFontFormatStyle {
@@ -34,26 +36,20 @@ export interface IFontFormatStyle {
     underline: boolean;
     strikethrough: boolean;
     align?: string;
-    controls?: {
-        // fontSize?: boolean;
-        // color?: boolean;
-        // bold?: boolean;
-        // italic?: boolean;
-        // underline?: boolean;
-        // strikethrough?: boolean;
-        align?: boolean;
-    };
+    alignControl?: boolean;
 }
 
 export type PropertyChangeFunction<T, K extends keyof T = keyof T> = (name: K, value: T[K]) => void;
 
 export interface IFontFormatBarProps extends Partial<IFontFormatStyle> {
+    localeService: LocaleService;
     className?: string;
     onChange?: PropertyChangeFunction<Omit<IFontFormatStyle, 'controls'>>;
 }
 
 export const FontFormatBar = (props: IFontFormatBarProps) => {
     const {
+        localeService,
         className,
         fontSize = defaultChartStyle.textStyle.titleFontSize,
         color,
@@ -61,7 +57,7 @@ export const FontFormatBar = (props: IFontFormatBarProps) => {
         italic,
         underline,
         strikethrough,
-        controls,
+        alignControl = false,
         onChange,
     } = props;
 
@@ -71,6 +67,7 @@ export const FontFormatBar = (props: IFontFormatBarProps) => {
     const UnderlineSingleIcon = componentManager.get('UnderlineSingle');
     const StrikethroughSingle = componentManager.get('StrikethroughSingle');
     const FontIcon = componentManager.get('FontColor');
+    const innerTextAlignOptions = useTranslatedOptions(localeService, textAlignOptions as unknown as OptionType[]);
 
     const [colorDropdownVisible, setColorDropdownVisible] = useState(false);
 
@@ -102,8 +99,8 @@ export const FontFormatBar = (props: IFontFormatBarProps) => {
                     <MoreDownSingle className={clsx(styles.fontFormatBarMenuIcon, { [styles.fontFormatBarRotateIcon]: colorDropdownVisible })} />
                 </div>
             </Dropdown>
-            {controls?.align !== false && (
-                <DropdownMenu menus={textAlignOptions as unknown as OptionType[]} onSelect={(item) => onChange?.('align', item.value)}>
+            {alignControl && (
+                <DropdownMenu menus={innerTextAlignOptions} onSelect={(item) => onChange?.('align', item.value)}>
                     <div className={clsx(styles.fontFormatBarItem)}>
                         <AlignTextBothSingle />
                     </div>

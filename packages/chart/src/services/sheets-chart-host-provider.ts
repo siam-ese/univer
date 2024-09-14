@@ -48,13 +48,15 @@ export class SheetsChartHostProvider extends Disposable implements IChartHostPro
     createHost(id: string) {
         const { _sheetCanvasFloatDomManagerService } = this;
         const _createHost = (_id: string) => {
+            const width = 468;
+            const height = 369;
             const floatDom = _sheetCanvasFloatDomManagerService.addFloatDomToPosition({
                 allowTransform: true,
                 initPosition: {
                     startX: 200,
-                    endX: 200 + 468,
+                    endX: 200 + width,
                     startY: 200,
-                    endY: 200 + 369,
+                    endY: 200 + height,
                 },
                 componentKey: 'Chart',
             }, _id);
@@ -64,10 +66,15 @@ export class SheetsChartHostProvider extends Disposable implements IChartHostPro
             }
 
             const mountNode = document.createElement('div');
-            mountNode.style.width = '100%';
-            mountNode.style.height = '100%';
+            mountNode.style.width = `${width - 2}px`;
+            mountNode.style.height = `${height - 2}px`;
+            mountNode.style.marginTop = '3px';
+            mountNode.style.marginLeft = '3px';
+            mountNode.style.border = '1px solid transparent';
+            mountNode.style.boxSizing = 'border-box';
 
             waitElement(floatDom.id).then((el) => {
+                el.style.padding = '1px';
                 el.appendChild(mountNode);
             });
 

@@ -44,15 +44,18 @@ export const themeColors = [
 export const defaultChartStyle = {
     allSeriesId: generateRandomId(10),
     invalidValueType: InvalidValueType.Break,
-    linePoint: {
+    line: {
+        width: 2,
+    },
+    point: {
         shape: LinePointShape.Circle,
-        size: 4,
+        size: 0,
     },
     axis: {
-        lineVisible: true,
+        // lineVisible: true,
         labelVisible: true,
         reverse: false,
-        gridLineVisible: true,
+        // gridLineVisible: true,
     },
     legend: {
         position: LegendPosition.Bottom,
@@ -64,6 +67,7 @@ export const defaultChartStyle = {
     },
     textStyle: {
         fontSize: 12,
+        subTitleFontSize: 14,
         titleFontSize: 16,
         color: '#1f2329',
         align: 'left',
@@ -72,6 +76,7 @@ export const defaultChartStyle = {
     area: {
         lineStyle: AreaLineStyle.Line,
     },
+    labelContentType: LabelContentType.Value,
     pie: {
         labelContentType: LabelContentType.CategoryName | LabelContentType.Value | LabelContentType.Percentage,
         radius: 0.8,

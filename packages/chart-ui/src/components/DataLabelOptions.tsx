@@ -18,6 +18,7 @@ import { Checkbox, Select } from '@univerjs/design';
 import React, { useCallback, useMemo } from 'react';
 import type { IPieLabelStyle, ISeriesLabelStyle } from '@univerjs/chart';
 import { chartBitsUtils, LabelContentType } from '@univerjs/chart';
+import type { LocaleService } from '@univerjs/core';
 import type { OptionType } from './options';
 import { labelContentTypeList } from './options';
 import type { IFontFormatBarProps, PropertyChangeFunction } from './font-format-bar';
@@ -26,6 +27,7 @@ import { FontFormatBar } from './font-format-bar';
 type UnionLabelStyle = ISeriesLabelStyle | IPieLabelStyle;
 
 export interface IDataLabelOptionsProps {
+    localeService: LocaleService;
     fallbackLabelStyle?: Partial<UnionLabelStyle>;
     labelStyle: Partial<UnionLabelStyle>;
     contentTypeOptions?: OptionType[];
@@ -42,14 +44,9 @@ export const DataLabelOptions = (props: IDataLabelOptionsProps) => {
         contentTypeOptions,
         onLabelStyleChange,
         onVisibleChange,
+        localeService,
     } = props;
     const mergedLabelStyle = { ...fallbackLabelStyle, ...labelStyle };
-
-    const fontFormatBarControls = useMemo(() => {
-        return {
-            align: false,
-        };
-    }, []);
 
     const { contentType } = mergedLabelStyle;
     const contentTypes = useMemo(() => {
@@ -73,7 +70,7 @@ export const DataLabelOptions = (props: IDataLabelOptionsProps) => {
 
         onLabelStyleChange?.('contentType', contentType);
     }, [onLabelStyleChange]);
-
+    const { t } = localeService;
     return (
         <div>
             <div>
@@ -83,33 +80,37 @@ export const DataLabelOptions = (props: IDataLabelOptionsProps) => {
                         onVisibleChange?.(Boolean(visible));
                     }}
                 >
-                    Show data labels
+                    {t('chart.styleEditPanel.showDataLabels')}
                 </Checkbox>
             </div>
             {mergedLabelStyle.visible && (
                 <>
-                    <div>
-                        <h5>Label Position</h5>
-                        <Select value={mergedLabelStyle.position ?? ''} onChange={(value) => onLabelStyleChange?.('position', value)} options={positionOptions}></Select>
-                    </div>
-                    {contentTypeOptions && (
-                        <div>
-                            <h5>Label text</h5>
-                            <Select
-                                mode="multiple"
-                                className="chart-edit-panel-select"
-                                // @ts-ignore select supports multiple mode but the type definition is not correct
-                                value={contentTypes}
-                                options={contentTypeOptions}
-                                // @ts-ignore select supports multiple mode but the type definition is not correct
-                                onChange={handleContentTypeChange}
-                            >
-                            </Select>
+                    <div className="chart-edit-panel-row">
+                        <div className="chart-edit-panel-row-half">
+                            <h5>{t('chart.styleEditPanel.labelPosition')}</h5>
+                            <Select value={mergedLabelStyle.position ?? ''} onChange={(value) => onLabelStyleChange?.('position', value)} options={positionOptions}></Select>
                         </div>
-                    )}
+                        {contentTypeOptions && (
+                            <div className="chart-edit-panel-row-half">
+                                <h5>{t('chart.styleEditPanel.labelText')}</h5>
+                                <Select
+                                    mode="multiple"
+                                    size="small"
+                                    className="chart-edit-panel-select"
+                                // @ts-ignore select supports multiple mode but the type definition is not correct
+                                    value={contentTypes}
+                                    options={contentTypeOptions}
+                                // @ts-ignore select supports multiple mode but the type definition is not correct
+                                    onChange={handleContentTypeChange}
+                                >
+                                </Select>
+                            </div>
+                        )}
+
+                    </div>
                     <div>
-                        <h5>Title Format</h5>
-                        <FontFormatBar {...mergedLabelStyle} controls={fontFormatBarControls} onChange={onLabelStyleChange as unknown as IFontFormatBarProps['onChange']} />
+                        <h5>{t('chart.titles.titleText')}</h5>
+                        <FontFormatBar {...mergedLabelStyle} localeService={localeService} onChange={onLabelStyleChange as unknown as IFontFormatBarProps['onChange']} />
                     </div>
                 </>
             )}

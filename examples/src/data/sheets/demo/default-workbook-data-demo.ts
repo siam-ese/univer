@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ChartTypeBits } from '@univerjs/chart';
+import { ChartTypeBits, DataOrientation, StackType } from '@univerjs/chart';
 import type { IDataValidationRule, IDocumentData, IWorkbookData } from '@univerjs/core';
 import { DataValidationErrorStyle, DataValidationOperator, DataValidationType, LocaleType } from '@univerjs/core';
 
@@ -24719,13 +24719,34 @@ export const DEFAULT_WORKBOOK_DATA_DEMO: IWorkbookData = {
                     //     seriesIndexes: [1, 2, 3, 4],
                     // },
                     {
-                        id: 'chart-0017',
-                        chartType: ChartTypeBits.Radar,
+                        id: 'chart-0018',
+                        chartType: ChartTypeBits.BarStacked,
+                        orient: DataOrientation.Column,
                         range: {
                             startRow: 13,
                             endRow: 22,
                             startColumn: 0,
                             endColumn: 4,
+                        },
+                        style: {
+                            stackType: StackType.Stacked,
+                        },
+                        context: {
+                            categoryIndex: 0,
+                            seriesIndexes: [1, 2, 3, 4],
+                        },
+                    },
+                    {
+                        id: 'chart-0017',
+                        chartType: ChartTypeBits.BarPercentStacked,
+                        range: {
+                            startRow: 13,
+                            endRow: 22,
+                            startColumn: 0,
+                            endColumn: 4,
+                        },
+                        style: {
+                            stackType: StackType.Percent,
                         },
                         context: {
                             categoryIndex: 0,

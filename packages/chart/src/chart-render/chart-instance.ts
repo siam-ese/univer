@@ -26,7 +26,7 @@ export interface IChartInstance<Spec = Record<string, any>> extends Disposable {
 
     render(spec: Spec): void;
 
-    setTheme(name: string, options: IChartThemeOptions): void;
+    // setTheme(name: string, options: IChartThemeOptions): void;
 
     exportImg(): Promise<string>;
 
@@ -35,7 +35,7 @@ export interface IChartInstance<Spec = Record<string, any>> extends Disposable {
     onDispose?(dispose: () => void): void;
 }
 
-export interface IChartInstanceConstructor<T = Record<string, any>> {
-    new (container: HTMLElement | string): IChartInstance<T>;
+export interface IChartInstanceConstructor<Spec> {
+    new (container: HTMLElement | string): IChartInstance<Spec>;
 }
 

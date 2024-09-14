@@ -19,54 +19,58 @@ import type { IChartOptionType } from '../services/sheets-chart-ui.service';
 
 export type OptionType = IChartOptionType;
 
+export const defaultOption = {
+    label: 'chart.default',
+    value: '__default__',
+};
+
 export const chartTypeOptions = [
     {
-        label: '折线图',
+        label: 'chartTypes.line',
         value: ChartTypeBits.Line,
     },
     {
-        label: '柱状图',
+        label: 'chartTypes.column',
         value: ChartTypeBits.Column,
     },
-
     {
-        label: '条形图',
+        label: 'chartTypes.bar',
         value: ChartTypeBits.Bar,
     },
     {
-        label: '堆叠条形图',
+        label: 'chartTypes.barStacked',
         value: ChartTypeBits.BarStacked,
     },
     {
-        label: '百分比堆叠条形图',
+        label: 'chartTypes.barPercentStacked',
         value: ChartTypeBits.BarPercentStacked,
     },
     {
-        label: '饼图',
+        label: 'chartTypes.pie',
         value: ChartTypeBits.Pie,
     },
     {
-        label: '环形图',
+        label: 'chartTypes.donut',
         value: ChartTypeBits.Doughnut,
     },
     {
-        label: '面积图',
+        label: 'chartTypes.area',
         value: ChartTypeBits.Area,
     },
     {
-        label: '堆叠面积图',
+        label: 'chartTypes.areaStacked',
         value: ChartTypeBits.AreaStacked,
     },
     {
-        label: '百分比堆叠面积图',
+        label: 'chartTypes.areaPercentStacked',
         value: ChartTypeBits.AreaPercentStacked,
     },
     {
-        label: '雷达图',
+        label: 'chartTypes.radar',
         value: ChartTypeBits.Radar,
     },
     {
-        label: '组合图',
+        label: 'chartTypes.combination',
         value: ChartTypeBits.Combination,
     },
 ].map((option) => ({ ...option, value: String(option.value) }));
@@ -74,12 +78,8 @@ export const chartTypeOptions = [
 export const seriesChartTypeOptions = chartTypeOptions.filter((option) => {
     const seriesChartTypes = [
         ChartTypeBits.Line,
-        ChartTypeBits.Bar,
-        // ChartTypeBits.BarStacked,
-        // ChartTypeBits.BarPercentStacked,
+        ChartTypeBits.Column,
         ChartTypeBits.Area,
-        // ChartTypeBits.AreaStacked,
-        // ChartTypeBits.AreaPercentStacked,
     ].map((type) => String(type));
 
     return seriesChartTypes.includes(option.value);
@@ -87,20 +87,24 @@ export const seriesChartTypeOptions = chartTypeOptions.filter((option) => {
 
 export const titleOptions = [
     {
-        label: '图表标题',
-        value: 'titleStyle',
+        label: 'chart.titles.mainTitle',
+        value: 'title',
     },
     {
-        label: '图表副标题',
-        value: 'subtitleStyle',
+        label: 'chart.titles.subTitle',
+        value: 'subtitle',
     },
     {
-        label: 'X轴标题',
-        value: 'xAxisTitleStyle',
+        label: 'chart.titles.xAxisTitle',
+        value: 'xAxisTitle',
     },
     {
-        label: 'Y轴标题',
-        value: 'yAxisTitleStyle',
+        label: 'chart.titles.yAxisTitle',
+        value: 'yAxisTitle',
+    },
+    {
+        label: 'chart.titles.rightAxisTitle',
+        value: 'rightYAxisTitle',
     },
 ] as const;
 
@@ -147,15 +151,15 @@ export const fontSizeOptions = [
 
 export const textAlignOptions = [
     {
-        label: '左对齐',
+        label: 'chart.align.left',
         value: 'left',
     },
     {
-        label: '居中',
+        label: 'chart.align.center',
         value: 'center',
     },
     {
-        label: '右对齐',
+        label: 'chart.align.right',
         value: 'right',
     },
 ] as const;
@@ -164,7 +168,7 @@ export type TextAlignOptionValue = typeof textAlignOptions[number]['value'];
 
 export function getAllSeriesOption() {
     return {
-        label: '全部系列',
+        label: 'chart.allSeries',
         value: defaultChartStyle.allSeriesId,
     };
 }
@@ -176,45 +180,45 @@ export const lineOpacityOptions = [1, 0.9, 0.7, 0.5, 0.3, 0.1, 0].map((opacity) 
 
 export const axisPositionOptions = [
     {
-        label: 'Left axis',
+        label: 'chart.axes.leftAxis',
         value: 'left',
     },
     {
-        label: 'Right axis',
+        label: 'chart.axes.rightAxis',
         value: 'right',
     },
 ];
 
 export const borderDashTypeOptions = [
     {
-        label: '实线',
+        label: 'chart.dashType.solid',
         value: ChartBorderDashType.Solid,
     },
     {
-        label: '虚线',
+        label: 'chart.dashType.dash',
         value: ChartBorderDashType.Dashed,
     },
     {
-        label: '点线',
+        label: 'chart.dashType.dot',
         value: ChartBorderDashType.Dotted,
     },
 ];
 
 export const linePointShapeOptions = [
     {
-        label: 'Circle',
+        label: 'chart.shape.circle',
         value: LinePointShape.Circle,
     },
     {
-        label: 'Square',
+        label: 'chart.shape.square',
         value: LinePointShape.Square,
     },
     {
-        label: 'Triangle',
+        label: 'chart.shape.triangle',
         value: LinePointShape.Triangle,
     },
     {
-        label: 'Diamond',
+        label: 'chart.shape.diamond',
         value: LinePointShape.Diamond,
     },
 ];
@@ -231,12 +235,12 @@ export const borderWidthOptions = [0, 1, 2, 4, 8].map((width) => ({
 
 export const dataLabelPositionOptions = [
     SeriesLabelPosition.Auto,
-    SeriesLabelPosition.Outside,
-    SeriesLabelPosition.Center,
+    SeriesLabelPosition.Inside,
+    SeriesLabelPosition.Left,
     SeriesLabelPosition.Top,
     SeriesLabelPosition.Bottom,
 ].map((value) => ({
-    label: value,
+    label: `chart.positionType.${value}`,
     value,
 }));
 
@@ -244,18 +248,19 @@ export const pieDataLabelPositionOptions = [
     PieLabelPosition.Inside,
     PieLabelPosition.Outside,
 ].map((value) => ({
-    label: value,
+    label: `chart.positionType.${value}`,
     value,
 }));
 
 export const legendLabelPositionOptions = [LegendPosition.Top, LegendPosition.Bottom, LegendPosition.Left, LegendPosition.Right, LegendPosition.Hide].map((value) => ({
-    label: value,
+    label: `chart.positionType.${value}`,
     value,
 }));
 
 export const axisListOptions = [
-    { value: 'xAxis', label: 'Horizontal axis' },
-    { value: 'yAxis', label: 'Vertical axis' },
+    { value: 'xAxis', label: 'chart.axes.horizontalAxis' },
+    { value: 'yAxis', label: 'chart.axes.verticalAxis' },
+    { value: 'rightYAxis', label: 'chart.axes.rightAxis' },
 ];
 
 export const tickThicknessOptions = [1, 2, 3].map((value) => ({
@@ -265,30 +270,30 @@ export const tickThicknessOptions = [1, 2, 3].map((value) => ({
 
 export const stackTypeOptions: OptionType[] = [
     {
-        label: 'None',
+        label: 'chart.none',
         value: '',
     },
     {
-        label: 'Stacked',
+        label: 'chart.stackType.stacked',
         value: StackType.Stacked,
     },
     {
-        label: 'Percent',
+        label: 'chart.stackType.percentStacked',
         value: StackType.Percent,
     },
 ];
 
 export const areaLineTypeOptions = [
     {
-        label: 'Line',
+        label: 'chart.lineType.line',
         value: AreaLineStyle.Line,
     },
     {
-        label: 'Smooth',
+        label: 'chart.lineType.smooth',
         value: AreaLineStyle.Smooth,
     },
     {
-        label: 'Step',
+        label: 'chart.lineType.step',
         value: AreaLineStyle.Step,
     },
 ];
@@ -298,43 +303,28 @@ export const pieDonutHoleOptions = [0, 0.25, 0.5, 0.75].map((value) => ({
     value: String(value),
 }));
 
-export const pieLabelContentOptions = [
-    {
-        label: 'Category',
-        value: LabelContentType.CategoryName,
-    },
-    {
-        label: 'Value',
-        value: LabelContentType.Value,
-    },
-    {
-        label: 'Percentage',
-        value: LabelContentType.Percentage,
-    },
-].map((option) => ({ ...option, value: String(option.value) }));
-
 export const radarShapeOptions = [
     {
-        label: 'Polygon',
+        label: 'chart.shape.polygon',
         value: RadarShape.Polygon,
     },
     {
-        label: 'Circle',
+        label: 'chart.shape.circle',
         value: RadarShape.Circle,
     },
 ];
 
 export const invalidValueOptions = [
     {
-        label: 'Gap',
+        label: 'chart.invalidType.gaps',
         value: InvalidValueType.Break,
     },
     {
-        label: 'Zero',
+        label: 'chart.invalidType.zero',
         value: InvalidValueType.Zero,
     },
     {
-        label: 'Connect',
+        label: 'chart.invalidType.connectDataPointsWithStraightLines',
         value: InvalidValueType.Link,
     },
 ];
@@ -346,3 +336,32 @@ export const labelContentTypeList = [
     LabelContentType.Percentage,
 ];
 
+export const labelContentOptions = [
+    {
+        label: 'chart.category',
+        value: LabelContentType.CategoryName,
+    },
+    {
+        label: 'chart.series',
+        value: LabelContentType.SeriesName,
+    },
+    {
+        label: 'chart.value',
+        value: LabelContentType.Value,
+    },
+    {
+        label: 'chart.percentage',
+        value: LabelContentType.Percentage,
+    },
+].map((option) => ({ ...option, value: String(option.value) }));
+
+// export const lineLabelContentOptions = labelContentOptions.filter((option) => option.value !== String(LabelContentType.Percentage));
+export const pieLabelContentOptions = labelContentOptions.filter((option) => option.value !== String(LabelContentType.SeriesName));
+export const tickLengthOptions = [6, 12, 18, 24].map((value) => ({
+    label: `${value}px`,
+    value: String(value),
+}));
+export const tickWidthOptions = [1, 2, 4, 8].map((value) => ({
+    label: `${value}px`,
+    value: String(value),
+}));

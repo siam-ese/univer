@@ -17,23 +17,27 @@
 import { defaultChartStyle } from '@univerjs/chart';
 import { Checkbox } from '@univerjs/design';
 import React from 'react';
+import type { LocaleService } from '@univerjs/core';
 import { useChartConfigState } from '../hooks';
 import type { SheetsChartUIService } from '../services/sheets-chart-ui.service';
 import { ButtonSwitch } from './button-switch';
 import { radarShapeOptions } from './options';
+import { useTranslatedOptions } from './use-translated-options';
 
 export const RadarChartOptionsEdit = (props: {
     service: SheetsChartUIService;
+    localeService: LocaleService;
     className?: string;
 }) => {
-    const { className, service } = props;
+    const { className, service, localeService } = props;
     const [radarShape, setRadarShape] = useChartConfigState('radarShape', service);
     const [radarFill, setRadarFill] = useChartConfigState('radarFill', service);
+    const innerRadarShapeOptions = useTranslatedOptions(localeService, radarShapeOptions);
 
     return (
         <div className={className}>
             <div>
-                <ButtonSwitch value={radarShape ?? defaultChartStyle.radar.shape} options={radarShapeOptions} onChange={setRadarShape as (v: string) => void} />
+                <ButtonSwitch value={radarShape ?? defaultChartStyle.radar.shape} options={innerRadarShapeOptions} onChange={setRadarShape as (v: string) => void} />
             </div>
             <div className="chart-edit-panel-top-gap">
                 <Checkbox

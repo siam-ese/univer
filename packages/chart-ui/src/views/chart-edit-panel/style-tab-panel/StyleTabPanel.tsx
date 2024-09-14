@@ -14,181 +14,177 @@
  * limitations under the License.
  */
 
-import type { IGridLineStyle, LegendPosition } from '@univerjs/chart';
-import { chartBitsUtils, ChartTypeBits, defaultChartStyle } from '@univerjs/chart';
-import { Checkbox, Input, InputNumber, Select } from '@univerjs/design';
-import clsx from 'clsx';
+import type { ILabelStyle, IRuntimeAxis, LegendPosition } from '@univerjs/chart';
+import { AxisValueType, chartBitsUtils, ChartTypeBits, defaultChartStyle, IRuntimeAxisPosition } from '@univerjs/chart';
+import { Input, Select } from '@univerjs/design';
 import type { CollapseProps } from 'rc-collapse';
 import Collapse from 'rc-collapse';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { LocaleService, useDependency } from '@univerjs/core';
 import { ColorPickerControl } from '../../../components/color-picker-control';
 import { FontFormatBar } from '../../../components/font-format-bar';
 import { PieChartStyleEdit } from '../../../components/PieChartStyleEdit';
 import { GridLineAndTickOptions } from '../../../components/grid-line-and-tick-options/GridLineAndTickOptions';
-import type { TitleOptionValue } from '../../../components/options';
+import type { OptionType, TitleOptionValue } from '../../../components/options';
 import { useChartConfigState, useSheetsChartUIService } from '../../../hooks';
-import { axisListOptions, legendLabelPositionOptions, titleOptions } from '../../../components/options';
-import { SeriesStyleEdit } from '../../../components/SeriesStyleEdit';
+import { legendLabelPositionOptions, titleOptions } from '../../../components/options';
+import { SeriesStyleEdit } from '../../../components/series-style-edit/SeriesStyleEdit';
+import { AxisOptionsEdit } from '../../../components/AxisOptionsEdit';
+import { useTranslatedOptions } from '../../../components/use-translated-options';
 import styles from './index.module.less';
 
 const { textStyle } = defaultChartStyle;
 
+/** If has right y axis we need to rename vertical axis to left axis */
 export const StyleTabPanel = () => {
+    const localeService = useDependency(LocaleService);
     const sheetsChartUIService = useSheetsChartUIService();
-
-    const [chartType] = useChartConfigState('chartType', sheetsChartUIService);
+    const { t } = localeService;
+    const [chartType, setChartType] = useChartConfigState('chartType', sheetsChartUIService);
+    const [headers] = useChartConfigState('headers', sheetsChartUIService);
     const [backgroundColor, setBackgroundColor] = useChartConfigState('backgroundColor', sheetsChartUIService, '');
     const [borderColor, setBorderColor] = useChartConfigState('borderColor', sheetsChartUIService, '');
-    const [fontSize, setFontSize] = useChartConfigState('fontSize', sheetsChartUIService, textStyle.fontSize);
-    const [titleFontSize, setTitleFontSize] = useChartConfigState('titleFontSize', sheetsChartUIService, textStyle.titleFontSize);
-    // const [seriesList] = useChartConfigState('seriesList', sheetsChartUIService);
-    // const [allSeriesStyle, setAllSeriesStyle] = useChartConfigState('allSeriesStyle', sheetsChartUIService);
-    // const [seriesStyleMap, setSeriesStyleMap] = useChartConfigState('seriesStyleMap', sheetsChartUIService);
+
     const [legendStyle, setLegendStyle] = useChartConfigState('legendStyle', sheetsChartUIService);
     const [xAxisOptions, setXAxisOptions] = useChartConfigState('xAxisOptions', sheetsChartUIService);
     const [yAxisOptions, setYAxisOptions] = useChartConfigState('yAxisOptions', sheetsChartUIService);
+    const [rightYAxisOptions, setRightYAxisOptions] = useChartConfigState('rightYAxisOptions', sheetsChartUIService);
+    const [titles, setTitles] = useChartConfigState('titles', sheetsChartUIService);
 
-    const [titleType, setTitleType] = useState<TitleOptionValue>(titleOptions[0].value);
-    const [currentTitleStyle, setCurrentTitleStyle] = useChartConfigState(titleType, sheetsChartUIService);
-    // const seriesOptions = useMemo(() => seriesList ? [getAllSeriesOption(), ...seriesList] : [], [seriesList]);
+    const [runtimeAxes] = useChartConfigState('runtimeAxes', sheetsChartUIService);
 
     const [content, setContent] = useState('');
-    const [currentAxisId, setCurrentAxisId] = useState<string>(axisListOptions[0].value);
-    // const [currentSeriesId, setCurrentSeriesId] = useState<string>(defaultChartStyle.allSeriesId);
+    // const [currentAxisId, setCurrentAxisId] = useState<string>(axisListOptions[0].value);
 
-    const gridLineStyle = currentAxisId === 'xAxis' ? xAxisOptions?.gridLine : yAxisOptions?.gridLine;
-    const setGridLineStyle = useCallback((gridLineStyle: Partial<IGridLineStyle>) => {
-        if (currentAxisId === 'xAxis') {
-            setXAxisOptions({ gridLine: gridLineStyle });
-        } else {
-            setYAxisOptions({ gridLine: gridLineStyle });
-        }
-    }, [currentAxisId]);
+    const axisMap = useMemo(() => {
+        return runtimeAxes?.reduce((acc, axis) => {
+            acc[axis.position] = axis;
+            return acc;
+        }, {} as Partial<Record<IRuntimeAxisPosition, IRuntimeAxis>>);
+    }, [runtimeAxes]);
 
-    // const currentSeriesStyle = seriesStyleMap?.get(currentSeriesId);
-    // const setCurrentSeriesStyle = useCallback((style: DeepPartial<ISeriesStyle>) => {
-    //     seriesStyleMap?.set(currentSeriesId, style);
-    // }, [currentSeriesId, seriesStyleMap]);
+    const dualVerticalAxes = Boolean(axisMap?.[IRuntimeAxisPosition.Right]) && Boolean(axisMap?.[IRuntimeAxisPosition.Left]);
 
-    // const setSeriesStyle = currentSeriesId === defaultChartStyle.allSeriesId ? setAllSeriesStyle : setCurrentSeriesStyle;
+    const [titleType, setTitleType] = useState<TitleOptionValue>(titleOptions[0].value);
+
+    const _currentTitleStyle = titles?.[titleType];
+    const currentTitleStyle = {
+        color: textStyle.color,
+        fontSize: titleType === 'title'
+            ? textStyle.titleFontSize
+            : titleType === 'subtitle'
+                ? textStyle.subTitleFontSize
+                : textStyle.fontSize,
+        ..._currentTitleStyle,
+    };
+
+    const setCurrentTitleStyle = useCallback((titleStyle: Partial<ILabelStyle>) => {
+        setTitles({
+            [titleType]: titleStyle,
+        });
+    }, [titleType]);
+
+    // const gridLineStyle = currentAxisId === 'xAxis' ? xAxisOptions?.gridLine : yAxisOptions?.gridLine;
+    // const setGridLineStyle = useCallback((gridLineStyle: Partial<IGridLineStyle>) => {
+    //     if (currentAxisId === 'xAxis') {
+    //         setXAxisOptions({ gridLine: gridLineStyle });
+    //     } else {
+    //         setYAxisOptions({ gridLine: gridLineStyle });
+    //     }
+    // }, [currentAxisId]);
 
     useEffect(() => {
-        const titleContent = currentTitleStyle?.content;
-        if (titleContent) {
-            setContent(titleContent);
-        }
+        setContent(currentTitleStyle?.content ?? '');
     }, [currentTitleStyle?.content]);
 
-    // const defaultBorderStyle = defaultChartStyle.borderStyle;
-    // const borderStyle: ISeriesStyle['border'] = Object.assign({
-    //     color: 'transparent',
-    //     opacity: defaultBorderStyle.opacity,
-    //     width: defaultBorderStyle.width,
-    //     dashType: defaultBorderStyle.dashType,
-    // }, allSeriesStyle?.border, currentSeriesStyle?.border);
-
-    // const labelStyle: Partial<ISeriesStyle['label']> = currentSeriesId === defaultChartStyle.allSeriesId
-    //     ? (allSeriesStyle?.label ?? {})
-    //     : Object.assign({}, allSeriesStyle?.label, currentSeriesStyle?.label);
-
-    const [yAxisMax, setYAxisMax] = useState(yAxisOptions?.max);
-    const [yAxisMin, setYAxisMin] = useState(yAxisOptions?.min);
+    // const innerAxisListOptions = useTranslatedOptions(localeService, axisListOptions);
+    const innerLegendLabelPositionOptions = useTranslatedOptions(localeService, legendLabelPositionOptions);
+    const innerTitleOptions = useTranslatedOptions(localeService, titleOptions as unknown as OptionType[]);
+    // useMemo(() => {
+    //     return titleOptions
+    //         .filter((option) => {
+    //             if (dualVerticalAxes) {
+    //                 return true;
+    //             }
+    //             // If no right y axis, hide right y axis title option
+    //             return option.value !== 'rightYAxisTitle';
+    //         }).map((option) => {
+    //             return {
+    //                 ...option,
+    //                 label: (option.value === 'yAxisTitle' && dualVerticalAxes) ? t('chart.titles.leftAxisTitle') : t(option.label),
+    //             };
+    //         });
+    // }, [dualVerticalAxes, localeService]);
 
     const isPie = Boolean(chartType && chartBitsUtils.baseOn(chartType, ChartTypeBits.Pie));
     const collapseItems = [
         {
-            label: '图表样式',
+            label: t('chart.chartStyle'),
             children: (
                 <section>
                     <div className={styles.styleTabPanelRow}>
                         <div className={styles.styleTabPanelRowHalf}>
-                            <div className={styles.styleTabPanelLabel}>背景颜色</div>
+                            <div className={styles.styleTabPanelLabel}>{t('chart.backgroundColor')}</div>
                             <ColorPickerControl color={backgroundColor} onChange={setBackgroundColor} />
                         </div>
                         <div className={styles.styleTabPanelRowHalf}>
-                            <div className={styles.styleTabPanelLabel}>图标边框颜色</div>
+                            <div className={styles.styleTabPanelLabel}>{t('chart.chartBorderColor')}</div>
                             <ColorPickerControl color={borderColor} onChange={setBorderColor} />
                         </div>
                     </div>
-                    {/* <div className={styles.styleTabPanelRow}>
-                        <div className={styles.styleTabPanelRowHalf}>
-                            <div className={styles.styleTabPanelLabel}>字体大小</div>
-                            <div className={styles.styleTabPanelFontSizeBar}>
-                                <Button
-                                    type="text"
-                                    className={styles.styleTabPanelFontSizeBtn}
-                                    onClick={() => {
-                                        setFontSize(fontSize - 1);
-                                        setTitleFontSize(titleFontSize - 1);
-                                    }}
-                                >
-                                    <FontSizeReduceSingle />
-                                </Button>
-                                <Button
-                                    type="text"
-                                    className={styles.styleTabPanelFontSizeBtn}
-                                    onClick={() => {
-                                        setFontSize(fontSize + 1);
-                                        setTitleFontSize(titleFontSize + 1);
-                                    }}
-                                >
-                                    <FontSizeIncreaseSingle />
-                                </Button>
-                            </div>
-                        </div>
-                    </div> */}
                 </section>
             ),
         },
         {
-            label: '图标和轴标题',
+            label: t('chart.chartAndAxisTitles'),
             children: (
                 <section>
-                    <Select className="chart-edit-panel-select" value={titleType} options={titleOptions as unknown as Array<{ label: string; value: string }>} onChange={(value) => setTitleType(value as TitleOptionValue)}></Select>
+                    <Select className="chart-edit-panel-select" value={titleType} options={innerTitleOptions} onChange={(value) => setTitleType(value as TitleOptionValue)}></Select>
                     <div>
-                        <div className={clsx(styles.styleTabPanelLabel, styles.styleTabPanelLabelGap)}>标题文本</div>
+                        <div className="chart-edit-panel-label">{t('chart.titles.titleText')}</div>
                         <Input
-                            value={content}
+                            value={content || (titleType === 'title' ? (headers || []).join(',') : '')}
                             onChange={setContent}
                             onBlur={() => {
                                 if (content !== currentTitleStyle?.content) {
-                                    setCurrentTitleStyle({ ...currentTitleStyle, content });
+                                    setCurrentTitleStyle({ content });
                                 }
                             }}
                         />
                     </div>
                     <div>
-                        <div className={clsx(styles.styleTabPanelLabel, styles.styleTabPanelLabelGap)}>标题格式</div>
+                        <div className="chart-edit-panel-label">{t('chart.titles.titleFormat')}</div>
                         <div className={styles.styleTabPanelFontStyleBar}>
-                            <FontFormatBar {...currentTitleStyle} onChange={(key, value) => setCurrentTitleStyle({ [key]: value })} />
+                            <FontFormatBar alignControl localeService={localeService} {...currentTitleStyle} onChange={(key, value) => setCurrentTitleStyle({ [key]: value })} />
                         </div>
                     </div>
                 </section>
             ),
         },
         !isPie && {
-            label: '系列',
+            label: t('chart.series'),
             children: (
-                <SeriesStyleEdit chartType={chartType} service={sheetsChartUIService} />
+                <SeriesStyleEdit chartType={chartType} service={sheetsChartUIService} localeService={localeService} />
             ),
         },
         isPie && {
-            label: '饼图',
-            children: <PieChartStyleEdit chartType={chartType} service={sheetsChartUIService} />,
+            label: t('chartTypes.pie'),
+            children: <PieChartStyleEdit chartType={chartType} service={sheetsChartUIService} localeService={localeService} onChartTypeChange={setChartType} />,
         },
         {
-            label: '图例',
+            label: t('chart.legend'),
             children: (
                 <section>
                     <div>
                         <div>
-                            <h5>Position</h5>
-                            <Select value={legendStyle?.position ?? defaultChartStyle.legend.position} onChange={(position) => setLegendStyle({ position: position as LegendPosition })} options={legendLabelPositionOptions} />
+                            <h5>{t('chart.position')}</h5>
+                            <Select value={legendStyle?.position ?? defaultChartStyle.legend.position} onChange={(position) => setLegendStyle({ position: position as LegendPosition })} options={innerLegendLabelPositionOptions} />
                         </div>
                         <div>
-                            <h5>Title Format</h5>
+                            <h5>{t('chart.titles.titleFormat')}</h5>
                             <FontFormatBar
                                 {...legendStyle?.label}
+                                localeService={localeService}
                                 fontSize={legendStyle?.label?.fontSize ?? defaultChartStyle.textStyle.fontSize}
                                 color={legendStyle?.label?.color ?? defaultChartStyle.textStyle.color}
                                 onChange={(name, value) => setLegendStyle({ label: { [name]: value } })}
@@ -199,112 +195,50 @@ export const StyleTabPanel = () => {
             ),
         },
         {
-            label: '横轴',
+            label: t('chart.axes.horizontalAxis'),
             children: (
-                <section>
-                    <div>
-                        <h5>Axis Options</h5>
-                        <div>
-                            <div className={styles.styleTabPanelRow}>
-                                <Checkbox className={styles.styleTabPanelRowHalf} checked={xAxisOptions?.labelVisible ?? defaultChartStyle.axis.labelVisible} onChange={(checked) => setXAxisOptions({ labelVisible: Boolean(checked) })}>Show Labels</Checkbox>
-                                <Checkbox className={styles.styleTabPanelRowHalf} checked={xAxisOptions?.reverse ?? defaultChartStyle.axis.reverse} onChange={(checked) => setXAxisOptions({ reverse: Boolean(checked) })}>Reverse axis order</Checkbox>
-                            </div>
-                            <Checkbox className="chart-edit-panel-top-gap" checked={xAxisOptions?.lineVisible ?? defaultChartStyle.axis.lineVisible} onChange={(checked) => setXAxisOptions({ lineVisible: Boolean(checked) })}>Show axis line</Checkbox>
-                        </div>
-                        <FontFormatBar
-                            className="chart-edit-panel-top-gap"
-                            {...xAxisOptions?.label}
-                            fontSize={xAxisOptions?.label?.fontSize ?? defaultChartStyle.textStyle.fontSize}
-                            color={xAxisOptions?.label?.color ?? defaultChartStyle.textStyle.color}
-                            onChange={(name, value) => setXAxisOptions({ label: { [name]: value } })}
-                        />
-                    </div>
-                </section>
+                <AxisOptionsEdit
+                    localeService={localeService}
+                    axisOptions={xAxisOptions}
+                    valueAxis={axisMap?.[IRuntimeAxisPosition.Bottom]?.type === AxisValueType.Numeric}
+                    onChange={setXAxisOptions}
+                />
             ),
         },
         {
-            label: '横轴',
+            label: t('chart.axes.verticalAxis'),
             children: (
-                <section>
-                    <div>
-                        <h5>Axis Options</h5>
-                        <div>
-                            <div className={styles.styleTabPanelRow}>
-                                <Checkbox className={styles.styleTabPanelRowHalf} checked={xAxisOptions?.labelVisible ?? defaultChartStyle.axis.labelVisible} onChange={(checked) => setXAxisOptions({ labelVisible: Boolean(checked) })}>Show Labels</Checkbox>
-                                <Checkbox className={styles.styleTabPanelRowHalf} checked={xAxisOptions?.reverse ?? defaultChartStyle.axis.reverse} onChange={(checked) => setXAxisOptions({ reverse: Boolean(checked) })}>Reverse axis order</Checkbox>
-                            </div>
-                            <Checkbox className="chart-edit-panel-top-gap" checked={xAxisOptions?.lineVisible ?? defaultChartStyle.axis.lineVisible} onChange={(checked) => setXAxisOptions({ lineVisible: Boolean(checked) })}>Show axis line</Checkbox>
-                        </div>
-                        <FontFormatBar
-                            className="chart-edit-panel-top-gap"
-                            {...xAxisOptions?.label}
-                            fontSize={xAxisOptions?.label?.fontSize ?? defaultChartStyle.textStyle.fontSize}
-                            color={xAxisOptions?.label?.color ?? defaultChartStyle.textStyle.color}
-                            onChange={(name, value) => setXAxisOptions({ label: { [name]: value } })}
-                        />
-                    </div>
-                </section>
+                <AxisOptionsEdit
+                    localeService={localeService}
+                    axisOptions={yAxisOptions}
+                    valueAxis={axisMap?.[IRuntimeAxisPosition.Left]?.type === AxisValueType.Numeric}
+                    onChange={setYAxisOptions}
+                />
+            ),
+        },
+        dualVerticalAxes && {
+            label: t('chart.axes.rightVerticalAxis'),
+            children: (
+                <AxisOptionsEdit
+                    localeService={localeService}
+                    axisOptions={rightYAxisOptions}
+                    onChange={setRightYAxisOptions}
+                    valueAxis
+                />
             ),
         },
         {
-            label: '竖轴',
+            label: t('chart.gridlinesAndTicks'),
             children: (
                 <section>
-                    <div>
-                        <h5>Axis Options</h5>
-                        <div className={clsx(styles.styleTabPanelRow, '')}>
-                            <Checkbox className={styles.styleTabPanelRowHalf} checked={yAxisOptions?.labelVisible ?? defaultChartStyle.axis.labelVisible} onChange={(checked) => setYAxisOptions({ labelVisible: Boolean(checked) })}>Show Labels</Checkbox>
-                            <Checkbox className={styles.styleTabPanelRowHalf} checked={yAxisOptions?.lineVisible ?? defaultChartStyle.axis.lineVisible} onChange={(checked) => setYAxisOptions({ lineVisible: Boolean(checked) })}>Show axis line</Checkbox>
-                        </div>
-                        <FontFormatBar
-                            className="chart-edit-panel-top-gap"
-                            {...yAxisOptions?.label}
-                            fontSize={yAxisOptions?.label?.fontSize ?? defaultChartStyle.textStyle.titleFontSize}
-                            color={yAxisOptions?.label?.color ?? defaultChartStyle.textStyle.color}
-                            onChange={(name, value) => setYAxisOptions({ label: { [name]: value } })}
-                        />
-                        <div className={clsx(styles.styleTabPanelRow, '')}>
-                            <div className={styles.styleTabPanelRowHalf}>
-                                <div>Min</div>
-                                <InputNumber
-                                    controls={false}
-                                    value={yAxisMin}
-                                    onChange={(v) => setYAxisMin(v ?? undefined)}
-                                    onBlur={() => setYAxisOptions({ min: yAxisMin })}
-                                    onPressEnter={() => setYAxisOptions({ min: yAxisMin })}
-                                >
-                                </InputNumber>
-                            </div>
-                            <div className={styles.styleTabPanelRowHalf}>
-                                <div>Max</div>
-                                <InputNumber
-                                    controls={false}
-                                    value={yAxisMax}
-                                    onChange={(v) => setYAxisMax(v ?? undefined)}
-                                    onBlur={() => setYAxisOptions({ max: yAxisMax })}
-                                    onPressEnter={() => setYAxisOptions({ max: yAxisMax })}
-                                >
-                                </InputNumber>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            ),
-        },
-        {
-            label: '网格与刻度标记',
-            children: (
-                <section>
-                    <div className="chart-edit-panel-top-gap">
-                        <h5>Select one</h5>
-                        <Select className="chart-edit-panel-select" options={axisListOptions} value={currentAxisId} onChange={setCurrentAxisId}></Select>
-                    </div>
+
                     <GridLineAndTickOptions
+                        service={sheetsChartUIService}
+                        localeService={localeService}
                         className="chart-edit-panel-top-gap"
-                        onChange={(name, value) => setGridLineStyle({ [name === 'gridLine' ? 'visible' : name]: value })}
-                        color={gridLineStyle?.color}
-                        gridLine={gridLineStyle?.visible ?? defaultChartStyle.axis.gridLineVisible}
-                        width={gridLineStyle?.width}
+                        runtimeAxes={runtimeAxes}
+                        // onChange={(name, value) => setGridLineStyle({ [name === 'gridLine' ? 'visible' : name]: value })}
+
                     />
                 </section>
             ),
@@ -318,7 +252,6 @@ export const StyleTabPanel = () => {
                 accordion
                 items={collapseItems}
             >
-
             </Collapse>
         </div>
     );

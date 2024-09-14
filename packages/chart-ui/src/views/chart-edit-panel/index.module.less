@@ -59,8 +59,12 @@
     :global(.chart-edit-panel-row-wrap) {
         flex-wrap: wrap;
     }
+    :global(.chart-edit-panel-text-right) {
+        text-align: right;
+    }
 
     :global(.chart-edit-panel-row-half) {
-        flex-basis: 50%;
+        width: calc(50% - 6px);
+        box-sizing: border-box;
     }
 }

@@ -25,7 +25,7 @@ export interface IChartSnapshot {
     chartType: ChartTypeBits;
     orient?: DataOrientation;
     context?: Pick<IChartContext, 'categoryIndex' | 'seriesIndexes' | 'transform'>;
-    style?: Omit<ChartStyle, 'runtime'>;
+    style?: ChartStyle;
     dataAggregation?: IChartDataAggregation;
 }
 

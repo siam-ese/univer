@@ -28,6 +28,7 @@ import { ChartRenderService } from './chart-render.service';
 
 export const SHEET_CHART_PLUGIN = 'SHEET_CHART_PLUGIN';
 
+const DEBOUNCE_TIME = 100;
 @OnLifecycle(LifecycleStages.Rendered, ChartModelService)
 export class ChartModelService extends Disposable {
     private readonly _activeChartModel$ = new BehaviorSubject<Nullable<ChartModel>>(null);
@@ -74,7 +75,7 @@ export class ChartModelService extends Disposable {
         this.disposeWithMe(
             chartModel.config$.pipe(
                 combineLatestWith(chartModel.style$),
-                debounceTime(150)
+                debounceTime(DEBOUNCE_TIME)
             ).subscribe(([config, style]) => {
                 if (!config) {
                     return;
@@ -92,6 +93,8 @@ export class ChartModelService extends Disposable {
                     }
                 });
 
+                style.runtime = chartModel.getRuntimeContext();
+
                 if (latestConfig !== config) {
                     latestConfig = config;
                     this._chartRenderService.render(chartModel.id, config, style);
@@ -103,7 +106,7 @@ export class ChartModelService extends Disposable {
 
         this.disposeWithMe(
             dataSource.rebuild$.pipe(
-                debounceTime(100)
+                debounceTime(DEBOUNCE_TIME)
             ).subscribe(() => {
                 const operators = [
                     findHeaderOperator,

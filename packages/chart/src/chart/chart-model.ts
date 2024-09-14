@@ -18,9 +18,12 @@ import { Disposable, generateRandomId, Tools } from '@univerjs/core';
 import type { Observable, Subscription } from 'rxjs';
 import { BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, filter, map } from 'rxjs';
 import { aggregateOperator, buildChartData, topNOperator } from './chart-data-operators';
-import { ChartTypeBits } from './constants';
+import { chartBitsUtils, ChartTypeBits } from './constants';
 import { pieDataContextTransformer } from './data-context-transformers/pie-data-context-transformer';
 import type { ChartStyle } from './style.types';
+// import { AxisValueType, IRuntimeAxisPosition } from './style.types';
+import type { IChartRuntimeContext, IRuntimeAxis } from './runtime-context.types';
+import { AxisValueType, IRuntimeAxisPosition, IRuntimeAxisPriority } from './runtime-context.types';
 import type { IChartConfig, IChartContext, IChartDataAggregation, IChartDataSource, IChartSnapshot } from './types';
 
 export interface IChartModelInit {
@@ -31,7 +34,31 @@ export interface IChartModelInit {
     style?: ChartStyle;
 }
 
-const DEBOUNCE_TIME = 100;
+const DEBOUNCE_TIME = 0;
+
+function getVerticalAxisVisible(seriesIds: number[], style: ChartStyle) {
+    const allSeriesRightYAxis = style.allSeriesStyle?.rightYAxis === true;
+    const axesVisible = {
+        left: !allSeriesRightYAxis,
+        right: allSeriesRightYAxis,
+    };
+
+    const { seriesStyleMap } = style;
+    if (!seriesStyleMap || Object.keys(seriesStyleMap).length <= 0) {
+        return axesVisible;
+    }
+
+    seriesIds.forEach((seriesId) => {
+        const seriesStyle = seriesStyleMap?.[seriesId];
+        if (allSeriesRightYAxis) {
+            axesVisible.left = seriesStyle?.rightYAxis !== true;
+        } else {
+            axesVisible.right = seriesStyle?.rightYAxis === true;
+        }
+    });
+
+    return axesVisible;
+}
 
 export class ChartModel extends Disposable {
     private _dataSource: IChartDataSource;
@@ -60,6 +87,7 @@ export class ChartModel extends Disposable {
     /** chart style config */
     private _style$ = new BehaviorSubject<ChartStyle>({});
     readonly style$ = this._style$.asObservable();
+
     get style() { return this._style$.getValue (); }
 
     private _configSubscription: Subscription;
@@ -141,12 +169,58 @@ export class ChartModel extends Disposable {
                 const chartData = buildChartData(dataSource, context);
                 this._config$.next({
                     type: chartType,
+                    headers: context.headers,
                     category: chartData.category,
                     series: chartData.series,
                 });
             });
 
         this.disposeWithMe(this._configSubscription);
+    }
+
+    getRuntimeContext(): IChartRuntimeContext {
+        const getAxes = () => {
+            const { style, context } = this;
+            const horizontalChart = chartBitsUtils.baseOn(this.chartType, ChartTypeBits.Bar);
+            const verticalAxesVisible = horizontalChart
+                ? { left: true, right: false }
+                : getVerticalAxisVisible(context.seriesIndexes || [], style);
+            const hasCategory = context.categoryIndex !== undefined;
+            const axes: IRuntimeAxis[] = [
+                verticalAxesVisible.left && {
+                    position: IRuntimeAxisPosition.Left as const,
+                    type: horizontalChart ? AxisValueType.Text : AxisValueType.Numeric,
+                    priority: horizontalChart ? IRuntimeAxisPriority.Primary : IRuntimeAxisPriority.Secondary,
+                },
+                {
+                    position: IRuntimeAxisPosition.Bottom as const,
+                    type: horizontalChart ? AxisValueType.Numeric : AxisValueType.Text,
+                    priority: horizontalChart ? IRuntimeAxisPriority.Secondary : IRuntimeAxisPriority.Primary,
+                },
+                verticalAxesVisible.right && {
+                    position: IRuntimeAxisPosition.Right as const,
+                    type: AxisValueType.Numeric,
+                    priority: verticalAxesVisible.left ? IRuntimeAxisPriority.Tertiary : IRuntimeAxisPriority.Secondary,
+                },
+            ].filter((axis) => {
+                if (!axis) {
+                    return false;
+                }
+                // Filter text type axis if no category
+                if (!hasCategory && axis.type === AxisValueType.Text) {
+                    return false;
+                }
+
+                return true;
+            }) as IRuntimeAxis[];
+
+            return axes;
+        };
+
+        return {
+            axes: getAxes(),
+            themeColors: [],
+        };
     }
 
     applyStyle(newStyle: ChartStyle) {
@@ -178,8 +252,6 @@ export class ChartModel extends Disposable {
     serialize() {
         const { context, style, dataAggregation } = this;
         const copyStyle = { ...style };
-
-        delete copyStyle.runtime;
 
         const chartSnapshot: IChartSnapshot = {
             id: this.id,

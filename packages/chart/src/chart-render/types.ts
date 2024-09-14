@@ -18,16 +18,10 @@ import type { IChartConfig } from '../chart/types';
 import type { ChartStyle } from '../chart/style.types';
 import type { IChartInstance } from './chart-instance';
 
-type SpecWithLabelMap<T> = T & {
-    __extra__?: {
-        categoryNameMap?: Record<string, string>;
-        seriesNameMap?: Record<number, string>;
-    };
-};
-export interface IChartRenderSpecConverter<ChartRenderSpec = unknown> {
+export interface IChartRenderSpecConverter<ChartRenderSpec = Record<string, any>> {
     canConvert: (config: IChartConfig) => boolean;
-    convert: (config: IChartConfig, style: ChartStyle) => SpecWithLabelMap<ChartRenderSpec>;
+    convert: (config: IChartConfig, style: ChartStyle) => ChartRenderSpec;
 }
 export type ChartConfigInterceptor = (config: IChartConfig) => IChartConfig;
-export type RenderSpecOperator<ChartRenderSpec = unknown> = (spec: SpecWithLabelMap<ChartRenderSpec>, style: ChartStyle, config: IChartConfig, instance: IChartInstance) => void;
+export type RenderSpecOperator<ChartRenderSpec> = (spec: ChartRenderSpec, style: ChartStyle, config: IChartConfig, instance: IChartInstance) => void;
 

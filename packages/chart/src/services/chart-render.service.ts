@@ -19,7 +19,7 @@ import type { IChartRenderModel } from '../chart-render/chart-render-model';
 import type { IChartInstance } from '../chart-render/chart-instance';
 import type { ChartStyle } from '../chart/style.types';
 import type { IChartConfig } from '../chart/types';
-import { VChartRenderModel } from '../chart-render/vchart-render-model';
+import { EChartRenderModel } from '../chart-render/echart-render-model';
 import { IChartHostProvider } from './chart-host-provider';
 
 export class ChartRenderService extends Disposable {
@@ -33,7 +33,7 @@ export class ChartRenderService extends Disposable {
     ) {
         super();
 
-        this.registerRenderModel('VChart', new VChartRenderModel());
+        this.registerRenderModel('VChart', new EChartRenderModel());
     }
 
     registerRenderModel(name: string, renderModel: IChartRenderModel) {
@@ -62,7 +62,7 @@ export class ChartRenderService extends Disposable {
         return chartInstance;
     }
 
-    render(id: string, config: IChartConfig, style: ChartStyle) {
+    async render(id: string, config: IChartConfig, style: ChartStyle) {
         const { _currentModel, _chartConfigMap } = this;
         if (!_currentModel) {
             return;
