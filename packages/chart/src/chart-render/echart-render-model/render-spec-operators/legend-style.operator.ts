@@ -21,9 +21,9 @@ export const legendStyleOperator: EChartRenderSpecOperator = (spec, style, confi
         show: true,
         bottom: 20,
         selectedMode: true,
-        data: config.series.map((item) => ({
-            name: item.name,
-            icon: 'roundRect',
-        })),
+        icon: 'roundRect',
+        itemWidth: 25 / 10 * 8.5,
+        itemHeight: 14 / 10 * 8.5,
+        data: config.series.map((item) => item.name),
     };
 };
