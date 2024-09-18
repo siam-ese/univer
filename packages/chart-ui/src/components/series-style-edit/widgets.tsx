@@ -16,7 +16,7 @@
 
 import React from 'react';
 
-import type { ChartBorderDashType, DeepPartial, ISeriesStyle, LinePointShape } from '@univerjs/chart';
+import type { ChartBorderDashType, DeepPartial, IPointStyle, ISeriesStyle, LinePointShape } from '@univerjs/chart';
 import { ChartCartesianAxisPosition, defaultChartStyle } from '@univerjs/chart';
 import { Select } from '@univerjs/design';
 
@@ -91,29 +91,51 @@ export const BorderOptions = (props: IBorderOptionsProps) => {
     );
 };
 
-export interface ILinePointOptionsProps extends IWidgetProps {
+type PointStyleKeys = keyof IPointStyle;
+export interface ILinePointOptionsProps extends Omit<IWidgetProps, 'onSeriesStyleChange'> {
     pointStyle: ISeriesStyle['point'];
+    controls: Array<PointStyleKeys>;
+    onChange?: <K extends PointStyleKeys = PointStyleKeys>(key: K, value: IPointStyle[K]) => void;
 }
 
 export const LinePointOptions = (props: ILinePointOptionsProps) => {
-    const { localeService, pointStyle, onSeriesStyleChange } = props;
+    const { localeService, pointStyle, controls, onChange } = props;
     const innerLinePointShapeOptions = useTranslatedOptions(localeService, linePointShapeOptions);
     const innerLinePointSizeOptions = useTranslatedOptions(localeService, linePointSizeOptions);
     const { t } = localeService;
     return (
         <>
-            <div className="chart-edit-panel-row-half">
-                <div className="chart-edit-panel-label chart-edit-panel-top-gap">{t('chart.withShape', t('chart.point'))}</div>
-                <Select value={String(pointStyle.shape)} options={innerLinePointShapeOptions} onChange={(v) => onSeriesStyleChange?.({ point: { shape: v as LinePointShape } })}></Select>
-            </div>
-            <div className="chart-edit-panel-row-half">
-                <div className="chart-edit-panel-label chart-edit-panel-top-gap">{t('chart.withSize', t('chart.dataPoint'))}</div>
-                <Select value={String(pointStyle.size)} options={innerLinePointSizeOptions} onChange={(v) => onSeriesStyleChange?.({ point: { size: Number(v) } })}></Select>
-            </div>
-            {/* <div className="chart-edit-panel-row-half">
-                <div className="chart-edit-panel-label chart-edit-panel-top-gap">{t('chart.withColor', t('chart.dataPoint'))}</div>
-                <ColorPickerControl color={pointStyle.color} onChange={(color) => onSeriesStyleChange?.({ point: { color } })}></ColorPickerControl>
-            </div> */}
+            {controls.map((control) => {
+                switch (control) {
+                    case 'shape': {
+                        return (
+                            <div key={control} className="chart-edit-panel-row-half">
+                                <div className="chart-edit-panel-label chart-edit-panel-top-gap">{t('chart.withShape', t('chart.point'))}</div>
+                                <Select value={String(pointStyle.shape)} options={innerLinePointShapeOptions} onChange={(v) => onChange?.('shape', v as LinePointShape)}></Select>
+                            </div>
+                        );
+                    }
+                    case 'size': {
+                        return (
+                            <div key={control} className="chart-edit-panel-row-half">
+                                <div className="chart-edit-panel-label chart-edit-panel-top-gap">{t('chart.withSize', t('chart.dataPoint'))}</div>
+                                <Select value={String(pointStyle.size)} options={innerLinePointSizeOptions} onChange={(v) => onChange?.('size', Number(v))}></Select>
+                            </div>
+                        );
+                    }
+
+                    case 'color': {
+                        return (
+                            <div key={control} className="chart-edit-panel-row-half">
+                                <div className="chart-edit-panel-label chart-edit-panel-top-gap">{t('chart.withColor', t('chart.dataPoint'))}</div>
+                                <ColorPickerControl color={pointStyle.color} onChange={(color) => onChange?.('color', color)}></ColorPickerControl>
+                            </div>
+                        );
+                    }
+                }
+
+                return null;
+            })}
         </>
     );
 };

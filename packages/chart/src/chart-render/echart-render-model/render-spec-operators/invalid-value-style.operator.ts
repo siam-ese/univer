@@ -14,23 +14,39 @@
  * limitations under the License.
  */
 
-import type { EChartRenderSpecOperator } from '../echart-render-engine';
 import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
+import { InvalidValueType } from '../../../chart/style.types';
+import type { EChartRenderSpecOperator } from '../echart-render-engine';
+import { seriesForEach } from './tools';
 
-export const invalidValueStyleOperator: EChartRenderSpecOperator = (_spec, style, config, instance) => {
-    // if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Pie)) {
-    //     hoverMarkStylizers.pie(_spec as IPieChartSpec);
-    // }
+export const invalidValueStyleOperator: EChartRenderSpecOperator = (spec, style, config, instance) => {
+    const invalidValueType = style.invalidValueType ?? defaultChartStyle.invalidValueType;
+    seriesForEach(spec.series, (series) => {
+        const isLine = series.type === 'line';
+        if (!isLine) {
+            return;
+        }
+        if (!series.rawData) {
+            series.rawData = (series.data as number[])?.slice();
+        }
 
-    // if (chartBitsUtils.baseOn(config.type, ChartTypeBits.Column)) {
-    //     hoverMarkStylizers.bar(_spec as IBarChartSpec);
-    // }
-    const invalidValueType = style.invalidValueType;
-    _spec.series?.forEach((series) => {
-        switch (series.type) {
-            case 'area':
-            case 'line': {
-                series.invalidType = invalidValueType ?? defaultChartStyle.invalidValueType;
+        switch (invalidValueType) {
+            case InvalidValueType.Zero: {
+                series.data = series.rawData.map((value) => {
+                    if (value === null || value === undefined) {
+                        return 0;
+                    }
+                    return value;
+                });
+                break;
+            }
+            case InvalidValueType.Link: {
+                series.data = series.rawData.slice();
+                series.connectNulls = true;
+                break;
+            }
+            case InvalidValueType.Break: {
+                series.data = series.rawData.slice();
                 break;
             }
         }

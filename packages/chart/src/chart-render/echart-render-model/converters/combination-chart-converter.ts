@@ -22,12 +22,12 @@ import type { EChartSeriesItem, EChartSpec, OptionalDataValue } from '../echart-
 
 const { combination } = defaultChartStyle;
 
-interface IDataItem {
-    seriesId: string;
-    id: string;
-    chartType: string;
-    values: Array<Record<string, any>>;
-}
+// interface IDataItem {
+//     seriesId: string;
+//     id: string;
+//     chartType: string;
+//     values: Array<Record<string, any>>;
+// }
 
 // function createValueAxis(position: IRuntimeAxisPosition): ICartesianLinearAxisSpec {
 //     return {

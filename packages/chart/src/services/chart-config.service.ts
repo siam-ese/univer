@@ -15,7 +15,7 @@
  */
 
 import type { Nullable } from '@univerjs/core';
-import { Disposable, ICommandService, Inject, LifecycleStages, LocaleService, OnLifecycle } from '@univerjs/core';
+import { Disposable, ICommandService, Inject, Injector, LifecycleStages, LocaleService, OnLifecycle } from '@univerjs/core';
 import { BehaviorSubject, combineLatestWith, debounceTime } from 'rxjs';
 import { findCategoryOperator, findHeaderOperator, findSeriesOperator } from '../chart/chart-data-operators';
 import type { IChartModelInit } from '../chart/chart-model';
@@ -39,6 +39,7 @@ export class ChartModelService extends Disposable {
     private _converters = new Set<IChartConfigConverter>();
 
     constructor(
+        @Inject(Injector) private _injector: Injector,
         @Inject(ChartRenderService) private _chartRenderService: ChartRenderService,
         @IChartHostProvider private _chartHostProvider: IChartHostProvider,
         @Inject(LocaleService) private _localeService: LocaleService,
@@ -63,7 +64,7 @@ export class ChartModelService extends Disposable {
 
     createChartModel(id: string, options: IChartModelInit) {
         const { dataSource } = options;
-        const chartModel = new ChartModel(id, options);
+        const chartModel = new ChartModel(id, options, this._injector);
 
         this._models.set(chartModel.id, chartModel);
 

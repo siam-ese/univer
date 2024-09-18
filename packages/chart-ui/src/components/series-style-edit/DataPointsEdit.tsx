@@ -17,18 +17,38 @@
 import React from 'react';
 
 import type { DeepPartial, ISeriesStyle } from '@univerjs/chart';
+import { ChartTypeBits, defaultChartStyle } from '@univerjs/chart';
 
+import { Button, Select } from '@univerjs/design';
+import type { LocaleService, Nullable } from '@univerjs/core';
+import { DeleteSingle } from '@univerjs/icons';
 import { ColorPickerControl } from '../color-picker-control';
+import type { IChartOptionType } from '../../services/sheets-chart-ui.service';
+import { LinePointOptions } from './widgets';
 
 export interface IDataPointsEditProps {
-    dataPoints: DeepPartial<ISeriesStyle['dataPoints']>;
-    onChange?: (key: string, dataPoints: DeepPartial<ISeriesStyle['dataPoints']>) => void;
+    chartType: Nullable<ChartTypeBits>;
+    data: DeepPartial<ISeriesStyle['dataPoints']>;
+    options: IChartOptionType[];
+    localeService: LocaleService;
+    onChange?: (style: DeepPartial<ISeriesStyle['dataPoints']>) => void;
 }
 
+const fallbackPointStyle = {
+    shape: defaultChartStyle.point.shape,
+    size: defaultChartStyle.point.size,
+    color: 'transparent',
+};
+
+const linePointControls = ['shape' as const, 'size' as const];
+
 export const DataPointsEdit = (props: IDataPointsEditProps) => {
-    const { dataPoints, onChange } = props;
-    const dataPointList = Object.keys(dataPoints).map((key) => {
-        const dataPoint = dataPoints[Number(key)];
+    const { chartType, data, options, localeService, onChange } = props;
+    const { t } = localeService;
+    const isLine = chartType === ChartTypeBits.Line;
+
+    const dataPointList = Object.keys(data).map((key) => {
+        const dataPoint = data[Number(key)];
 
         return {
             key,
@@ -40,17 +60,62 @@ export const DataPointsEdit = (props: IDataPointsEditProps) => {
         <div>
             {dataPointList.map((dataPoint) => {
                 const { style } = dataPoint;
+                if (style === undefined) {
+                    return null;
+                }
                 return (
                     <div key={dataPoint.key}>
                         <div className="chart-edit-panel-row">
                             <div className="chart-edit-panel-row-half">
-                                <div className="chart-edit-panel-label">Data point</div>
-
+                                <div className="chart-edit-panel-label">{t('chart.dataPoint')}</div>
+                                <Select
+                                    value={dataPoint.key}
+                                    onChange={(dataPointIndex: string) => {
+                                        onChange?.({
+                                            [dataPoint.key]: undefined,
+                                            [Number(dataPointIndex)]: dataPoint.style,
+                                        });
+                                    }}
+                                    options={options}
+                                >
+                                </Select>
                             </div>
                             <div className="chart-edit-panel-row-half">
-                                <div className="chart-edit-panel-labe">Color</div>
-                                <ColorPickerControl color={style?.color ?? ''} />
+                                <div className="chart-edit-panel-labe">{t('chart.color')}</div>
+                                <ColorPickerControl
+                                    color={style?.color ?? ''}
+                                    onChange={(color) => {
+                                        onChange?.({
+                                            [dataPoint.key]: {
+                                                color,
+                                            },
+                                        });
+                                    }}
+                                />
                             </div>
+                            <Button
+                                type="text"
+                                size="small"
+                                onClick={() => onChange?.({
+                                    [dataPoint.key]: undefined,
+                                })}
+                            >
+                                <DeleteSingle />
+                            </Button>
+                        </div>
+                        <div className="chart-edit-panel-row">
+                            {isLine && (
+                                <LinePointOptions
+                                    pointStyle={{ ...fallbackPointStyle, ...dataPoint.style }}
+                                    controls={linePointControls}
+                                    localeService={localeService}
+                                    onChange={(k, v) => onChange?.({
+                                        [dataPoint.key]: {
+                                            [k]: v,
+                                        },
+                                    })}
+                                />
+                            )}
                         </div>
                     </div>
                 );

@@ -14,13 +14,25 @@
  * limitations under the License.
  */
 
-import type { ICommonChartSpec } from '@visactor/vchart';
-import { ChartTypeBits } from '../../../chart/constants';
-import type { EChartRenderSpecOperator } from '../echart-render-engine';
+import { Disposable } from '@univerjs/core';
 
-export const combinationStyleOperator: EChartRenderSpecOperator = (_spec, style, config, instance) => {
-    if (config.type !== ChartTypeBits.Combination) return _spec;
-    const spec = _spec as ICommonChartSpec;
+export interface IChartTheme {
+    colors: string[];
+}
 
-    return spec;
-};
+export class ChartThemeService extends Disposable {
+    private _themeMap = new Map<string, IChartTheme>();
+
+    registerTheme(name: string, theme: IChartTheme) {
+        this._themeMap.set(name, theme);
+    }
+
+    getTheme(name: string) {
+        return this._themeMap.get(name);
+    }
+
+    override dispose() {
+        super.dispose();
+        this._themeMap.clear();
+    }
+}

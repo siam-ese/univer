@@ -17,35 +17,13 @@
 import type { EChartRenderSpecOperator } from '../echart-render-engine';
 
 export const legendStyleOperator: EChartRenderSpecOperator = (spec, style, config, instance) => {
-    // const legendStyle = style.legend;
     spec.legend = {
         show: true,
         bottom: 20,
         selectedMode: true,
-        data: config.series.map((item) => item.name),
+        data: config.series.map((item) => ({
+            name: item.name,
+            icon: 'roundRect',
+        })),
     };
-    // if (!Array.isArray(spec.legends)) {
-    //     spec.legends = [];
-    // }
-
-    // let discreteLegendIndex = spec.legends.findIndex((legend) => legend.type === 'discrete');
-    // if (discreteLegendIndex === -1) {
-    //     spec.legends.unshift({
-    //         type: 'discrete',
-    //         visible: legendStyle?.position !== LegendPosition.Hide,
-    //         orient: legendStyle?.position as any,
-    //     });
-    //     discreteLegendIndex = 0;
-    // } else {
-    //     Tools.set(spec.legends, `${discreteLegendIndex}.visible`, legendStyle?.position !== LegendPosition.Hide);
-    //     Tools.set(spec.legends, `${discreteLegendIndex}.orient`, legendStyle?.position);
-    // }
-
-    // applyLabelStyle(spec.legends[discreteLegendIndex] as any, 'item.label.style', {
-    //     fontSize: defaultChartStyle.textStyle.fontSize,
-    //     color: defaultChartStyle.textStyle.color,
-    //     ...legendStyle?.label,
-    // });
-
-    return spec;
 };

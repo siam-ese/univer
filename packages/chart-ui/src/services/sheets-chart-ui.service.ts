@@ -15,7 +15,7 @@
  */
 
 import type { IRange, Nullable } from '@univerjs/core';
-import { Disposable, ICommandService, Inject, LifecycleStages, OnLifecycle, Tools } from '@univerjs/core';
+import { Disposable, ICommandService, Inject, LifecycleStages, LocaleService, OnLifecycle, Tools } from '@univerjs/core';
 import type { AreaLineStyle, ChartModel, ChartStyle, DataOrientation, DeepPartial, IAllSeriesStyle, IAxisOptions, IChartContext, IChartStyle, IChartUpdateConfigMutationParams, ILegendStyle, InvalidValueType, IPieLabelStyle, IRuntimeAxis, RadarShape, RightYAxisOptions } from '@univerjs/chart';
 import { CategoryType, ChartAttributeBits, chartBitsUtils, ChartModelService, ChartTypeBits, ChartUpdateConfigMutation, SheetsChartService, StackType } from '@univerjs/chart';
 import { combineLatestWith, distinctUntilChanged, map, type Observable } from 'rxjs';
@@ -253,7 +253,7 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             service.executeChartUpdateConfig({
                 chartModelId: chartModel.id,
                 style: {
-                    gradientFill: v,
+                    gradientFill: v as boolean | undefined,
                 },
             });
         },
@@ -398,64 +398,6 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             );
         },
     }));
-    // service.registerViewState('titleStyle', (chartModel) => ({
-    //     set(style) {
-    //         service.executeChartUpdateConfig({
-    //             chartModelId: chartModel.id,
-    //             style: {
-    //                 title: style,
-    //             },
-    //         });
-    //     },
-    //     get() {
-    //         return chartModel.style$.pipe(
-    //             map((style) => style.title),
-    //             distinctUntilChanged()
-    //         );
-    //     },
-    // }));
-    // service.registerViewState('subtitleStyle', (chartModel) => ({
-    //     set(style) {
-    //         service.executeChartUpdateConfig({
-    //             chartModelId: chartModel.id,
-    //             style: {
-    //                 subtitle: style,
-    //             },
-    //         });
-    //     },
-    //     get() {
-    //         return chartModel.style$.pipe(
-    //             map((style) => style.subtitle),
-    //             distinctUntilChanged()
-    //         );
-    //     },
-    // }));
-    // service.registerViewState('xAxisTitleStyle', (chartModel) => ({
-    //     set(style) {
-    //         service.executeChartUpdateConfig({
-    //             chartModelId: chartModel.id,
-    //             style: {
-    //                 xAxisTitle: style,
-    //             },
-    //         });
-    //     },
-    //     get() {
-    //         return chartModel.style$.pipe(map((style) => style.xAxisTitle));
-    //     },
-    // }));
-    // service.registerViewState('yAxisTitleStyle', (chartModel) => ({
-    //     set(style) {
-    //         service.executeChartUpdateConfig({
-    //             chartModelId: chartModel.id,
-    //             style: {
-    //                 yAxisTitle: style,
-    //             },
-    //         });
-    //     },
-    //     get() {
-    //         return chartModel.style$.pipe(map((style) => style.yAxisTitle));
-    //     },
-    // }));
 
     service.registerViewState('allSeriesStyle', (chartModel) => ({
         set(style) {
@@ -641,15 +583,19 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             return chartModel.style$.pipe(map((style) => style.invalidValueType), distinctUntilChanged());
         },
     }));
-    // service.registerViewState('hasRightYAxis', (chartModel) => {
-    //     return chartModel.style$.pipe(
-    //         map(() => {
-    //             const runtimeAxes = chartModel.getRuntimeContext().axes;
+    service.registerViewState('dataPointsOptions', (chartModel) => {
+        return chartModel.config$.pipe(map((config) => {
+            const categoryValues = config?.category?.items;
+            return config?.series[0].items.map((item, index) => {
+                const label = categoryValues ? categoryValues[index].label : service.t('chart.theIndexItem', `${index + 1}`);
 
-    //             return runtimeAxes.some((axis) => axis.position === IRuntimeAxisPosition.Right);
-    //         })
-    //     );
-    // });
+                return {
+                    label,
+                    value: `${index}`,
+                };
+            });
+        }));
+    });
 };
 
 export interface IChartOptionType {
@@ -659,7 +605,6 @@ export interface IChartOptionType {
 
 export interface IChartConfigStateMap {
     headers: IChartConfigState<IChartContext['headers']>;
-    // defaultDirection: IChartConfigState<Nullable<DataOrientation>>;
     orient: IChartConfigState<Nullable<DataOrientation>>;
     aggregate: IChartConfigState<boolean>;
     gradientFill: IChartConfigState<Nullable<boolean>>;
@@ -680,11 +625,6 @@ export interface IChartConfigStateMap {
     fontSize: IChartConfigState<number | undefined, number>;
     titleFontSize: IChartConfigState<number | undefined, number>;
     titles: IChartConfigState<Nullable<DeepPartial<IChartStyle['titles']>>, DeepPartial<IChartStyle['titles']>>;
-    // hasRightYAxis: IChartConfigState<boolean>;
-    // titleStyle: IChartConfigState<Nullable<DeepPartial<ILabelStyle>>, DeepPartial<ILabelStyle>>;
-    // subtitleStyle: IChartConfigState<Nullable<DeepPartial<ILabelStyle>>, DeepPartial<ILabelStyle>>;
-    // xAxisTitleStyle: IChartConfigState<Nullable<DeepPartial<ILabelStyle>>, DeepPartial<ILabelStyle>>;
-    // yAxisTitleStyle: IChartConfigState< Nullable<DeepPartial<ILabelStyle>>, DeepPartial<ILabelStyle>>;
     allSeriesStyle: IChartConfigState< Nullable<DeepPartial<IAllSeriesStyle>>, IAllSeriesStyle>;
     seriesStyleMap: IChartConfigState<ChartStyle['seriesStyleMap']>;
     legendStyle: IChartConfigState<Nullable<DeepPartial<ILegendStyle>>, Partial<ILegendStyle>>;
@@ -701,6 +641,7 @@ export interface IChartConfigStateMap {
     radarShape: IChartConfigState<Nullable<RadarShape>, RadarShape>;
     radarFill: IChartConfigState<Nullable<boolean>, boolean>;
     invalidValueType: IChartConfigState<Nullable<InvalidValueType>, InvalidValueType>;
+    dataPointsOptions: IChartConfigState<Nullable<IChartOptionType[]>>;
 }
 
 export type ChartConfigStateKey = keyof IChartConfigStateMap;
@@ -721,8 +662,8 @@ export class SheetsChartUIService extends Disposable {
     constructor(
         @Inject(ChartModelService) private readonly _chartModelService: ChartModelService,
         @Inject(SheetsChartService) private readonly _sheetsChartService: SheetsChartService,
-        @ICommandService private readonly _commandService: ICommandService
-
+        @ICommandService private readonly _commandService: ICommandService,
+        @Inject(LocaleService) private readonly _localeService: LocaleService
     ) {
         super();
         registryChartConfigState(this);
@@ -760,6 +701,10 @@ export class SheetsChartUIService extends Disposable {
         if (_viewState.has(id)) {
             _viewState.delete(id);
         }
+    }
+
+    t(...args: Parameters<LocaleService['t']>) {
+        return this._localeService.t(...args);
     }
 
     override dispose() {

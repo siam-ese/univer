@@ -78,10 +78,6 @@ export interface IPieLabelStyle extends Omit<ILabelStyle, 'align' | 'content' > 
     position: PieLabelPosition;
 }
 
-export interface IDataPointStyle {
-    color: string; // set to color
-};
-
 export enum LinePointShape {
     Circle = 'circle',
     Square = 'square',
@@ -94,6 +90,9 @@ export interface IPointStyle {
     color: string;
 }
 
+export interface IDataPointStyle extends IPointStyle {
+};
+
 export enum ChartBorderDashType {
     Solid = 'solid',
     Dashed = 'dashed',
@@ -104,6 +103,7 @@ export enum ChartCartesianAxisPosition {
     Left = 'left',
     Right = 'right',
 }
+
 export interface ISeriesStyle {
     chartType?: ChartTypeBits.Line | ChartTypeBits.Column | ChartTypeBits.Area;
     rightYAxis?: boolean;

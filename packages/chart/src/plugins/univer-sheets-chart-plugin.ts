@@ -23,6 +23,7 @@ import { SheetsChartController } from '../controllers/sheets-chart.controller';
 import { ChartRenderService } from '../services/chart-render.service';
 import { ChartModelService } from '../services/chart-config.service';
 import { IChartHostProvider } from '../services/chart-host-provider';
+import { ChartThemeService } from '../services/chart-theme.service';
 import { SheetsChartHostProvider } from '../services/sheets-chart-host-provider';
 
 export const SHEETS_CHART_PLUGIN_NAME = 'SHEET_CHART_PLUGIN';
@@ -47,6 +48,7 @@ export class UniverSheetsChartPlugin extends Plugin {
             [ChartRenderService],
             [SheetsChartService],
             [SheetsChartController],
+            [ChartThemeService],
             [IChartHostProvider, { useClass: SheetsChartHostProvider }],
         ] as Dependency[]).forEach((d) => _injector.add(d));
 

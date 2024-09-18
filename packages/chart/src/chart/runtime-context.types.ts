@@ -39,6 +39,6 @@ export interface IRuntimeAxis {
 }
 
 export interface IChartRuntimeContext {
-    themeColors: string[];
+    themeColors?: string[];
     axes: IRuntimeAxis[];
 }

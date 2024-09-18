@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
+import type { Injector } from '@univerjs/core';
 import { Disposable, generateRandomId, Tools } from '@univerjs/core';
 import type { Observable, Subscription } from 'rxjs';
 import { BehaviorSubject, combineLatest, debounceTime, distinctUntilChanged, filter, map } from 'rxjs';
+import { ChartThemeService } from '../services/chart-theme.service';
 import { aggregateOperator, buildChartData, topNOperator } from './chart-data-operators';
 import { chartBitsUtils, ChartTypeBits } from './constants';
 import { pieDataContextTransformer } from './data-context-transformers/pie-data-context-transformer';
@@ -25,6 +27,7 @@ import type { ChartStyle } from './style.types';
 import type { IChartRuntimeContext, IRuntimeAxis } from './runtime-context.types';
 import { AxisValueType, IRuntimeAxisPosition, IRuntimeAxisPriority } from './runtime-context.types';
 import type { IChartConfig, IChartContext, IChartDataAggregation, IChartDataSource, IChartSnapshot } from './types';
+import { themeColors } from './constants/default-chart-style';
 
 export interface IChartModelInit {
     chartType?: ChartTypeBits;
@@ -92,7 +95,7 @@ export class ChartModel extends Disposable {
 
     private _configSubscription: Subscription;
 
-    constructor(public readonly id: string, private _options: IChartModelInit) {
+    constructor(public readonly id: string, private _options: IChartModelInit, private _injector: Injector) {
         super();
 
         const { chartType, dataSource, style, dataAggregation, context } = _options;
@@ -217,9 +220,19 @@ export class ChartModel extends Disposable {
             return axes;
         };
 
+        const getThemeColors = () => {
+            const chartThemeService = this._injector.get(ChartThemeService);
+
+            const themeName = this.style.theme;
+
+            return themeName
+                ? chartThemeService.getTheme(themeName)?.colors
+                : themeColors;
+        };
+
         return {
             axes: getAxes(),
-            themeColors: [],
+            themeColors: getThemeColors(),
         };
     }
 

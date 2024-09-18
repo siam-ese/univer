@@ -16,17 +16,17 @@
 
 export { chartAxesOperator } from './chart-axes.operator';
 export { chartBoxStyleOperator } from './chart-box-style.operator';
-export { dataLabelOperator } from './data-label.operator';
+// export { dataLabelOperator } from './data-label.operator';
 // export { gradientFillOperator } from './gradient-fill.operator';
 export { fontSizeOperator } from './font-size.operator';
 export { legendStyleOperator } from './legend-style.operator';
 export { seriesStyleOperator } from './series-style-operator/series-style-operator';
 export { stackOperator } from './stack.operator';
 export { titleStyleOperator } from './title-style.operator';
-export { lineLikeStyleOperator } from './lin-like-style.operator';
+export { lineLikeStyleOperator } from './line-like-style.operator';
 export { pieStyleOperator } from './pie-style.operator';
-export { combinationStyleOperator } from './combination-style.operator';
-export { toHorizontalOperator } from './to-horizontal.operator';
+// export { combinationStyleOperator } from './combination-style.operator';
+// export { toHorizontalOperator } from './to-horizontal.operator';
 export { hoverMarkStyleOperator } from './hover-mark-style.operator';
 export { invalidValueStyleOperator } from './invalid-value-style.operator';
 export { chartThemeOperator } from './theme.operator';

@@ -274,11 +274,11 @@ export const stackTypeOptions: OptionType[] = [
         value: '',
     },
     {
-        label: 'chart.stackType.stacked',
+        label: 'chart.stackType.stack',
         value: StackType.Stacked,
     },
     {
-        label: 'chart.stackType.percentStacked',
+        label: 'chart.stackType.percent',
         value: StackType.Percent,
     },
 ];

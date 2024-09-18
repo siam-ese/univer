@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ChartTypeBits, DataOrientation, StackType } from '@univerjs/chart';
+import { ChartTypeBits, DataOrientation } from '@univerjs/chart';
 import type { IDataValidationRule, IDocumentData, IWorkbookData } from '@univerjs/core';
 import { DataValidationErrorStyle, DataValidationOperator, DataValidationType, LocaleType } from '@univerjs/core';
 
@@ -24720,7 +24720,7 @@ export const DEFAULT_WORKBOOK_DATA_DEMO: IWorkbookData = {
                     // },
                     {
                         id: 'chart-0018',
-                        chartType: ChartTypeBits.BarStacked,
+                        chartType: ChartTypeBits.Line,
                         orient: DataOrientation.Column,
                         range: {
                             startRow: 13,
@@ -24728,8 +24728,25 @@ export const DEFAULT_WORKBOOK_DATA_DEMO: IWorkbookData = {
                             startColumn: 0,
                             endColumn: 4,
                         },
+                        // style: {
+                        //     stackType: StackType.Stacked,
+                        // },
+
                         style: {
-                            stackType: StackType.Stacked,
+                            seriesStyleMap: {
+                                1: {
+                                    dataPoints: {
+                                        0: {
+                                            shape: 'square',
+                                            size: 5,
+                                        },
+                                        1: {
+                                            color: 'red',
+                                            size: 4,
+                                        },
+                                    },
+                                },
+                            },
                         },
                         context: {
                             categoryIndex: 0,
@@ -24738,7 +24755,7 @@ export const DEFAULT_WORKBOOK_DATA_DEMO: IWorkbookData = {
                     },
                     {
                         id: 'chart-0017',
-                        chartType: ChartTypeBits.BarPercentStacked,
+                        chartType: ChartTypeBits.Line,
                         range: {
                             startRow: 13,
                             endRow: 22,
@@ -24746,8 +24763,24 @@ export const DEFAULT_WORKBOOK_DATA_DEMO: IWorkbookData = {
                             endColumn: 4,
                         },
                         style: {
-                            stackType: StackType.Percent,
+                            seriesStyleMap: {
+                                1: {
+                                    dataPoints: {
+                                        0: {
+                                            shape: 'square',
+                                            size: 5,
+                                        },
+                                        1: {
+                                            color: 'red',
+                                            size: 4,
+                                        },
+                                    },
+                                },
+                            },
                         },
+                        // style: {
+                        //     stackType: StackType.Percent,
+                        // },
                         context: {
                             categoryIndex: 0,
                             seriesIndexes: [2, 3, 4],

@@ -23,7 +23,7 @@ import { Button, Select } from '@univerjs/design';
 import type { LocaleService, Nullable } from '@univerjs/core';
 import { IncreaseSingle } from '@univerjs/icons';
 import { useChartConfigState } from '../../hooks';
-import type { SheetsChartUIService } from '../../services/sheets-chart-ui.service';
+import type { IChartOptionType, SheetsChartUIService } from '../../services/sheets-chart-ui.service';
 import { DataLabelOptions } from '../DataLabelOptions';
 import {
     dataLabelPositionOptions,
@@ -32,6 +32,7 @@ import {
     // lineLabelContentOptions,
 } from '../options';
 import { useTranslatedOptions } from '../use-translated-options';
+import { DropdownMenu } from '../dropdown-menu';
 import { CombinationChartTypeSelect } from './CombinationChartTypeSelect';
 import { useSeriesChartType } from './use-series-chart-type';
 import { AxisControl, BorderOptions, FillOptions, LinePointOptions } from './widgets';
@@ -54,6 +55,8 @@ const allSeriesOptions = [getAllSeriesOption()];
 
 const defaultBorderStyle = defaultChartStyle.borderStyle;
 
+const linePointControls = ['shape' as const, 'size' as const, 'color' as const];
+
 export const SeriesStyleEdit = (props: ISeriesStyleEditProps) => {
     const { chartType, service, localeService } = props;
     const innerDataLabelPositionOptions = useTranslatedOptions(localeService, dataLabelPositionOptions);
@@ -74,6 +77,7 @@ export const SeriesStyleEdit = (props: ISeriesStyleEditProps) => {
             };
         });
     }, [chartType, localeService]);
+
     const [innerAllSeriesOption] = useTranslatedOptions(localeService, allSeriesOptions);
 
     const [currentSeriesId, setCurrentSeriesId] = useState<string>(defaultChartStyle.allSeriesId);
@@ -81,13 +85,13 @@ export const SeriesStyleEdit = (props: ISeriesStyleEditProps) => {
 
     const [allSeriesStyle, setAllSeriesStyle] = useChartConfigState('allSeriesStyle', service);
     const [seriesStyleMap, setSeriesStyleMap] = useChartConfigState('seriesStyleMap', service);
+    const [dataPointsOptions] = useChartConfigState('dataPointsOptions', service);
 
     const currentSeriesStyle = seriesStyleMap?.[currentSeriesId];
 
     const [seriesList] = useChartConfigState('seriesList', service);
 
     const dataPoints = currentSeriesStyle?.dataPoints;
-    // const dataPointsSize = dataPoints ? Object.keys(dataPoints).length : 0;
 
     const seriesOptions = useMemo(() => seriesList ? [innerAllSeriesOption, ...seriesList] : [], [innerAllSeriesOption, seriesList]);
 
@@ -124,9 +128,33 @@ export const SeriesStyleEdit = (props: ISeriesStyleEditProps) => {
         : Object.assign({}, allSeriesStyle?.label, currentSeriesStyle?.label);
 
     const rightYAxis = currentSeriesStyle?.rightYAxis ?? allSeriesStyle?.rightYAxis;
-    // console.log(currentSeriesStyle?.rightYAxis, currentSeriesStyle, 'currentSeriesStyle?.rightYAxis');
+
     const onlyAxisControl = seriesChartType === ChartTypeBits.None || (chartType === ChartTypeBits.Combination && seriesChartType === ChartTypeBits.Column && isAllSeriesStyle);
+
     const { t } = localeService;
+
+    const handleDataPointsSelect = useCallback((item: IChartOptionType) => {
+        const dataPoint = currentSeriesStyle && currentSeriesStyle.dataPoints && currentSeriesStyle.dataPoints[Number(item.value)];
+        if (dataPoint) {
+            return;
+        }
+        setSeriesStyleMap({
+            [currentSeriesId]: {
+                dataPoints: {
+                    [item.value]: {},
+                },
+            },
+        });
+    }, [currentSeriesStyle, currentSeriesId]);
+
+    const onDataPointsChange = useCallback((dataPointsStyle: DeepPartial<ISeriesStyle['dataPoints']>) => {
+        setSeriesStyleMap({
+            [currentSeriesId]: {
+                dataPoints: dataPointsStyle,
+            },
+        });
+    }, [currentSeriesId]);
+
     return (
         <section>
             <Select className="chart-edit-panel-select" value={currentSeriesId} onChange={(id) => setCurrentSeriesId(id)} options={seriesOptions}></Select>
@@ -142,25 +170,51 @@ export const SeriesStyleEdit = (props: ISeriesStyleEditProps) => {
                     <>
                         {!isLineChartSeries && <FillOptions seriesStyle={isAllSeriesStyle ? allSeriesStyle : currentSeriesStyle} onSeriesStyleChange={setSeriesStyle} localeService={localeService} />}
                         <BorderOptions controlName={t(isLineOrAreaChart ? 'chart.line' : 'chart.border')} borderStyle={borderStyle} onSeriesStyleChange={setSeriesStyle} localeService={localeService} />
-                        {isLineOrAreaChart && <LinePointOptions pointStyle={pointStyle} onSeriesStyleChange={setSeriesStyle} localeService={localeService} />}
+                        {isLineOrAreaChart && (
+                            <LinePointOptions
+                                pointStyle={pointStyle}
+                                onChange={(k, v) => setSeriesStyle({
+                                    point: {
+                                        [k]: v,
+                                    },
+                                })}
+                                controls={linePointControls}
+                                localeService={localeService}
+                            />
+                        )}
                     </>
                 )}
                 {!isHorizontalChart && (
                     <AxisControl rightYAxis={Boolean(rightYAxis)} onSeriesStyleChange={setSeriesStyle} localeService={localeService} />
                 )}
             </div>
-            <div className="chart-edit-panel-top-gap">
-                <div className="chart-edit-panel-row">
-                    <div className="chart-edit-panel-row-half">{t('chart.withFormat', t('chart.dataPoint'))}</div>
-                    <div className="chart-edit-panel-row-half chart-edit-panel-text-right">
-                        <Button className={styles.seriesStyleEditAddDataPointBtn} type="text" size="small">
-                            <IncreaseSingle />
-                            <span>{t('chart.addDataPoint')}</span>
-                        </Button>
+
+            {/* Data points */}
+            {!isAllSeriesStyle && (
+                <div className="chart-edit-panel-top-gap">
+                    <div className="chart-edit-panel-row">
+                        <div className="chart-edit-panel-row-half">{t('chart.withFormat', t('chart.dataPoint'))}</div>
+                        <div className="chart-edit-panel-row-half chart-edit-panel-text-right">
+                            <DropdownMenu menus={dataPointsOptions ?? []} onSelect={handleDataPointsSelect}>
+                                <Button className={styles.seriesStyleEditAddDataPointBtn} type="text" size="small">
+                                    <IncreaseSingle />
+                                    <span>{t('chart.addDataPoint')}</span>
+                                </Button>
+                            </DropdownMenu>
+                        </div>
                     </div>
+                    {dataPoints && (
+                        <DataPointsEdit
+                            chartType={chartType}
+                            data={dataPoints}
+                            options={dataPointsOptions ?? []}
+                            onChange={onDataPointsChange}
+                            localeService={localeService}
+                        />
+                    )}
                 </div>
-                {dataPoints && <DataPointsEdit dataPoints={dataPoints} />}
-            </div>
+            )}
+
             <div className="chart-edit-panel-top-gap">
                 <DataLabelOptions
                     localeService={localeService}

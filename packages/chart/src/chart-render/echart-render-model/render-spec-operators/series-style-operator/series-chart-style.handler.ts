@@ -15,6 +15,7 @@
  */
 
 import { Tools } from '@univerjs/core';
+
 import tinyColor from 'tinycolor2';
 import { chartBitsUtils, ChartTypeBits } from '../../../../chart/constants';
 import { themeColors } from '../../../../chart/constants/default-chart-style';
@@ -51,10 +52,23 @@ const shapeMap = {
 const seriesStylizers = {
     bar(ctx: ISeriesStyleHandlerContext, seriesColor: string) {
         const { chartStyle, seriesItem, seriesStyle } = ctx;
+        const dataPoints = seriesStyle?.dataPoints;
+
         const fillColor = seriesStyle?.color ?? seriesColor;
         const gradientFill = chartStyle.gradientFill;
 
-        Tools.set(seriesItem, 'itemStyle.color', gradientFill ? getGradientColor(fillColor) : fillColor);
+        if (dataPoints) {
+            Tools.set(seriesItem, 'itemStyle.color', (params: any) => {
+                const pointStyle = dataPoints[params.dataIndex];
+                if (pointStyle?.color) {
+                    return pointStyle.color;
+                } else {
+                    return gradientFill ? getGradientColor(fillColor) : fillColor;
+                }
+            });
+        } else {
+            Tools.set(seriesItem, 'itemStyle.color', gradientFill ? getGradientColor(fillColor) : fillColor);
+        }
 
         if (seriesStyle?.fillOpacity) {
             Tools.set(seriesItem, 'itemStyle.opacity', seriesStyle.fillOpacity);
@@ -74,7 +88,9 @@ const seriesStylizers = {
     },
     // eslint-disable-next-line complexity
     line(ctx: ISeriesStyleHandlerContext, seriesColor: string) {
-        const { chartType, chartStyle, seriesStyle, seriesItem, seriesIndex } = ctx;
+        const { chartType, chartStyle, seriesStyle, seriesItem } = ctx;
+        const dataPoints = seriesStyle?.dataPoints;
+
         const isArea = chartBitsUtils.baseOn(chartType, ChartTypeBits.Area);
         const gradientFill = chartStyle.gradientFill ?? isArea;
         if (isArea) {
@@ -104,7 +120,44 @@ const seriesStylizers = {
             Tools.set(seriesItem, 'lineStyle.type', border.dashType);
         }
 
-        Tools.set(seriesItem, 'symbolSize', point?.size !== undefined ? point.size : 0);
+        if (dataPoints) {
+            Tools.set(seriesItem, 'symbol', (value: any, params: any) => {
+                const pointStyle = dataPoints[params.dataIndex];
+                if (pointStyle?.shape) {
+                    return shapeMap[pointStyle.shape];
+                }
+                if (point?.shape) {
+                    return shapeMap[point.shape];
+                }
+            });
+            Tools.set(seriesItem, 'symbolSize', (value: any, params: any) => {
+                const pointStyle = dataPoints[params.dataIndex];
+                if (pointStyle?.size !== undefined) {
+                    return pointStyle.size;
+                }
+                if (point?.size !== undefined) {
+                    return point.size;
+                }
+                return 0;
+            });
+            Tools.set(seriesItem, 'itemStyle.color', (params: any) => {
+                const pointStyle = dataPoints[params.dataIndex];
+                if (pointStyle?.color) {
+                    return pointStyle.color;
+                }
+                if (point?.color) {
+                    return point.color;
+                }
+            });
+        } else {
+            if (point?.shape) {
+                Tools.set(seriesItem, 'symbol', shapeMap[point.shape]);
+            }
+            if (point?.color) {
+                Tools.set(seriesItem, 'itemStyle.color', point?.color);
+            }
+            Tools.set(seriesItem, 'symbolSize', point?.size !== undefined ? point.size : 0);
+        }
     },
 };
 export const seriesChartStyleHandler: SeriesItemHandler = (ctx) => {

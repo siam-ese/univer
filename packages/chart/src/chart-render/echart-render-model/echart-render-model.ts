@@ -27,6 +27,7 @@ import {
     chartAxesOperator,
     chartBoxStyleOperator,
     chartThemeOperator,
+    invalidValueStyleOperator,
     legendStyleOperator,
     lineLikeStyleOperator,
     pieStyleOperator,
@@ -36,7 +37,6 @@ import {
     // dataLabelOperator,
     // gradientFillOperator,
     // hoverMarkStyleOperator,
-    // invalidValueStyleOperator,
     stackOperator,
     titleStyleOperator,
 } from './render-spec-operators';
@@ -83,7 +83,7 @@ export class EChartRenderModel extends Disposable implements IChartRenderModel {
         // _specOperators.add(combinationStyleOperator);
 
         // _specOperators.add(hoverMarkStyleOperator);
-        // _specOperators.add(invalidValueStyleOperator);
+        _specOperators.add(invalidValueStyleOperator);
         _specOperators.add(chartThemeOperator);
     }
 

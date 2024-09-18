@@ -18,13 +18,5 @@ import { themeColors } from '../../../chart/constants/default-chart-style';
 import type { EChartRenderSpecOperator } from '../echart-render-engine';
 
 export const chartThemeOperator: EChartRenderSpecOperator = (spec, style, config, instance) => {
-    // instance.setTheme('default', {
-    //     colors: style.runtime?.themeColors ?? themeColors,
-    // });
-    spec.color = themeColors;
-    // instance.setTheme('default', {
-    //     colors: themeColors,
-    // });
-
-    // return spec;
+    spec.color = style.runtime?.themeColors ?? themeColors;
 };

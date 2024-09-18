@@ -75,6 +75,8 @@ const locale = {
             horizontalAxis: '横轴',
             verticalAxis: '纵轴',
             rightVerticalAxis: '右纵轴',
+            leftAxis: '左轴',
+            rightAxis: '右轴',
         },
         position: '位置',
         dataLabels: '数据标签',
@@ -129,6 +131,7 @@ const locale = {
 
         },
         none: '无',
+        theIndexItem: '第{0}项',
         styleEditPanel: {
             showLabels: '显示标签',
             showDataLabels: '显示数据标签',
