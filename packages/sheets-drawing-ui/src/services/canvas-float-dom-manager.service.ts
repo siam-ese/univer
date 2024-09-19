@@ -44,6 +44,7 @@ export interface ICanvasFloatDom {
     /**
      * unitId of workbook, if not set, will use current workbook
      */
+    id?: string;
     unitId?: string;
     /**
      * subUnitId of worksheet, if not set, will use current worksheet
@@ -266,7 +267,6 @@ export class SheetCanvasFloatDomManagerService extends Disposable {
                     }
 
                     const { transform, drawingType, data } = floatDomParam;
-
                     if (drawingType !== DrawingTypeEnum.DRAWING_DOM) {
                         return;
                     }
@@ -283,7 +283,6 @@ export class SheetCanvasFloatDomManagerService extends Disposable {
                     }
 
                     const { left, top, width, height, angle, flipX, flipY, skewX, skewY } = transform;
-
                     const rectShapeKey = getDrawingShapeKeyByDrawingSearch({ unitId, subUnitId, drawingId });
 
                     const rectShape = scene.getObject(rectShapeKey);
@@ -319,6 +318,7 @@ export class SheetCanvasFloatDomManagerService extends Disposable {
                         unitId,
                         subUnitId,
                     };
+
                     this._canvasFloatDomService.addFloatDom({
                         position$,
                         id: drawingId,
@@ -342,6 +342,7 @@ export class SheetCanvasFloatDomManagerService extends Disposable {
 
                     const listener = rect.onTransformChange$.subscribeEvent(() => {
                         const newPosition = calcPosition(rect, renderObject.renderObject, skeleton.skeleton, target.worksheet);
+
                         position$.next(
                             newPosition
                         );

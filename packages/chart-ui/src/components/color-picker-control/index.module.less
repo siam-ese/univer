@@ -1,0 +1,28 @@
+.color-picker-control {
+    padding: var(--padding-sm);
+    &-overlay {
+        padding: var(--padding-base);
+        font-size: var(--font-size-xs);
+        background-color: rgb(var(--bg-color-secondary));
+        border: 1px solid rgb(var(--border-color));
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--box-shadow-base);
+    }
+    &-view-box {
+        display: flex;
+        align-items: center;
+    }
+    &-view {
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        border: 1px solid rgb(var(--border-color));
+    }
+    &-arrow {
+        margin-left: var(--margin-xs);
+        transition: transform 0.3s;
+    }
+    &-rotate {
+        transform: rotate(180deg);
+    }
+}

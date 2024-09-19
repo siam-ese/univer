@@ -23,6 +23,7 @@ const locale: typeof zhCN = {
     toolbar: {
         undo: 'Undo',
         redo: 'Redo',
+        insertChart: 'Insert Chart',
         formatPainter: 'Paint format',
         currencyFormat: 'Format as currency',
         percentageFormat: 'Format as percent',

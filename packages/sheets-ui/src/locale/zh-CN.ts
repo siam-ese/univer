@@ -22,6 +22,7 @@ const locale = {
     toolbar: {
         undo: '撤销',
         redo: '重做',
+        insertChart: '图表',
         formatPainter: '格式刷',
         currencyFormat: '货币格式',
         percentageFormat: '百分比格式',

@@ -1,0 +1,13 @@
+.button-switch {
+    display: flex;
+    align-items: center;
+    padding: var(--padding-xs);
+    border: 1px solid rgb(var(--border-color));
+    border-radius: 4px;
+    &-item {
+        flex-grow: 1;
+        + .button-switch-item {
+            border-left: 1px solid rgb(var(--border-color));
+        }
+    }
+}

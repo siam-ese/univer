@@ -23,6 +23,7 @@ const locale: typeof zhCN = {
     toolbar: {
         undo: 'Отменить',
         redo: 'Повторить',
+        insertChart: 'Insert Chart',
         formatPainter: 'Копировать формат',
         currencyFormat: 'Форматировать как валюту',
         percentageFormat: 'Форматировать как процент',
