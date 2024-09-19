@@ -73,6 +73,9 @@ export const chartBitsUtils = {
     baseOn(bit: number, base: number) {
         return (bit & base) !== 0 && bit >= base;
     },
+    remove(bit: number, attribute: number) {
+        return bit & ~attribute;
+    },
     chartBitToString(bit: ChartTypeBits) {
         return chartTypeStrings[bit];
     },

@@ -69,7 +69,7 @@ export class EChartRenderModel extends Disposable implements IChartRenderModel {
         // _specOperators.add(toHorizontalOperator);
         _specOperators.add(stackOperator);
         _specOperators.add(chartBoxStyleOperator);
-    // _specOperators.add(fontSizeOperator);
+        // _specOperators.add(fontSizeOperator);
         // _specOperators.add(chartBorderOperator);
         _specOperators.add(titleStyleOperator);
         _specOperators.add(seriesStyleOperator);

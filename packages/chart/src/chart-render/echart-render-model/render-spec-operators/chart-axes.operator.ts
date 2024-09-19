@@ -18,8 +18,9 @@ import type { Nullable } from '@univerjs/core';
 import { Tools } from '@univerjs/core';
 import type { EChartRenderSpecOperator } from '../echart-render-engine';
 import { defaultChartStyle } from '../../../chart/constants/default-chart-style';
-import { type IAxisOptions, PieLabelPosition, StackType } from '../../../chart/style.types';
+import { type IAxisOptions, PieLabelPosition } from '../../../chart/style.types';
 import { IRuntimeAxisPriority } from '../../../chart/runtime-context.types';
+import { ChartAttributeBits, chartBitsUtils } from '../../../chart/constants';
 import { applyLabelStyle, toArray } from './tools';
 
 const { textStyle } = defaultChartStyle;
@@ -27,7 +28,7 @@ const { textStyle } = defaultChartStyle;
 export const chartAxesOperator: EChartRenderSpecOperator = (spec, style, config, instance) => {
     const { xAxis, yAxis, rightYAxis } = style || {};
 
-    const percentStacked = style.stackType === StackType.Percent;
+    const percentStacked = chartBitsUtils.has(config.type, ChartAttributeBits.PercentStack);
     const axes = [...toArray(spec.xAxis), ...toArray(spec.yAxis)];
     const runtimeAxes = style.runtime?.axes;
     const secondaryAxis = runtimeAxes?.find((axis) => axis.priority === IRuntimeAxisPriority.Secondary);

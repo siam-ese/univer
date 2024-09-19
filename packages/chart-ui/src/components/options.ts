@@ -73,6 +73,10 @@ export const chartTypeOptions = [
         label: 'chartTypes.combination',
         value: ChartTypeBits.Combination,
     },
+    {
+        label: 'chartTypes.scatter',
+        value: ChartTypeBits.Scatter,
+    },
 ].map((option) => ({ ...option, value: String(option.value) }));
 
 export const seriesChartTypeOptions = chartTypeOptions.filter((option) => {

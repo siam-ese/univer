@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import type { InvalidValueType, StackType } from '@univerjs/chart';
-import { CategoryType, chartBitsUtils, ChartTypeBits, DataOrientation, defaultChartStyle, SHEETS_CHART_PLUGIN_NAME } from '@univerjs/chart';
+import type { InvalidValueType } from '@univerjs/chart';
+import { CategoryType, ChartAttributeBits, chartBitsUtils, ChartTypeBits, DataOrientation, defaultChartStyle, SHEETS_CHART_PLUGIN_NAME, StackType } from '@univerjs/chart';
 import type { IUnitRange, Workbook } from '@univerjs/core';
 import { createInternalEditorID, IUniverInstanceService, LocaleService, UniverInstanceType, useDependency } from '@univerjs/core';
 import { Button, Checkbox, Dropdown, Menu, MenuItem, Select } from '@univerjs/design';
@@ -23,7 +23,7 @@ import { serializeRange } from '@univerjs/engine-formula';
 import { DeleteSingle } from '@univerjs/icons';
 import { RangeSelector } from '@univerjs/ui';
 import clsx from 'clsx';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useChartConfigState, useSheetsChartUIService } from '../../../hooks';
 import { areaLineTypeOptions, chartTypeOptions, invalidValueOptions, stackTypeOptions } from '../../../components/options';
 import { useTranslatedOptions } from '../../../components/use-translated-options';
@@ -51,7 +51,7 @@ export const DataTabPanel = () => {
 
     const [chartType, setChartType] = useChartConfigState('chartType', sheetsChartUIService);
 
-    const [stackType, setStackType] = useChartConfigState('stackType', sheetsChartUIService);
+    // const [stackType, setStackType] = useChartConfigState('stackType', sheetsChartUIService);
 
     const [dataRange, setDataRange] = useChartConfigState('dataRange', sheetsChartUIService);
 
@@ -100,6 +100,35 @@ export const DataTabPanel = () => {
         }
     };
     const { t } = localeService;
+
+    const stackType = chartType &&
+    (chartBitsUtils.has(chartType, ChartAttributeBits.PercentStack)
+        ? StackType.Percent
+        : chartBitsUtils.has(chartType, ChartAttributeBits.Stack) ? StackType.Stacked : undefined);
+
+    const handleStackTypeChange = useCallback((_v: string) => {
+        if (!chartType) {
+            return;
+        }
+
+        const v = _v as StackType | '';
+        const pureChartType = chartBitsUtils.remove(chartType, ChartAttributeBits.PercentStack);
+        switch (v) {
+            case StackType.Stacked: {
+                setChartType(pureChartType | ChartAttributeBits.Stack);
+                break;
+            }
+            case StackType.Percent: {
+                setChartType(pureChartType | ChartAttributeBits.PercentStack);
+                break;
+            }
+            default: {
+                setChartType(pureChartType);
+                break;
+            }
+        }
+    }, [chartType]);
+
     return (
         <div>
             <div>
@@ -121,7 +150,7 @@ export const DataTabPanel = () => {
             {showStackControl && (
                 <div>
                     <h5>Stack</h5>
-                    <Select className="chart-edit-panel-select" value={stackType || ''} options={innerStackTypeOptions} onChange={(v) => setStackType(v as StackType)}></Select>
+                    <Select className="chart-edit-panel-select" value={stackType || ''} options={innerStackTypeOptions} onChange={handleStackTypeChange}></Select>
                 </div>
             )}
             <div>

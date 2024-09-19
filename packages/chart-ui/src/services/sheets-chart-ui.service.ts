@@ -17,7 +17,7 @@
 import type { IRange, Nullable } from '@univerjs/core';
 import { Disposable, ICommandService, Inject, LifecycleStages, LocaleService, OnLifecycle, Tools } from '@univerjs/core';
 import type { AreaLineStyle, ChartModel, ChartStyle, DataOrientation, DeepPartial, IAllSeriesStyle, IAxisOptions, IChartContext, IChartStyle, IChartUpdateConfigMutationParams, ILegendStyle, InvalidValueType, IPieLabelStyle, IRuntimeAxis, RadarShape, RightYAxisOptions } from '@univerjs/chart';
-import { CategoryType, ChartAttributeBits, chartBitsUtils, ChartModelService, ChartTypeBits, ChartUpdateConfigMutation, SheetsChartService, StackType } from '@univerjs/chart';
+import { CategoryType, ChartModelService, ChartTypeBits, ChartUpdateConfigMutation, SheetsChartService } from '@univerjs/chart';
 import { combineLatestWith, distinctUntilChanged, map, type Observable } from 'rxjs';
 
 function formatAxisOptionLabel(column: number, dataRange: IRange) {
@@ -30,12 +30,12 @@ export function registryChartConfigState(service: SheetsChartUIService) {
     service.registerViewState('chartType', (chartModel) => ({
         set(type) {
             const style: ChartStyle = {};
-            if (chartBitsUtils.has(type, ChartAttributeBits.PercentStack)) {
-                style.stackType = StackType.Percent;
-            }
-            if (chartBitsUtils.has(type, ChartAttributeBits.Stack)) {
-                style.stackType = StackType.Stacked;
-            }
+            // if (chartBitsUtils.has(type, ChartAttributeBits.PercentStack)) {
+            //     style.stackType = StackType.Percent;
+            // }
+            // if (chartBitsUtils.has(type, ChartAttributeBits.Stack)) {
+            //     style.stackType = StackType.Stacked;
+            // }
             if (type === ChartTypeBits.Doughnut) {
                 style.pie = {
                     doughnutHole: undefined,
@@ -51,22 +51,22 @@ export function registryChartConfigState(service: SheetsChartUIService) {
             return chartModel.chartType$;
         },
     }));
-    service.registerViewState('stackType', (chartModel) => ({
-        set(v) {
-            service.executeChartUpdateConfig({
-                chartModelId: chartModel.id,
-                style: {
-                    stackType: v || undefined,
-                },
-            });
-        },
-        get() {
-            return chartModel.style$.pipe(
-                map((style) => style.stackType),
-                distinctUntilChanged()
-            );
-        },
-    }));
+    // service.registerViewState('stackType', (chartModel) => ({
+    //     set(v) {
+    //         service.executeChartUpdateConfig({
+    //             chartModelId: chartModel.id,
+    //             style: {
+    //                 stackType: v || undefined,
+    //             },
+    //         });
+    //     },
+    //     get() {
+    //         return chartModel.style$.pipe(
+    //             map((style) => style.stackType),
+    //             distinctUntilChanged()
+    //         );
+    //     },
+    // }));
 
     service.registerViewState('dataRange', (chartModel) => ({
         set(v) {
@@ -608,7 +608,7 @@ export interface IChartConfigStateMap {
     orient: IChartConfigState<Nullable<DataOrientation>>;
     aggregate: IChartConfigState<boolean>;
     gradientFill: IChartConfigState<Nullable<boolean>>;
-    stackType: IChartConfigState<Nullable<StackType>>;
+    // stackType: IChartConfigState<Nullable<StackType>>;
     chartType: IChartConfigState<ChartTypeBits>;
     dataRange: IChartConfigState<Nullable<IRange>>;
     /** Series & Category */

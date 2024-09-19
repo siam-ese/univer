@@ -183,7 +183,7 @@ export enum InvalidValueType {
 export interface IChartStyle {
     runtime: IChartRuntimeContext;
     theme: string;
-    stackType: StackType;
+    // stackType: StackType;
     invalidValueType: InvalidValueType;
     gradientFill: boolean;
     backgroundColor: string;

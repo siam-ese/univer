@@ -15,16 +15,17 @@
  */
 
 import { Tools } from '@univerjs/core';
-import { StackType } from '../../../chart/style.types';
+// import { StackType } from '../../../chart/style.types';
 import type { EChartRenderSpecOperator } from '../echart-render-engine';
+import { ChartAttributeBits, chartBitsUtils } from '../../../chart/constants';
 import { seriesForEach, toPercentage } from './tools';
 
 export const stackOperator: EChartRenderSpecOperator = (spec, style, config) => {
-    const stacked = Boolean(style.stackType);
+    const stacked = chartBitsUtils.has(config.type, ChartAttributeBits.Stack);
     if (!stacked) {
         return;
     }
-    const percentStacked = style.stackType === StackType.Percent;
+    const percentStacked = chartBitsUtils.has(config.type, ChartAttributeBits.PercentStack);
     const totalData: number[] = [];
     seriesForEach(spec.series, (ser) => {
         if (stacked) {
